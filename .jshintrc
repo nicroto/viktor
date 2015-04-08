@@ -11,5 +11,5 @@
 	"boss": true,
 	"eqnull": true,
 	"node": true,
-	"predef": ["describe", "it", "before", "beforeEach", "after", "afterEach", "module", "Phaser"]
+	"predef": ["describe", "it", "before", "beforeEach", "after", "afterEach", "module", "window", "document", "navigator"]
 }
