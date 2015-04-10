@@ -1,2 +1,5 @@
 node_modules
 src/server/client/bower_components
+src/server/client/css
+src/server/client/js
+src/server/client/index.html

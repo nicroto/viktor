@@ -11,8 +11,8 @@ module.exports = function(grunt) {
 
 		clean: {
 			dev: [
+				'src/server/client/index.html',
 				'src/server/client/css',
-
 				'src/server/client/js/app.js'
 			],
 			build: ['build/']
@@ -65,6 +65,12 @@ module.exports = function(grunt) {
 						cwd: "src/client/styles/img/",
 						src: "**",
 						dest: "src/server/client/css/img/"
+					},
+					{
+						expand: true,
+						cwd: "src/app/",
+						src: "*.html",
+						dest: "src/server/client/"
 					}
 				]
 			}
