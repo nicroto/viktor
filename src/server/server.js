@@ -10,4 +10,5 @@ app.use( express.static( pathUtils.resolve( __dirname, "client" ) ) );
 
 http.createServer(app).listen( PORT, function() {
     console.log('Express server listening on port ' + PORT);
+    console.log('http://localhost:' + PORT);
 } );
