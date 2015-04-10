@@ -1,14 +1,24 @@
 'use strict';
 
-var $ = require( "jquery" ),
+var angular = require( "angular" ),
 	DAW = require( "./daw/daw" ),
 	Synth = require( "./synth/instrument" ),
 	AudioContext = window.AudioContext || window.webkitAudioContext,
-	daw;
+	app = angular.module( "app", [
+		require( "angular-local-storage" ).name
+	] );
 
-$( document ).ready( function() {
+app.run( function( localStorageService ) {
 
-	daw = new DAW( AudioContext );
+	if ( !localStorageService.get( "lastVisit" ) ) {
+		angular.element( "body" ).text( "Hello stranger!" );
+	} else {
+		angular.element( "body" ).text( "Welcome back!" );
+	}
+
+	localStorageService.set( "lastVisit", new Date() );
+
+	var daw = new DAW( AudioContext );
 
 	daw.init( function() {
 
