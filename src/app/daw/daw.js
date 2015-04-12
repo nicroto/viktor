@@ -16,7 +16,7 @@ DAW.prototype = {
 			audioContext = self.audioContext,
 			midiController = new MIDIController();
 
-		midiController.init( function(error) {
+		midiController.init( function( error ) {
 			if ( error ) {
 				console.log( error );
 			} else {
@@ -25,7 +25,11 @@ DAW.prototype = {
 				);
 			}
 
-			callback();
+			self.addInstrument( require( "./instruments/synth/instrument" ) );
+
+			if ( callback ) {
+				callback();
+			}
 		} );
 
 		self.audioContext = audioContext;

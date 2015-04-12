@@ -36,6 +36,7 @@
   },
   "devDependencies": {
     "browserify": "^9.0.8",
+    "browserify-ng-html2js": "^1.0.1",
     "browserify-shim": "^3.8.3",
     "grunt": "^0.4.5",
     "grunt-browserify": "^3.6.0",
@@ -59,9 +60,12 @@
       "depends": "angular",
       "exports": "angular.module('LocalStorageModule')"
     }
-  }, 
+  },
   "browserify": {
-    "transform": [ "browserify-shim" ]
+    "transform": [
+      "browserify-ng-html2js",
+      "browserify-shim"
+    ]
   },
   "keywords": [],
   "private": true
