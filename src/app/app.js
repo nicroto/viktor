@@ -5,7 +5,7 @@ var angular = require( "angular" ),
 		require( "./daw/module" ).name
 	] );
 
-app.run( [ "daw", function( daw ) {
+app.run( [ "dawEngine", function( daw ) {
 	daw.init();
 } ] );
 

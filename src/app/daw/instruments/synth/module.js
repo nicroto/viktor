@@ -9,6 +9,7 @@ var angular = require( "angular" ),
 mod.directive( "synth", [ "$templateCache", function( $templateCache ) {
 	return {
 		restrict: "E",
+		replace: true,
 		template: $templateCache.get( template.name )
 	};
 } ] );

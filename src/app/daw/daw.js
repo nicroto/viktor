@@ -6,7 +6,9 @@ function DAW( AudioContext ) {
 	var self = this;
 
 	self.audioContext = new AudioContext();
+	self.midiController = new MIDIController();
 	self.instruments = [];
+	self.externalMidiMessageHandlers = [];
 }
 
 DAW.prototype = {
@@ -14,7 +16,7 @@ DAW.prototype = {
 	init: function( callback ) {
 		var self = this,
 			audioContext = self.audioContext,
-			midiController = new MIDIController();
+			midiController = self.midiController;
 
 		midiController.init( function( error ) {
 			if ( error ) {
@@ -48,11 +50,30 @@ DAW.prototype = {
 
 	propagateMidiMessage: function( eventType, parsed, rawEvent ) {
 		var self = this,
-			instruments = self.instruments;
+			instruments = self.instruments,
+			externalHandlers = self.externalMidiMessageHandlers;
 
 		instruments.forEach( function( inst ) {
 			inst.onMidiMessage( eventType, parsed, rawEvent );
 		} );
+
+		externalHandlers.forEach( function( handler ) {
+			handler( eventType, parsed, rawEvent );
+		} );
+	},
+
+	externalMidiMessage: function( midiEvent ) {
+		var self = this,
+			midiController = self.midiController;
+
+		midiController.onMidiMessage( midiEvent );
+	},
+
+	addExternalMidiMessageHandler: function( handler ) {
+		var self = this,
+			handlers = self.externalMidiMessageHandlers;
+
+		handlers.push( handler );
 	}
 
 };
