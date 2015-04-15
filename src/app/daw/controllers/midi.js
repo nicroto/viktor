@@ -16,11 +16,13 @@ MIDIController.prototype = {
 			requestMIDIAccess().then(
 				self.onMidiAccess.bind( self, callback ),
 				function( error ) {
-					callback( error );
+					console.log( error );
+					callback();
 				}
 			);
 		} else {
-			callback( "Midi API is unavailable in this browser." );
+			console.log( "Midi API is unavailable in this browser." );
+			callback();
 		}
 	},
 
@@ -54,11 +56,10 @@ MIDIController.prototype = {
 				input = inputs.next();
 			}
 
-			if ( hasDevices ) {
-				callback();
-			} else {
-				callback( noDevicesMessage );
+			if ( !hasDevices ) {
+				console.log( noDevicesMessage );
 			}
+			callback();
 
 		}
 	},

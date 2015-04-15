@@ -19,13 +19,9 @@ DAW.prototype = {
 			midiController = self.midiController;
 
 		midiController.init( function( error ) {
-			if ( error ) {
-				console.log( error );
-			} else {
-				midiController.setMessageHandler(
-					self.propagateMidiMessage.bind( self )
-				);
-			}
+			midiController.setMessageHandler(
+				self.propagateMidiMessage.bind( self )
+			);
 
 			self.addInstrument( require( "./instruments/synth/instrument" ) );
 
