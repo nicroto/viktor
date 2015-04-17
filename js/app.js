@@ -36119,12 +36119,12 @@ ngModule.run(['$templateCache', function($templateCache) {
     '			<div id="firstOscillator" class="oscillator row">\n' +
     '				<h5 class="text-center">Oscilator 1</h5>\n' +
     '				<div class="col-lg-4">\n' +
-    '					<webaudio-knob class="range-knob" src="/images/range-knob.png"\n' +
+    '					<webaudio-knob class="range-knob" src="images/range-knob.png"\n' +
     '					bind-polymer\n' +
     '					value="{{oscillators.osc1.range}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 1 range"></webaudio-knob>\n' +
     '				</div>\n' +
     '				<div class="col-lg-4 col-lg-offset-4">\n' +
-    '					<webaudio-knob class="waveform-knob" src="/images/range-knob.png"\n' +
+    '					<webaudio-knob class="waveform-knob" src="images/range-knob.png"\n' +
     '					bind-polymer\n' +
     '					value="{{oscillators.osc1.waveform}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 1 waveform"></webaudio-knob>\n' +
     '				</div>\n' +
@@ -36132,17 +36132,17 @@ ngModule.run(['$templateCache', function($templateCache) {
     '			<div class="oscillator row">\n' +
     '				<h5 class="text-center">Oscilator 2</h5>\n' +
     '				<div class="col-lg-4">\n' +
-    '					<webaudio-knob class="range-knob" src="/images/range-knob.png"\n' +
+    '					<webaudio-knob class="range-knob" src="images/range-knob.png"\n' +
     '					bind-polymer\n' +
     '					value="{{oscillators.osc2.range}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 2 range"></webaudio-knob>\n' +
     '				</div>\n' +
     '				<div class="col-lg-4">\n' +
-    '					<webaudio-knob class="frequency-knob" src="/images/frequency-knob.png"\n' +
+    '					<webaudio-knob class="frequency-knob" src="images/frequency-knob.png"\n' +
     '					bind-polymer\n' +
     '					value="{{oscillators.osc2.fineDetune}}" max="16" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 2 frequency"></webaudio-knob>\n' +
     '				</div>\n' +
     '				<div class="col-lg-4">\n' +
-    '					<webaudio-knob class="waveform-knob" src="/images/range-knob.png"\n' +
+    '					<webaudio-knob class="waveform-knob" src="images/range-knob.png"\n' +
     '					bind-polymer\n' +
     '					value="{{oscillators.osc2.waveform}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 2 waveform"></webaudio-knob>\n' +
     '				</div>\n' +
@@ -36150,17 +36150,17 @@ ngModule.run(['$templateCache', function($templateCache) {
     '			<div class="oscillator row">\n' +
     '				<h5 class="text-center">Oscilator 3</h5>\n' +
     '				<div class="col-lg-4">\n' +
-    '					<webaudio-knob class="range-knob" src="/images/lfo-knob.png"\n' +
+    '					<webaudio-knob class="range-knob" src="images/lfo-knob.png"\n' +
     '					bind-polymer\n' +
     '					value="{{oscillators.osc3.range}}" max="6" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 3 range"></webaudio-knob>\n' +
     '				</div>\n' +
     '				<div class="col-lg-4">\n' +
-    '					<webaudio-knob class="frequency-knob" src="/images/frequency-knob.png"\n' +
+    '					<webaudio-knob class="frequency-knob" src="images/frequency-knob.png"\n' +
     '					bind-polymer\n' +
     '					value="{{oscillators.osc3.fineDetune}}" max="16" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 3 frequency"></webaudio-knob>\n' +
     '				</div>\n' +
     '				<div class="col-lg-4">\n' +
-    '					<webaudio-knob class="waveform-knob" src="/images/range-knob.png"\n' +
+    '					<webaudio-knob class="waveform-knob" src="images/range-knob.png"\n' +
     '					bind-polymer\n' +
     '					value="{{oscillators.osc3.waveform}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 3 waveform"></webaudio-knob>\n' +
     '				</div>\n' +
