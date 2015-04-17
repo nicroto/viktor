@@ -5,15 +5,18 @@ var angular = require( "angular" ),
 	mod = angular.module( "dawModule", [
 		require( "./instruments/synth/module" ).name,
 		template.name
-	] ),
-	DAW = require( "./daw" );
+	] );
 
-mod.factory( "dawEngine", function() {
-	var AudioContext = window.AudioContext || window.webkitAudioContext;
+mod.provider( "dawEngine", function dawEngineProvider() {
 
-	var daw = new DAW( AudioContext );
+	var self = this;
 
-	return daw;
+	self.dawEngine = null;
+
+	self.$get = function dawEngineFactory() {
+		return self.dawEngine;
+	};
+
 } );
 
 mod.directive( "dawContainer", [ "$templateCache", function($templateCache) {

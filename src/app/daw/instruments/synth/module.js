@@ -14,8 +14,7 @@ mod.directive( "synth", [ "$templateCache", function( $templateCache ) {
 	};
 } ] );
 
-mod.controller( "synthCtrl", function() {
-
-} );
+// Controllers
+require( "./view/controller/oscillator-bank" )( mod );
 
 module.exports = mod;

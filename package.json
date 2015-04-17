@@ -53,12 +53,17 @@
     "uglifyify": "^3.0.1"
   },
   "browser": {
-    "angular-local-storage": "./node_modules/angular-local-storage/dist/angular-local-storage.js"
+    "angular-local-storage": "./node_modules/angular-local-storage/dist/angular-local-storage.js",
+    "angular-bind-polymer": "./non-npm/angular-bind-polymer.js"
   },
   "browserify-shim": {
     "angular-local-storage": {
       "depends": "angular",
       "exports": "angular.module('LocalStorageModule')"
+    },
+    "angular-bind-polymer": {
+      "depends": "angular",
+      "exports": "angular.module('eee-c.angularBindPolymer')"
     }
   },
   "browserify": {

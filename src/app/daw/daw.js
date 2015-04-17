@@ -7,7 +7,7 @@ function DAW( AudioContext ) {
 
 	self.audioContext = new AudioContext();
 	self.midiController = new MIDIController();
-	self.instruments = [];
+	self.synth = null;
 	self.externalMidiMessageHandlers = [];
 }
 
@@ -23,7 +23,9 @@ DAW.prototype = {
 				self.propagateMidiMessage.bind( self )
 			);
 
-			self.addInstrument( require( "./instruments/synth/instrument" ) );
+			self.synth = self.createInstrument(
+				require( "./instruments/synth/instrument" )
+			);
 
 			if ( callback ) {
 				callback();
@@ -33,25 +35,22 @@ DAW.prototype = {
 		self.audioContext = audioContext;
 	},
 
-	addInstrument: function( Instrument, settings ) {
+	createInstrument: function( Instrument, settings ) {
 		var self = this,
-			instruments = self.instruments,
 			audioContext = self.audioContext,
 			newInstrument = new Instrument( audioContext, settings );
 
-		instruments.push( newInstrument );
-
 		newInstrument.outputNode.connect( audioContext.destination );
+
+		return newInstrument;
 	},
 
 	propagateMidiMessage: function( eventType, parsed, rawEvent ) {
 		var self = this,
-			instruments = self.instruments,
+			synth = self.synth,
 			externalHandlers = self.externalMidiMessageHandlers;
 
-		instruments.forEach( function( inst ) {
-			inst.onMidiMessage( eventType, parsed, rawEvent );
-		} );
+		synth.onMidiMessage( eventType, parsed, rawEvent );
 
 		externalHandlers.forEach( function( handler ) {
 			handler( eventType, parsed, rawEvent );
