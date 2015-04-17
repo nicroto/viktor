@@ -35586,6 +35586,7 @@ directive('bindPolymer', ['$parse', function($parse) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"angular":2}],5:[function(require,module,exports){
+(function (global){
 'use strict';
 
 var angular = require( "angular" ),
@@ -35593,7 +35594,6 @@ var angular = require( "angular" ),
 		require( "angular-bind-polymer" ).name,
 		require( "./daw/module" ).name
 	] ),
-	global = window,
 	DAW = require( "./daw/daw" ),
 	AudioContext = global.AudioContext || global.webkitAudioContext,
 	dawEngine = new DAW( AudioContext );
@@ -35617,6 +35617,7 @@ angular.element( document ).ready( function() {
 } );
 
 module.exports = app;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./daw/daw":7,"./daw/module":13,"angular":2,"angular-bind-polymer":4}],6:[function(require,module,exports){
 'use strict';
 
@@ -35763,7 +35764,7 @@ DAW.prototype = {
 			audioContext = self.audioContext,
 			midiController = self.midiController;
 
-		midiController.init( function( error ) {
+		midiController.init( function() {
 			midiController.setMessageHandler(
 				self.propagateMidiMessage.bind( self )
 			);
@@ -35924,7 +35925,7 @@ Instrument.prototype = {
 			envelope.gain.cancelScheduledValues( 0 );
 			envelope.gain.setTargetAtTime( 0.0, 0, settings.releaseTime );
 		} else {
-			var noteFrequency = activeNotes[ activeNotes.length - 1 ];
+			noteFrequency = activeNotes[ activeNotes.length - 1 ];
 
 			self.oscillators.forEach( function( osc ) {
 				self._setNoteToOscillator( noteFrequency, settings, osc );
@@ -36017,7 +36018,6 @@ var SEMITONE_CENTS = 100,
 	FINE_DETUNE_HALF_SPECTRE = 8,
 	RANGE_DEFAULT_BASE = 3;
 
-
 var utils = {
 
 	OSC_WAVEFORM: [
@@ -36064,8 +36064,7 @@ module.exports = mod;
 },{"./view/controller/oscillator-bank":11,"./view/template/synth.html":12,"angular":2}],11:[function(require,module,exports){
 'use strict';
 
-var $ = require( "jquery" ),
-	angular = require( "angular" );
+var $ = require( "jquery" );
 
 module.exports = function( mod ) {
 
@@ -36107,7 +36106,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"angular":2,"jquery":3}],12:[function(require,module,exports){
+},{"jquery":3}],12:[function(require,module,exports){
 var ngModule = angular.module('synth.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('synth.html',
