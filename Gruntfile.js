@@ -42,7 +42,7 @@ module.exports = function(grunt) {
 				src: ['src/app/app.js'],
 				dest: 'src/server/client/js/app.js',
 				options: {
-					transform: ['uglifyify'],
+					transform: [],
 					debug: false
 				}
 			}

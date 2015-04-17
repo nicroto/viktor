@@ -102,7 +102,7 @@ Instrument.prototype = {
 			envelope.gain.cancelScheduledValues( 0 );
 			envelope.gain.setTargetAtTime( 0.0, 0, settings.releaseTime );
 		} else {
-			var noteFrequency = activeNotes[ activeNotes.length - 1 ];
+			noteFrequency = activeNotes[ activeNotes.length - 1 ];
 
 			self.oscillators.forEach( function( osc ) {
 				self._setNoteToOscillator( noteFrequency, settings, osc );

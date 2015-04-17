@@ -5,7 +5,6 @@ var angular = require( "angular" ),
 		require( "angular-bind-polymer" ).name,
 		require( "./daw/module" ).name
 	] ),
-	global = window,
 	DAW = require( "./daw/daw" ),
 	AudioContext = global.AudioContext || global.webkitAudioContext,
 	dawEngine = new DAW( AudioContext );

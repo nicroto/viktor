@@ -1,7 +1,6 @@
 'use strict';
 
-var $ = require( "jquery" ),
-	angular = require( "angular" );
+var $ = require( "jquery" );
 
 module.exports = function( mod ) {
 

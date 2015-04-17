@@ -18,7 +18,7 @@ DAW.prototype = {
 			audioContext = self.audioContext,
 			midiController = self.midiController;
 
-		midiController.init( function( error ) {
+		midiController.init( function() {
 			midiController.setMessageHandler(
 				self.propagateMidiMessage.bind( self )
 			);
