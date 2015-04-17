@@ -1,0 +1,8 @@
+{
+  "name": "core-component-page",
+  "private": true,
+  "dependencies": {
+    "webcomponentsjs": "Polymer/webcomponentsjs",
+    "polymer": "Polymer/polymer#master"
+  }
+}

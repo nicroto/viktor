@@ -1,0 +1,14 @@
+{
+  "name": "polymer-gestures",
+  "private": true,
+  "homepage": "https://github.com/Polymer/polymer-gestures",
+  "_release": "ccd9dfae58",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "ccd9dfae58896dff2e4fe9ce123870d321e393d1"
+  },
+  "_source": "git://github.com/Polymer/polymer-gestures.git",
+  "_target": "master",
+  "_originalSource": "Polymer/polymer-gestures"
+}

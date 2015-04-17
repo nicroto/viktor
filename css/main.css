@@ -1,1 +1,1 @@
-body{background-color:#000;}body #mainContainer{width:90%;border:solid 1px #fff}
+body #dawContainer{position:relative;width:90%;height:500px;margin-top:50px;margin-left:auto;margin-right:auto;border:solid 1px #000;}body #dawContainer #dawKeyboard{position:absolute;bottom:0;margin-left:200px}body #dawContainer #synthContainer{background-color:#323333;color:#eee}body #dawContainer .control-bank .oscillator{margin-top:5px}

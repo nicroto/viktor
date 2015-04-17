@@ -1,0 +1,18 @@
+{
+  "name": "webaudio-controls",
+  "version": "0.1.0",
+  "description": "GUI parts library for Web application using [Polymer] WebComponents",
+  "main": "Gruntfile.js",
+  "dependencies": {},
+  "devDependencies": {
+    "grunt-contrib-watch": "~0.5.3",
+    "grunt-contrib-connect": "^0.7.1",
+    "grunt-bower-task": "~0.3.4"
+  },
+  "scripts": {
+    "test": ""
+  },
+  "repository": "git@github.com:WebMusicDevelopersJP/webaudio-controls.git",
+  "author": "WebMusicDevelopersJP",
+  "license": "Apache2.0"
+}
