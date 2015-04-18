@@ -10,10 +10,10 @@ MIDIController.prototype = {
 
 	init: function( callback ) {
 		var self = this,
-			requestMIDIAccess = navigator.requestMIDIAccess.bind( navigator );
+			requestMIDIAccess = navigator.requestMIDIAccess;
 
 		if ( requestMIDIAccess ) {
-			requestMIDIAccess().then(
+			requestMIDIAccess.bind( navigator )().then(
 				self.onMidiAccess.bind( self, callback ),
 				function( error ) {
 					console.log( error );
