@@ -3,7 +3,9 @@
 var angular = require( "angular" ),
 	template = require( "./view/template/synth.html" ),
 	mod = angular.module( "synth", [
-		template.name
+		template.name,
+		require( "./view/template/oscillator-bank.html" ).name
+		//... require all template used within the module
 	] );
 
 mod.directive( "synth", [ "$templateCache", function( $templateCache ) {
