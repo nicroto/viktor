@@ -144,7 +144,30 @@ Instrument.prototype = {
 						},
 						resolveWaveform = function( oldSettings, settings, osc ) {
 							if ( oldSettings.waveform !== settings.waveform ) {
-								osc.type = utils.OSC_WAVEFORM[ settings.waveform ];
+								var defaultForm = utils.OSC_WAVEFORM[ settings.waveform ];
+
+								if ( defaultForm ) {
+									osc.type = defaultForm;
+								} else {
+									var waveformFFT = utils.OSC_WAVEFORM_FFT[ settings.waveform - utils.OSC_WAVEFORM.length ];
+
+									if ( waveformFFT ) {
+										var audioContext = self.audioContext,
+											fft = waveformFFT.fft,
+											size = fft.real.length,
+											real = new Float32Array( size ),
+											imag = new Float32Array( size );
+
+										for ( var i = 0; i < size; i++ ) {
+											real[ i ] = fft.real[ i ];
+											imag[ i ] = fft.imag[ i ];
+										}
+
+										var waveTable = audioContext.createPeriodicWave( real, imag );
+
+										osc.setPeriodicWave( waveTable );
+									}
+								}
 							}
 						},
 						resolveFineDetune = function( oldSettings, settings, osc, base ) {
