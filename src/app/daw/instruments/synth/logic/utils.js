@@ -32,6 +32,10 @@ var utils = {
 		var fine = ( fineDetune - FINE_DETUNE_HALF_SPECTRE ) * SEMITONE_CENTS;
 
 		return base + fine;
+	},
+
+	getVolume: function( value ) {
+		return value / 100;
 	}
 
 };

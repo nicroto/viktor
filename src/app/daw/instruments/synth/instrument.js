@@ -7,6 +7,7 @@ var utils = require( "./logic/utils" );
 function Instrument( audioContext, settings ) {
 	var self = this,
 		oscillators = [],
+		volumes = [],
 		envelope = audioContext.createGain(),
 		customOrDefault = function( customValue, defaultValue ) {
 			return customValue !== undefined ? customValue : defaultValue;
@@ -15,19 +16,25 @@ function Instrument( audioContext, settings ) {
 	settings = settings ? settings : {};
 
 	while ( oscillators.length < 3 ) {
-		var osc = audioContext.createOscillator();
+		var osc = audioContext.createOscillator(),
+			volume = audioContext.createGain();
 
 		osc.frequency.setValueAtTime( 110, 0 );
-		osc.connect( envelope );
+		osc.connect( volume );
 		osc.start( 0 );
 
+		volume.gain.value = 1.0;
+		volume.connect( envelope );
+
 		oscillators.push( osc );
+		volumes.push( volume );
 	}
 
 	envelope.gain.value = 0.0;
 
 	self.audioContext = audioContext;
 	self.oscillators = oscillators;
+	self.volumes = volumes;
 	self.envelopeNode = envelope;
 	self.outputNode = envelope;
 	self.activeNotes = [];
@@ -36,7 +43,8 @@ function Instrument( audioContext, settings ) {
 		releaseTime: customOrDefault( settings.releaseTime, 0.05 ),
 		portamento: customOrDefault( settings.portamento, 0.05 ),
 
-		oscillators: null
+		oscillators: null,
+		mixer: null
 	};
 
 	self._defineProps();
@@ -55,6 +63,21 @@ function Instrument( audioContext, settings ) {
 			range: 3,
 			fineDetune: 8,
 			waveform: 0
+		}
+	};
+
+	self.mixerSettings = {
+		volume1: {
+			isEnabled: 1,
+			value: 60
+		},
+		volume2: {
+			isEnabled: 0,
+			value: 60
+		},
+		volume3: {
+			isEnabled: 0,
+			value: 60
 		}
 	};
 }
@@ -196,6 +219,44 @@ Instrument.prototype = {
 			}
 
 		} );
+
+		Object.defineProperty( self, "mixerSettings", {
+
+			get: function() {
+				// if slow - use npm clone
+				return JSON.parse( JSON.stringify( self.settings.mixer ) );
+			},
+
+			set: function( settings ) {
+				var oldSettings = self.settings.mixer,
+					volumes = self.volumes,
+					volume1 = volumes[ 0 ],
+					volume2 = volumes[ 1 ],
+					volume3 = volumes[ 2 ],
+					volumeSettings1 = settings.volume1,
+					volumeSettings2 = settings.volume2,
+					volumeSettings3 = settings.volume3;
+
+				if ( oldSettings ) {
+					var oldVolumeSettings1 = oldSettings.volume1,
+						oldVolumeSettings2 = oldSettings.volume2,
+						oldVolumeSettings3 = oldSettings.volume3,
+						resolveVolume = function( oldSettings, settings, volume ) {
+							var value = settings.isEnabled ? settings.value : 0;
+
+							volume.gain.value = utils.getVolume( value );
+						};
+
+					resolveVolume( oldVolumeSettings1, volumeSettings1, volume1 );
+					resolveVolume( oldVolumeSettings2, volumeSettings2, volume2 );
+					resolveVolume( oldVolumeSettings3, volumeSettings3, volume3 );
+				}
+
+				self.settings.mixer = JSON.parse( JSON.stringify( settings ) );
+			}
+
+		} );
+
 	},
 
 	_setNoteToOscillator: function( noteFrequency, settings, oscillator ) {

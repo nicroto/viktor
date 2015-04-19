@@ -7,7 +7,7 @@ module.exports = function( mod ) {
 	mod.controller( "OscillatorBankCtrl", [ "$scope", "dawEngine", function( $scope, dawEngine ) {
 		var self = this,
 			synth = dawEngine.synth,
-			settingsChangeHandler = function() {console.log( "change" );
+			settingsChangeHandler = function() {
 				synth.oscillatorSettings = {
 					osc1: self.osc1,
 					osc2: self.osc2,
@@ -33,7 +33,7 @@ module.exports = function( mod ) {
 			$scope.$watch( path, settingsChangeHandler );
 		} );
 
-		$( "webaudio-knob" ).on( "change", function( e ) {
+		$( ".oscillator webaudio-knob" ).on( "change", function( e ) {
 			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
 				$( e.target ).attr( "value", e.target.value );
 			}
