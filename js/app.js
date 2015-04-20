@@ -35829,8 +35829,10 @@ var utils = require( "./logic/utils" );
 
 function Instrument( audioContext, settings ) {
 	var self = this,
-		oscillators = [],
 		volumes = [],
+		oscillators = [],
+		noiseVolume = audioContext.createGain(),
+		noiseNode = audioContext.createScriptProcessor( utils.NOISE_BUFFER_SIZE, 1, 1 ),
 		envelope = audioContext.createGain(),
 		customOrDefault = function( customValue, defaultValue ) {
 			return customValue !== undefined ? customValue : defaultValue;
@@ -35838,26 +35840,33 @@ function Instrument( audioContext, settings ) {
 
 	settings = settings ? settings : {};
 
+	envelope.gain.value = 0.0;
+
 	while ( oscillators.length < 3 ) {
 		var osc = audioContext.createOscillator(),
 			volume = audioContext.createGain();
+
+		volume.gain.value = 0.0;
+		volume.connect( envelope );
 
 		osc.frequency.setValueAtTime( 110, 0 );
 		osc.connect( volume );
 		osc.start( 0 );
 
-		volume.gain.value = 1.0;
-		volume.connect( envelope );
-
-		oscillators.push( osc );
 		volumes.push( volume );
+		oscillators.push( osc );
 	}
 
-	envelope.gain.value = 0.0;
+	noiseVolume.gain.value = 0.0;
+	noiseVolume.connect( envelope );
+
+	noiseNode.connect( noiseVolume );
 
 	self.audioContext = audioContext;
-	self.oscillators = oscillators;
 	self.volumes = volumes;
+	self.oscillators = oscillators;
+	self.noiseVolume = noiseVolume;
+	self.noiseNode = noiseNode;
 	self.envelopeNode = envelope;
 	self.outputNode = envelope;
 	self.activeNotes = [];
@@ -35901,8 +35910,14 @@ function Instrument( audioContext, settings ) {
 		volume3: {
 			isEnabled: 0,
 			value: 60
+		},
+		noise: {
+			type: 0,
+			volume: 0
 		}
 	};
+
+	self._changeNoise( noiseNode, utils.NOISE_TYPE[ utils.DEFAULT_NOISE_TYPE ] );
 }
 
 Instrument.prototype = {
@@ -36056,23 +36071,33 @@ Instrument.prototype = {
 					volume1 = volumes[ 0 ],
 					volume2 = volumes[ 1 ],
 					volume3 = volumes[ 2 ],
+					noiseVolume = self.noiseVolume,
+					noiseNode = self.noiseNode,
 					volumeSettings1 = settings.volume1,
 					volumeSettings2 = settings.volume2,
-					volumeSettings3 = settings.volume3;
+					volumeSettings3 = settings.volume3,
+					noiseSettings = settings.noise,
+					resolveVolume = function( settings, volume ) {
+						var value = settings.isEnabled ? settings.value : 0;
+
+						volume.gain.value = utils.getVolume( value );
+					};
+
+				resolveVolume( volumeSettings1, volume1 );
+				resolveVolume( volumeSettings2, volume2 );
+				resolveVolume( volumeSettings3, volume3 );
 
 				if ( oldSettings ) {
-					var oldVolumeSettings1 = oldSettings.volume1,
-						oldVolumeSettings2 = oldSettings.volume2,
-						oldVolumeSettings3 = oldSettings.volume3,
-						resolveVolume = function( oldSettings, settings, volume ) {
-							var value = settings.isEnabled ? settings.value : 0;
+					var oldNoiseSettings = oldSettings.noise;
 
-							volume.gain.value = utils.getVolume( value );
-						};
-
-					resolveVolume( oldVolumeSettings1, volumeSettings1, volume1 );
-					resolveVolume( oldVolumeSettings2, volumeSettings2, volume2 );
-					resolveVolume( oldVolumeSettings3, volumeSettings3, volume3 );
+					// resolve Noise
+					if ( noiseSettings.type !== oldNoiseSettings.type ) {
+						self._changeNoise( noiseNode, utils.NOISE_TYPE[ noiseSettings.type ] );
+					}
+					if ( noiseSettings.volume !== oldNoiseSettings.volume ) {
+						// alter volume
+						noiseVolume.gain.value = utils.getVolume( noiseSettings.volume );
+					}
 				}
 
 				self.settings.mixer = JSON.parse( JSON.stringify( settings ) );
@@ -36089,6 +36114,10 @@ Instrument.prototype = {
 			0,
 			settings.portamento
 		);
+	},
+
+	_changeNoise: function( noiseNode, type ) {
+		noiseNode.onaudioprocess = utils.getNoiseGenerator( type );
 	}
 
 };
@@ -36121,6 +36150,13 @@ var utils = {
 		}
 	],
 	OSC3_RANGE_BASE: 4,
+	NOISE_TYPE: [
+		"brown",
+		"pink",
+		"white"
+	],
+	DEFAULT_NOISE_TYPE: 0,
+	NOISE_BUFFER_SIZE: 4096,
 
 	getDetune: function( range, fineDetune, rangeBase ) {
 		rangeBase = rangeBase === undefined ? RANGE_DEFAULT_BASE : rangeBase;
@@ -36133,6 +36169,66 @@ var utils = {
 
 	getVolume: function( value ) {
 		return value / 100;
+	},
+
+	getNoiseGenerator: function( type ) {
+		// code copied from here:
+		//		http://noisehack.com/generate-noise-web-audio-api/
+		var self = this,
+			bufferSize = self.NOISE_BUFFER_SIZE,
+			generator;
+		switch ( type ) {
+			case "white":
+				generator = function( e ) {
+					var output = e.outputBuffer.getChannelData( 0 );
+					for ( var i = 0; i < bufferSize; i++ ) {
+						output[ i ] = Math.random() * 2 - 1;
+					}
+				};
+				break;
+			case "pink":
+				generator = ( function() {
+					var b0, b1, b2, b3, b4, b5, b6;
+					b0 = b1 = b2 = b3 = b4 = b5 = b6 = 0.0;
+					var result = function( e ) {
+						var output = e.outputBuffer.getChannelData( 0 );
+						for ( var i = 0; i < bufferSize; i++ ) {
+							var white = Math.random() * 2 - 1;
+
+							b0 = 0.99886 * b0 + white * 0.0555179;
+							b1 = 0.99332 * b1 + white * 0.0750759;
+							b2 = 0.96900 * b2 + white * 0.1538520;
+							b3 = 0.86650 * b3 + white * 0.3104856;
+							b4 = 0.55000 * b4 + white * 0.5329522;
+							b5 = -0.7616 * b5 - white * 0.0168980;
+
+							output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+							output[i] *= 0.11; // (roughly) compensate for gain
+
+							b6 = white * 0.115926;
+						}
+					};
+					return result;
+				} )();
+				break;
+			case "brown":
+				generator = ( function() {
+					var lastOut = 0.0;
+					var result = function( e ) {
+						var output = e.outputBuffer.getChannelData( 0 );
+						for ( var i = 0; i < bufferSize; i++ ) {
+							var white = Math.random() * 2 - 1;
+							output[ i ] = ( lastOut + ( 0.02 * white ) ) / 1.02;
+							lastOut = output[ i ];
+							output[ i ] *= 3.5; // (roughly) compensate for gain
+						}
+					};
+					return result;
+				} )();
+				break;
+		}
+
+		return generator;
 	}
 
 };
@@ -36176,23 +36272,16 @@ module.exports = function( mod ) {
 				synth.mixerSettings = {
 					volume1: self.volume1,
 					volume2: self.volume2,
-					volume3: self.volume3
+					volume3: self.volume3,
+					noise: self.noise
 				};
 			},
 			settings = synth.mixerSettings;
 
-		self.volume1 = {
-			isEnabled: 1,
-			value: 60
-		};
-		self.volume2 = {
-			isEnabled: 0,
-			value: 60
-		};
-		self.volume3 = {
-			isEnabled: 0,
-			value: 60
-		};
+		self.volume1 = settings.volume1;
+		self.volume2 = settings.volume2;
+		self.volume3 = settings.volume3;
+		self.noise = settings.noise;
 
 		[
 			"mixer.volume1.isEnabled",
@@ -36200,16 +36289,21 @@ module.exports = function( mod ) {
 			"mixer.volume2.isEnabled",
 			"mixer.volume2.value",
 			"mixer.volume3.isEnabled",
-			"mixer.volume3.value"
+			"mixer.volume3.value",
+			"mixer.noise.type",
+			"mixer.noise.volume"
 		].forEach( function( path ) {
 			$scope.$watch( path, settingsChangeHandler );
 		} );
 
 		// fix problem with bad init state
-		$( ".mixer .volume:first-child webaudio-switch" )[ 0 ].setValue( self.volume1.isEnabled );
+		$( ".mixer .oscillator-switch webaudio-switch" )[ 0 ].setValue( self.volume1.isEnabled );
 
 		// fix the lack of attr 'value' update
-		$( ".volume webaudio-switch" ).add( ".volume webaudio-knob" ).on( "change", function( e ) {
+		$( ".mixer webaudio-switch" )
+			.add( ".mixer webaudio-knob" )
+			.add( ".mixer webaudio-slider" )
+		.on( "change", function( e ) {
 			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
 				$( e.target ).attr( "value", e.target.value );
 			}
@@ -36284,39 +36378,52 @@ var ngModule = angular.module('mixer.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('mixer.html',
     '<div class="col-lg-3 mixer control-bank text-center" ng-controller="MixerCtrl as mixer">\n' +
-    '	<div class="volume row">\n' +
-    '		<div class="col-lg-3">\n' +
-    '			<webaudio-switch bind-polymer value="{{mixer.volume1.isEnabled}}"></webaudio-switch>\n' +
+    '	<div class="row">\n' +
+    '		<div class="oscillator-switch col-lg-4">\n' +
+    '			<div class="row">\n' +
+    '				<webaudio-switch bind-polymer value="{{mixer.volume1.isEnabled}}"></webaudio-switch>\n' +
+    '			</div>\n' +
+    '			<div class="row">\n' +
+    '				<webaudio-switch bind-polymer value="{{mixer.volume2.isEnabled}}"></webaudio-switch>\n' +
+    '			</div>\n' +
+    '			<div class="row">\n' +
+    '				<webaudio-switch bind-polymer value="{{mixer.volume3.isEnabled}}"></webaudio-switch>\n' +
+    '			</div>\n' +
     '		</div>\n' +
-    '		<div class="col-lg-3">\n' +
-    '			<webaudio-knob class="volume-knob" src="images/frequency-knob.png"\n' +
-    '				bind-polymer\n' +
-    '				value="{{mixer.volume1.value}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 1 volume"></webaudio-knob>\n' +
+    '		<div class="oscillator-volume col-lg-4">\n' +
+    '			<div class="row">\n' +
+    '				<webaudio-knob class="volume-knob" src="images/frequency-knob.png"\n' +
+    '					bind-polymer\n' +
+    '					value="{{mixer.volume1.value}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 1 volume"></webaudio-knob>\n' +
+    '			</div>\n' +
+    '			<div class="row">\n' +
+    '				<webaudio-knob class="volume-knob" src="images/frequency-knob.png"\n' +
+    '					bind-polymer\n' +
+    '					value="{{mixer.volume2.value}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 1 volume"></webaudio-knob>\n' +
+    '			</div>\n' +
+    '			<div class="row">\n' +
+    '				<webaudio-knob class="volume-knob" src="images/frequency-knob.png"\n' +
+    '					bind-polymer\n' +
+    '					value="{{mixer.volume3.value}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 1 volume"></webaudio-knob>\n' +
+    '			</div>\n' +
     '		</div>\n' +
-    '	</div>\n' +
-    '	<div class="volume row">\n' +
-    '		<div class="col-lg-3">\n' +
-    '			<webaudio-switch bind-polymer value="{{mixer.volume2.isEnabled}}"></webaudio-switch>\n' +
-    '		</div>\n' +
-    '		<div class="col-lg-3">\n' +
-    '			<webaudio-knob class="volume-knob" src="images/frequency-knob.png"\n' +
-    '				bind-polymer\n' +
-    '				value="{{mixer.volume2.value}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 1 volume"></webaudio-knob>\n' +
-    '		</div>\n' +
-    '	</div>\n' +
-    '	<div class="volume row">\n' +
-    '		<div class="col-lg-3">\n' +
-    '			<webaudio-switch bind-polymer value="{{mixer.volume3.isEnabled}}"></webaudio-switch>\n' +
-    '		</div>\n' +
-    '		<div class="col-lg-3">\n' +
-    '			<webaudio-knob class="volume-knob" src="images/frequency-knob.png"\n' +
-    '				bind-polymer\n' +
-    '				value="{{mixer.volume3.value}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 1 volume"></webaudio-knob>\n' +
+    '		<div class="noise col-lg-4">\n' +
+    '			<div class="row">\n' +
+    '				<webaudio-knob class="volume-knob" src="images/frequency-knob.png"\n' +
+    '					bind-polymer\n' +
+    '					value="{{mixer.noise.volume}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Noise volume"></webaudio-knob>\n' +
+    '			</div>\n' +
+    '			<div class="row">\n' +
+    '				<webaudio-slider direction="horz" max="2" step="1"\n' +
+    '					bind-polymer\n' +
+    '					width="66" height="16" value="{{mixer.noise.type}}"></webaudio-slider>\n' +
+    '			</div>\n' +
     '		</div>\n' +
     '	</div>\n' +
     '	<div class="row">\n' +
-    '		<div class="col-lg-3">On/Off</div>\n' +
-    '		<div class="col-lg-3">Volume</div>\n' +
+    '		<div class="col-lg-4">On/Off</div>\n' +
+    '		<div class="col-lg-4">Volume</div>\n' +
+    '		<div class="col-lg-4">Noise</div>\n' +
     '	</div>\n' +
     '	<h4>Mixer</h4>\n' +
     '</div>');
