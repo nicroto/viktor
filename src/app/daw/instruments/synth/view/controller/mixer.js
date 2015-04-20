@@ -29,6 +29,7 @@ module.exports = function( mod ) {
 			"mixer.volume2.value",
 			"mixer.volume3.isEnabled",
 			"mixer.volume3.value",
+			"mixer.noise.isEnabled",
 			"mixer.noise.type",
 			"mixer.noise.volume"
 		].forEach( function( path ) {

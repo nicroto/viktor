@@ -37,8 +37,6 @@ function Instrument( audioContext, settings ) {
 	noiseVolume.gain.value = 0.0;
 	noiseVolume.connect( envelope );
 
-	noiseNode.connect( noiseVolume );
-
 	self.audioContext = audioContext;
 	self.volumes = volumes;
 	self.oscillators = oscillators;
@@ -90,7 +88,8 @@ function Instrument( audioContext, settings ) {
 		},
 		noise: {
 			type: 0,
-			volume: 0
+			volume: 0,
+			isEnabled: 0
 		}
 	};
 
@@ -267,14 +266,17 @@ Instrument.prototype = {
 				if ( oldSettings ) {
 					var oldNoiseSettings = oldSettings.noise;
 
-					// resolve Noise
 					if ( noiseSettings.type !== oldNoiseSettings.type ) {
 						self._changeNoise( noiseNode, utils.NOISE_TYPE[ noiseSettings.type ] );
 					}
-					if ( noiseSettings.volume !== oldNoiseSettings.volume ) {
-						// alter volume
-						noiseVolume.gain.value = utils.getVolume( noiseSettings.volume );
+
+					if ( oldNoiseSettings.isEnabled && !noiseSettings.isEnabled ) {
+						noiseNode.disconnect();
+					} else if ( !oldNoiseSettings.isEnabled && noiseSettings.isEnabled ) {
+						noiseNode.connect( noiseVolume );
 					}
+
+					noiseVolume.gain.value = utils.getVolume( noiseSettings.volume );
 				}
 
 				self.settings.mixer = JSON.parse( JSON.stringify( settings ) );
