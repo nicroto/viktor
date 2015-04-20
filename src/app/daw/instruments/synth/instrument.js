@@ -6,8 +6,10 @@ var utils = require( "./logic/utils" );
 
 function Instrument( audioContext, settings ) {
 	var self = this,
-		oscillators = [],
 		volumes = [],
+		oscillators = [],
+		noiseVolume = audioContext.createGain(),
+		noiseNode = audioContext.createScriptProcessor( utils.NOISE_BUFFER_SIZE, 1, 1 ),
 		envelope = audioContext.createGain(),
 		customOrDefault = function( customValue, defaultValue ) {
 			return customValue !== undefined ? customValue : defaultValue;
@@ -15,26 +17,33 @@ function Instrument( audioContext, settings ) {
 
 	settings = settings ? settings : {};
 
+	envelope.gain.value = 0.0;
+
 	while ( oscillators.length < 3 ) {
 		var osc = audioContext.createOscillator(),
 			volume = audioContext.createGain();
+
+		volume.gain.value = 0.0;
+		volume.connect( envelope );
 
 		osc.frequency.setValueAtTime( 110, 0 );
 		osc.connect( volume );
 		osc.start( 0 );
 
-		volume.gain.value = 1.0;
-		volume.connect( envelope );
-
-		oscillators.push( osc );
 		volumes.push( volume );
+		oscillators.push( osc );
 	}
 
-	envelope.gain.value = 0.0;
+	noiseVolume.gain.value = 0.0;
+	noiseVolume.connect( envelope );
+
+	noiseNode.connect( noiseVolume );
 
 	self.audioContext = audioContext;
-	self.oscillators = oscillators;
 	self.volumes = volumes;
+	self.oscillators = oscillators;
+	self.noiseVolume = noiseVolume;
+	self.noiseNode = noiseNode;
 	self.envelopeNode = envelope;
 	self.outputNode = envelope;
 	self.activeNotes = [];
@@ -78,8 +87,14 @@ function Instrument( audioContext, settings ) {
 		volume3: {
 			isEnabled: 0,
 			value: 60
+		},
+		noise: {
+			type: 0,
+			volume: 0
 		}
 	};
+
+	self._changeNoise( noiseNode, utils.NOISE_TYPE[ utils.DEFAULT_NOISE_TYPE ] );
 }
 
 Instrument.prototype = {
@@ -233,23 +248,33 @@ Instrument.prototype = {
 					volume1 = volumes[ 0 ],
 					volume2 = volumes[ 1 ],
 					volume3 = volumes[ 2 ],
+					noiseVolume = self.noiseVolume,
+					noiseNode = self.noiseNode,
 					volumeSettings1 = settings.volume1,
 					volumeSettings2 = settings.volume2,
-					volumeSettings3 = settings.volume3;
+					volumeSettings3 = settings.volume3,
+					noiseSettings = settings.noise,
+					resolveVolume = function( settings, volume ) {
+						var value = settings.isEnabled ? settings.value : 0;
+
+						volume.gain.value = utils.getVolume( value );
+					};
+
+				resolveVolume( volumeSettings1, volume1 );
+				resolveVolume( volumeSettings2, volume2 );
+				resolveVolume( volumeSettings3, volume3 );
 
 				if ( oldSettings ) {
-					var oldVolumeSettings1 = oldSettings.volume1,
-						oldVolumeSettings2 = oldSettings.volume2,
-						oldVolumeSettings3 = oldSettings.volume3,
-						resolveVolume = function( oldSettings, settings, volume ) {
-							var value = settings.isEnabled ? settings.value : 0;
+					var oldNoiseSettings = oldSettings.noise;
 
-							volume.gain.value = utils.getVolume( value );
-						};
-
-					resolveVolume( oldVolumeSettings1, volumeSettings1, volume1 );
-					resolveVolume( oldVolumeSettings2, volumeSettings2, volume2 );
-					resolveVolume( oldVolumeSettings3, volumeSettings3, volume3 );
+					// resolve Noise
+					if ( noiseSettings.type !== oldNoiseSettings.type ) {
+						self._changeNoise( noiseNode, utils.NOISE_TYPE[ noiseSettings.type ] );
+					}
+					if ( noiseSettings.volume !== oldNoiseSettings.volume ) {
+						// alter volume
+						noiseVolume.gain.value = utils.getVolume( noiseSettings.volume );
+					}
 				}
 
 				self.settings.mixer = JSON.parse( JSON.stringify( settings ) );
@@ -266,6 +291,10 @@ Instrument.prototype = {
 			0,
 			settings.portamento
 		);
+	},
+
+	_changeNoise: function( noiseNode, type ) {
+		noiseNode.onaudioprocess = utils.getNoiseGenerator( type );
 	}
 
 };

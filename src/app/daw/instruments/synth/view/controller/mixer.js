@@ -11,23 +11,16 @@ module.exports = function( mod ) {
 				synth.mixerSettings = {
 					volume1: self.volume1,
 					volume2: self.volume2,
-					volume3: self.volume3
+					volume3: self.volume3,
+					noise: self.noise
 				};
 			},
 			settings = synth.mixerSettings;
 
-		self.volume1 = {
-			isEnabled: 1,
-			value: 60
-		};
-		self.volume2 = {
-			isEnabled: 0,
-			value: 60
-		};
-		self.volume3 = {
-			isEnabled: 0,
-			value: 60
-		};
+		self.volume1 = settings.volume1;
+		self.volume2 = settings.volume2;
+		self.volume3 = settings.volume3;
+		self.noise = settings.noise;
 
 		[
 			"mixer.volume1.isEnabled",
@@ -35,16 +28,21 @@ module.exports = function( mod ) {
 			"mixer.volume2.isEnabled",
 			"mixer.volume2.value",
 			"mixer.volume3.isEnabled",
-			"mixer.volume3.value"
+			"mixer.volume3.value",
+			"mixer.noise.type",
+			"mixer.noise.volume"
 		].forEach( function( path ) {
 			$scope.$watch( path, settingsChangeHandler );
 		} );
 
 		// fix problem with bad init state
-		$( ".mixer .volume:first-child webaudio-switch" )[ 0 ].setValue( self.volume1.isEnabled );
+		$( ".mixer .oscillator-switch webaudio-switch" )[ 0 ].setValue( self.volume1.isEnabled );
 
 		// fix the lack of attr 'value' update
-		$( ".volume webaudio-switch" ).add( ".volume webaudio-knob" ).on( "change", function( e ) {
+		$( ".mixer webaudio-switch" )
+			.add( ".mixer webaudio-knob" )
+			.add( ".mixer webaudio-slider" )
+		.on( "change", function( e ) {
 			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
 				$( e.target ).attr( "value", e.target.value );
 			}
