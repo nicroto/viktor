@@ -48,13 +48,18 @@ function Instrument( audioContext, settings ) {
 	self.settings = {
 		attackTime: customOrDefault( settings.attackTime, 0.05 ),
 		releaseTime: customOrDefault( settings.releaseTime, 0.05 ),
-		portamento: customOrDefault( settings.portamento, 0.05 ),
 
+		modulation: null,
 		oscillators: null,
 		mixer: null
 	};
 
 	self._defineProps();
+
+	self.modulationSettings = {
+		portamento: 5,
+		mix: 50
+	};
 
 	self.oscillatorSettings = {
 		osc1: {
@@ -92,6 +97,7 @@ function Instrument( audioContext, settings ) {
 			isEnabled: 0
 		}
 	};
+
 
 	self._changeNoise( noiseNode, utils.NOISE_TYPE[ utils.DEFAULT_NOISE_TYPE ] );
 }
@@ -149,6 +155,21 @@ Instrument.prototype = {
 
 	_defineProps: function() {
 		var self = this;
+
+		Object.defineProperty( self, "modulationSettings", {
+
+			get: function() {
+				// if slow - use npm clone
+				return JSON.parse( JSON.stringify( self.settings.modulation ) );
+			},
+
+			set: function( settings ) {
+				var oldSettings = self.settings.modulation;
+
+				self.settings.modulation = JSON.parse( JSON.stringify( settings ) );
+			}
+
+		} );
 
 		Object.defineProperty( self, "oscillatorSettings", {
 
@@ -283,7 +304,6 @@ Instrument.prototype = {
 			}
 
 		} );
-
 	},
 
 	_setNoteToOscillator: function( noteFrequency, settings, oscillator ) {
@@ -291,7 +311,7 @@ Instrument.prototype = {
 		oscillator.frequency.setTargetAtTime(
 			noteFrequency,
 			0,
-			settings.portamento
+			utils.getPortamento( settings.modulation.portamento )
 		);
 	},
 

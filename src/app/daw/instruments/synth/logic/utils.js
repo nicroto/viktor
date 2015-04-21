@@ -103,6 +103,12 @@ var utils = {
 		}
 
 		return generator;
+	},
+
+	getPortamento: function( value ) {
+		var self = this;
+
+		return self.getVolume( value ) / 6;
 	}
 
 };
