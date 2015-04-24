@@ -1,0 +1,55 @@
+<div class="col-lg-3 envelopes control-bank text-center" ng-controller="EnvelopesCtrl as envs">
+	<div class="envelope row">
+		<h5>Primary</h5>
+		<div class="col-lg-3">
+			<webaudio-knob src="images/frequency-knob.png"
+				bind-polymer
+				value="{{envs.primary.attack}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Primary attack"></webaudio-knob>
+		</div>
+		<div class="col-lg-3">
+			<webaudio-knob src="images/frequency-knob.png"
+				bind-polymer
+				value="{{envs.primary.decay}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Primary decay"></webaudio-knob>
+		</div>
+		<div class="col-lg-3">
+			<webaudio-knob src="images/frequency-knob.png"
+				bind-polymer
+				value="{{envs.primary.sustain}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Primary sustain"></webaudio-knob>
+		</div>
+		<div class="col-lg-3">
+			<webaudio-knob src="images/frequency-knob.png"
+				bind-polymer
+				value="{{envs.primary.release}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Primary release"></webaudio-knob>
+		</div>
+	</div>
+	<div class="envelope row">
+		<h5>Filter</h5>
+		<div class="col-lg-3">
+			<webaudio-knob src="images/frequency-knob.png"
+				bind-polymer
+				value="{{envs.filter.attack}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Filter attack"></webaudio-knob>
+		</div>
+		<div class="col-lg-3">
+			<webaudio-knob src="images/frequency-knob.png"
+				bind-polymer
+				value="{{envs.filter.decay}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Filter decay"></webaudio-knob>
+		</div>
+		<div class="col-lg-3">
+			<webaudio-knob src="images/frequency-knob.png"
+				bind-polymer
+				value="{{envs.filter.sustain}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Filter sustain"></webaudio-knob>
+		</div>
+		<div class="col-lg-3">
+			<webaudio-knob src="images/frequency-knob.png"
+				bind-polymer
+				value="{{envs.filter.release}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Filter release"></webaudio-knob>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-lg-3">Attack</div>
+		<div class="col-lg-3">Decay</div>
+		<div class="col-lg-3">Sustain</div>
+		<div class="col-lg-3">Release</div>
+	</div>
+	<h4>Envelopes</h4>
+</div>

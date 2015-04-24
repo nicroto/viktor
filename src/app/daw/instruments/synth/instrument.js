@@ -2,29 +2,27 @@
 
 'use strict';
 
-var utils = require( "./logic/utils" );
+var CONST = require( "./engine/const" ),
+	utils = require( "./engine/utils" ),
+	Envelope = require( "./engine/envelope" );
 
-function Instrument( audioContext, settings ) {
+function Instrument( audioContext ) {
 	var self = this,
 		volumes = [],
 		oscillators = [],
 		noiseVolume = audioContext.createGain(),
-		noiseNode = audioContext.createScriptProcessor( utils.NOISE_BUFFER_SIZE, 1, 1 ),
-		envelope = audioContext.createGain(),
-		customOrDefault = function( customValue, defaultValue ) {
-			return customValue !== undefined ? customValue : defaultValue;
-		};
+		noiseNode = audioContext.createScriptProcessor( CONST.NOISE_BUFFER_SIZE, 1, 1 ),
+		envelope = new Envelope( audioContext ),
+		masterVolume = audioContext.createGain();
 
-	settings = settings ? settings : {};
-
-	envelope.gain.value = 0.0;
+	masterVolume.gain.value = 1.0;
 
 	while ( oscillators.length < 3 ) {
 		var osc = audioContext.createOscillator(),
 			volume = audioContext.createGain();
 
 		volume.gain.value = 0.0;
-		volume.connect( envelope );
+		volume.connect( envelope.node );
 
 		osc.frequency.setValueAtTime( 110, 0 );
 		osc.connect( volume );
@@ -35,71 +33,35 @@ function Instrument( audioContext, settings ) {
 	}
 
 	noiseVolume.gain.value = 0.0;
-	noiseVolume.connect( envelope );
+	noiseVolume.connect( envelope.node );
+
+	envelope.node.connect( masterVolume );
 
 	self.audioContext = audioContext;
 	self.volumes = volumes;
 	self.oscillators = oscillators;
 	self.noiseVolume = noiseVolume;
 	self.noiseNode = noiseNode;
-	self.envelopeNode = envelope;
-	self.outputNode = envelope;
+	self.envelope = envelope;
+	self.outputNode = masterVolume;
 	self.activeNotes = [];
 	self.settings = {
-		attackTime: customOrDefault( settings.attackTime, 0.05 ),
-		releaseTime: customOrDefault( settings.releaseTime, 0.05 ),
 
 		modulation: null,
 		oscillators: null,
-		mixer: null
+		mixer: null,
+		envelopes: null
+
 	};
 
 	self._defineProps();
 
-	self.modulationSettings = {
-		portamento: 5,
-		mix: 50
-	};
+	self.modulationSettings = CONST.DEFAULT_MOD_SETTINGS;
+	self.oscillatorSettings = CONST.DEFAULT_OSC_SETTINGS;
+	self.mixerSettings = CONST.DEFAULT_MIX_SETTINGS;
+	self.envelopesSettings = CONST.DEFAULT_ENVELOPES_SETTINGS;
 
-	self.oscillatorSettings = {
-		osc1: {
-			range: 3,
-			waveform: 0
-		},
-		osc2: {
-			range: 3,
-			fineDetune: 8,
-			waveform: 0
-		},
-		osc3: {
-			range: 3,
-			fineDetune: 8,
-			waveform: 0
-		}
-	};
-
-	self.mixerSettings = {
-		volume1: {
-			isEnabled: 1,
-			value: 60
-		},
-		volume2: {
-			isEnabled: 0,
-			value: 60
-		},
-		volume3: {
-			isEnabled: 0,
-			value: 60
-		},
-		noise: {
-			type: 0,
-			volume: 0,
-			isEnabled: 0
-		}
-	};
-
-
-	self._changeNoise( noiseNode, utils.NOISE_TYPE[ utils.DEFAULT_NOISE_TYPE ] );
+	self._changeNoise( noiseNode, CONST.NOISE_TYPE[ CONST.DEFAULT_NOISE_TYPE ] );
 }
 
 Instrument.prototype = {
@@ -116,7 +78,7 @@ Instrument.prototype = {
 
 	onNoteOn: function( noteFrequency, velocity ) {
 		var self = this,
-			envelope = self.envelopeNode,
+			envelope = self.envelope,
 			activeNotes = self.activeNotes,
 			settings = self.settings;
 
@@ -126,13 +88,12 @@ Instrument.prototype = {
 			self._setNoteToOscillator( noteFrequency, settings, osc );
 		} );
 
-		envelope.gain.cancelScheduledValues( 0 );
-		envelope.gain.setTargetAtTime( 1.0, 0, settings.attackTime );
+		envelope.start();
 	},
 
 	onNoteOff: function( noteFrequency, velocity ) {
 		var self = this,
-			envelope = self.envelopeNode,
+			envelope = self.envelope,
 			activeNotes = self.activeNotes,
 			settings = self.settings,
 			position = activeNotes.indexOf( noteFrequency );
@@ -142,8 +103,7 @@ Instrument.prototype = {
 		}
 
 		if ( activeNotes.length === 0 ) {
-			envelope.gain.cancelScheduledValues( 0 );
-			envelope.gain.setTargetAtTime( 0.0, 0, settings.releaseTime );
+			envelope.end();
 		} else {
 			noteFrequency = activeNotes[ activeNotes.length - 1 ];
 
@@ -202,12 +162,12 @@ Instrument.prototype = {
 						},
 						resolveWaveform = function( oldSettings, settings, osc ) {
 							if ( oldSettings.waveform !== settings.waveform ) {
-								var defaultForm = utils.OSC_WAVEFORM[ settings.waveform ];
+								var defaultForm = CONST.OSC_WAVEFORM[ settings.waveform ];
 
 								if ( defaultForm ) {
 									osc.type = defaultForm;
 								} else {
-									var waveformFFT = utils.OSC_WAVEFORM_FFT[ settings.waveform - utils.OSC_WAVEFORM.length ];
+									var waveformFFT = CONST.OSC_WAVEFORM_FFT[ settings.waveform - CONST.OSC_WAVEFORM.length ];
 
 									if ( waveformFFT ) {
 										var audioContext = self.audioContext,
@@ -246,7 +206,7 @@ Instrument.prototype = {
 					resolveFineDetune( oldOscSettings2, oscSettings2, osc2 );
 					resolveWaveform( oldOscSettings2, oscSettings2, osc2 );
 
-					resolveFineDetune( oldOscSettings3, oscSettings3, osc3, utils.OSC3_RANGE_BASE );
+					resolveFineDetune( oldOscSettings3, oscSettings3, osc3, CONST.OSC3_RANGE_BASE );
 					resolveWaveform( oldOscSettings3, oscSettings3, osc3 );
 				}
 
@@ -288,7 +248,7 @@ Instrument.prototype = {
 					var oldNoiseSettings = oldSettings.noise;
 
 					if ( noiseSettings.type !== oldNoiseSettings.type ) {
-						self._changeNoise( noiseNode, utils.NOISE_TYPE[ noiseSettings.type ] );
+						self._changeNoise( noiseNode, CONST.NOISE_TYPE[ noiseSettings.type ] );
 					}
 
 					if ( oldNoiseSettings.isEnabled && !noiseSettings.isEnabled ) {
@@ -301,6 +261,43 @@ Instrument.prototype = {
 				}
 
 				self.settings.mixer = JSON.parse( JSON.stringify( settings ) );
+			}
+
+		} );
+
+		Object.defineProperty( self, "envelopesSettings", {
+
+			get: function() {
+				// if slow - use npm clone
+				return JSON.parse( JSON.stringify( self.settings.envelopes ) );
+			},
+
+			set: function( settings ) {
+				var oldSettings = self.settings.envelopes || {
+						primary: {},
+						filter: {}
+					},
+					resolve = function( oldSettings, settings, envelope ) {
+						[
+							"attack",
+							"decay",
+							"sustain",
+							"release"
+						].forEach( function( name ) {
+							var newVal = settings[ name ];
+
+							if ( oldSettings[ name ] !== newVal ) {
+								var methodName = "get" + name[ 0 ].toUpperCase() + name.slice( 1 );
+								envelope[ name ] = utils[ methodName ]( newVal );
+								console.log( name + ": " + utils[ methodName ]( newVal ) );
+							}
+						} );
+					};
+
+				resolve( oldSettings.primary, settings.primary, self.envelope );
+				// resolve( oldSettings.filter, settings.filter, self.filter );
+
+				self.settings.envelopes = JSON.parse( JSON.stringify( settings ) );
 			}
 
 		} );

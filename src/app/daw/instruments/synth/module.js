@@ -6,7 +6,8 @@ var angular = require( "angular" ),
 		template.name,
 		require( "./view/template/modulation.html" ).name,
 		require( "./view/template/oscillator-bank.html" ).name,
-		require( "./view/template/mixer.html" ).name
+		require( "./view/template/mixer.html" ).name,
+		require( "./view/template/envelopes.html" ).name
 	] );
 
 mod.directive( "synth", [ "$templateCache", function( $templateCache ) {
@@ -21,5 +22,6 @@ mod.directive( "synth", [ "$templateCache", function( $templateCache ) {
 require( "./view/controller/modulation" )( mod );
 require( "./view/controller/oscillator-bank" )( mod );
 require( "./view/controller/mixer" )( mod );
+require( "./view/controller/envelopes" )( mod );
 
 module.exports = mod;
