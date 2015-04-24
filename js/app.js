@@ -35618,7 +35618,7 @@ angular.element( document ).ready( function() {
 
 module.exports = app;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./daw/daw":7,"./daw/module":18,"angular":2,"angular-bind-polymer":4}],6:[function(require,module,exports){
+},{"./daw/daw":7,"./daw/module":22,"angular":2,"angular-bind-polymer":4}],6:[function(require,module,exports){
 'use strict';
 
 function MIDIController() {
@@ -35820,71 +35820,12 @@ DAW.prototype = {
 };
 
 module.exports = DAW;
-},{"./controllers/midi":6,"./instruments/synth/instrument":8}],8:[function(require,module,exports){
-/* jshint -W098 */
-
+},{"./controllers/midi":6,"./instruments/synth/instrument":11}],8:[function(require,module,exports){
 'use strict';
 
-var utils = require( "./logic/utils" );
+module.exports = {
 
-function Instrument( audioContext, settings ) {
-	var self = this,
-		volumes = [],
-		oscillators = [],
-		noiseVolume = audioContext.createGain(),
-		noiseNode = audioContext.createScriptProcessor( utils.NOISE_BUFFER_SIZE, 1, 1 ),
-		envelope = audioContext.createGain(),
-		customOrDefault = function( customValue, defaultValue ) {
-			return customValue !== undefined ? customValue : defaultValue;
-		};
-
-	settings = settings ? settings : {};
-
-	envelope.gain.value = 0.0;
-
-	while ( oscillators.length < 3 ) {
-		var osc = audioContext.createOscillator(),
-			volume = audioContext.createGain();
-
-		volume.gain.value = 0.0;
-		volume.connect( envelope );
-
-		osc.frequency.setValueAtTime( 110, 0 );
-		osc.connect( volume );
-		osc.start( 0 );
-
-		volumes.push( volume );
-		oscillators.push( osc );
-	}
-
-	noiseVolume.gain.value = 0.0;
-	noiseVolume.connect( envelope );
-
-	self.audioContext = audioContext;
-	self.volumes = volumes;
-	self.oscillators = oscillators;
-	self.noiseVolume = noiseVolume;
-	self.noiseNode = noiseNode;
-	self.envelopeNode = envelope;
-	self.outputNode = envelope;
-	self.activeNotes = [];
-	self.settings = {
-		attackTime: customOrDefault( settings.attackTime, 0.05 ),
-		releaseTime: customOrDefault( settings.releaseTime, 0.05 ),
-
-		modulation: null,
-		oscillators: null,
-		mixer: null
-	};
-
-	self._defineProps();
-
-	self.modulationSettings = {
-		portamento: 5,
-		mix: 50
-	};
-
-	self.oscillatorSettings = {
+	DEFAULT_OSC_SETTINGS: {
 		osc1: {
 			range: 3,
 			waveform: 0
@@ -35899,9 +35840,12 @@ function Instrument( audioContext, settings ) {
 			fineDetune: 8,
 			waveform: 0
 		}
-	};
-
-	self.mixerSettings = {
+	},
+	DEFAULT_MOD_SETTINGS: {
+		portamento: 5,
+		mix: 50
+	},
+	DEFAULT_MIX_SETTINGS: {
 		volume1: {
 			isEnabled: 1,
 			value: 60
@@ -35919,241 +35863,21 @@ function Instrument( audioContext, settings ) {
 			volume: 0,
 			isEnabled: 0
 		}
-	};
-
-
-	self._changeNoise( noiseNode, utils.NOISE_TYPE[ utils.DEFAULT_NOISE_TYPE ] );
-}
-
-Instrument.prototype = {
-
-	onMidiMessage: function( eventType, parsed, rawEvent ) {
-		var self = this;
-
-		if ( eventType === "notePress" ) {
-			var methodName = ( parsed.isNoteOn ) ? "onNoteOn" : "onNoteOff";
-
-			self[ methodName ]( parsed.noteFrequency, parsed.velocity );
+	},
+	DEFAULT_ENVELOPES_SETTINGS: {
+		primary: {
+			attack: 25,
+			decay: 25,
+			sustain: 50,
+			release: 5
+		},
+		filter: {
+			attack: 25,
+			decay: 25,
+			sustain: 50,
+			release: 5
 		}
 	},
-
-	onNoteOn: function( noteFrequency, velocity ) {
-		var self = this,
-			envelope = self.envelopeNode,
-			activeNotes = self.activeNotes,
-			settings = self.settings;
-
-		activeNotes.push( noteFrequency );
-
-		self.oscillators.forEach( function( osc ) {
-			self._setNoteToOscillator( noteFrequency, settings, osc );
-		} );
-
-		envelope.gain.cancelScheduledValues( 0 );
-		envelope.gain.setTargetAtTime( 1.0, 0, settings.attackTime );
-	},
-
-	onNoteOff: function( noteFrequency, velocity ) {
-		var self = this,
-			envelope = self.envelopeNode,
-			activeNotes = self.activeNotes,
-			settings = self.settings,
-			position = activeNotes.indexOf( noteFrequency );
-
-		if ( position !== -1 ) {
-			activeNotes.splice( position, 1 );
-		}
-
-		if ( activeNotes.length === 0 ) {
-			envelope.gain.cancelScheduledValues( 0 );
-			envelope.gain.setTargetAtTime( 0.0, 0, settings.releaseTime );
-		} else {
-			noteFrequency = activeNotes[ activeNotes.length - 1 ];
-
-			self.oscillators.forEach( function( osc ) {
-				self._setNoteToOscillator( noteFrequency, settings, osc );
-			} );
-		}
-	},
-
-	_defineProps: function() {
-		var self = this;
-
-		Object.defineProperty( self, "modulationSettings", {
-
-			get: function() {
-				// if slow - use npm clone
-				return JSON.parse( JSON.stringify( self.settings.modulation ) );
-			},
-
-			set: function( settings ) {
-				var oldSettings = self.settings.modulation;
-
-				self.settings.modulation = JSON.parse( JSON.stringify( settings ) );
-			}
-
-		} );
-
-		Object.defineProperty( self, "oscillatorSettings", {
-
-			get: function() {
-				// if slow - use npm clone
-				return JSON.parse( JSON.stringify( self.settings.oscillators ) );
-			},
-
-			set: function( settings ) {
-				var oldSettings = self.settings.oscillators,
-					oscillators = self.oscillators,
-					osc1 = oscillators[ 0 ],
-					osc2 = oscillators[ 1 ],
-					osc3 = oscillators[ 2 ],
-					oscSettings1 = settings.osc1,
-					oscSettings2 = settings.osc2,
-					oscSettings3 = settings.osc3;
-
-				if ( oldSettings ) {
-					var oldOscSettings1 = oldSettings.osc1,
-						oldOscSettings2 = oldSettings.osc2,
-						oldOscSettings3 = oldSettings.osc3,
-						resolveRange = function( oldSettings, settings, osc ) {
-							if ( oldSettings.range !== settings.range ) {
-								osc.detune.value = utils.getDetune(
-									settings.range,
-									8
-								);
-							}
-						},
-						resolveWaveform = function( oldSettings, settings, osc ) {
-							if ( oldSettings.waveform !== settings.waveform ) {
-								var defaultForm = utils.OSC_WAVEFORM[ settings.waveform ];
-
-								if ( defaultForm ) {
-									osc.type = defaultForm;
-								} else {
-									var waveformFFT = utils.OSC_WAVEFORM_FFT[ settings.waveform - utils.OSC_WAVEFORM.length ];
-
-									if ( waveformFFT ) {
-										var audioContext = self.audioContext,
-											fft = waveformFFT.fft,
-											size = fft.real.length,
-											real = new Float32Array( size ),
-											imag = new Float32Array( size );
-
-										for ( var i = 0; i < size; i++ ) {
-											real[ i ] = fft.real[ i ];
-											imag[ i ] = fft.imag[ i ];
-										}
-
-										var waveTable = audioContext.createPeriodicWave( real, imag );
-
-										osc.setPeriodicWave( waveTable );
-									}
-								}
-							}
-						},
-						resolveFineDetune = function( oldSettings, settings, osc, base ) {
-							if ( oldSettings.range !== settings.range ||
-								oldSettings.fineDetune !== settings.fineDetune )
-							{
-								osc.detune.value = utils.getDetune(
-									settings.range,
-									settings.fineDetune,
-									base
-								);
-							}
-						};
-
-					resolveRange( oldOscSettings1, oscSettings1, osc1 );
-					resolveWaveform( oldOscSettings1, oscSettings1, osc1 );
-
-					resolveFineDetune( oldOscSettings2, oscSettings2, osc2 );
-					resolveWaveform( oldOscSettings2, oscSettings2, osc2 );
-
-					resolveFineDetune( oldOscSettings3, oscSettings3, osc3, utils.OSC3_RANGE_BASE );
-					resolveWaveform( oldOscSettings3, oscSettings3, osc3 );
-				}
-
-				self.settings.oscillators = JSON.parse( JSON.stringify( settings ) );
-			}
-
-		} );
-
-		Object.defineProperty( self, "mixerSettings", {
-
-			get: function() {
-				// if slow - use npm clone
-				return JSON.parse( JSON.stringify( self.settings.mixer ) );
-			},
-
-			set: function( settings ) {
-				var oldSettings = self.settings.mixer,
-					volumes = self.volumes,
-					volume1 = volumes[ 0 ],
-					volume2 = volumes[ 1 ],
-					volume3 = volumes[ 2 ],
-					noiseVolume = self.noiseVolume,
-					noiseNode = self.noiseNode,
-					volumeSettings1 = settings.volume1,
-					volumeSettings2 = settings.volume2,
-					volumeSettings3 = settings.volume3,
-					noiseSettings = settings.noise,
-					resolveVolume = function( settings, volume ) {
-						var value = settings.isEnabled ? settings.value : 0;
-
-						volume.gain.value = utils.getVolume( value );
-					};
-
-				resolveVolume( volumeSettings1, volume1 );
-				resolveVolume( volumeSettings2, volume2 );
-				resolveVolume( volumeSettings3, volume3 );
-
-				if ( oldSettings ) {
-					var oldNoiseSettings = oldSettings.noise;
-
-					if ( noiseSettings.type !== oldNoiseSettings.type ) {
-						self._changeNoise( noiseNode, utils.NOISE_TYPE[ noiseSettings.type ] );
-					}
-
-					if ( oldNoiseSettings.isEnabled && !noiseSettings.isEnabled ) {
-						noiseNode.disconnect();
-					} else if ( !oldNoiseSettings.isEnabled && noiseSettings.isEnabled ) {
-						noiseNode.connect( noiseVolume );
-					}
-
-					noiseVolume.gain.value = utils.getVolume( noiseSettings.volume );
-				}
-
-				self.settings.mixer = JSON.parse( JSON.stringify( settings ) );
-			}
-
-		} );
-	},
-
-	_setNoteToOscillator: function( noteFrequency, settings, oscillator ) {
-		oscillator.frequency.cancelScheduledValues( 0 );
-		oscillator.frequency.setTargetAtTime(
-			noteFrequency,
-			0,
-			utils.getPortamento( settings.modulation.portamento )
-		);
-	},
-
-	_changeNoise: function( noiseNode, type ) {
-		noiseNode.onaudioprocess = utils.getNoiseGenerator( type );
-	}
-
-};
-
-module.exports = Instrument;
-},{"./logic/utils":9}],9:[function(require,module,exports){
-'use strict';
-
-var SEMITONE_CENTS = 100,
-	OCTAVE_CENTS = 12 * SEMITONE_CENTS,
-	FINE_DETUNE_HALF_SPECTRE = 8,
-	RANGE_DEFAULT_BASE = 3;
-
-var utils = {
 
 	OSC_WAVEFORM: [
 		"sine",
@@ -36172,6 +35896,7 @@ var utils = {
 		}
 	],
 	OSC3_RANGE_BASE: 4,
+
 	NOISE_TYPE: [
 		"brown",
 		"pink",
@@ -36179,6 +35904,87 @@ var utils = {
 	],
 	DEFAULT_NOISE_TYPE: 0,
 	NOISE_BUFFER_SIZE: 4096,
+
+	FAKE_ZERO: 0.00001,
+
+	ENVELOPE: {
+		DEFAULT_ATTACK:		0.5,
+		DEFAULT_DECAY:		0.5,
+		DEFAULT_SUSTAIN:	0.5,
+		DEFAULT_RELEASE:	0.1
+	}
+};
+},{}],9:[function(require,module,exports){
+'use strict';
+
+var utils = require( "./utils" ),
+	CONST = require( "./const" );
+
+function Envelope( audioContext, settings ) {
+	var self = this,
+		node = audioContext.createGain();
+
+	settings = settings || {};
+
+	node.gain.value = 0.0;
+	self.audioContext = audioContext;
+
+	self.node = node;
+
+	self.attack =	utils.customOrDefault( settings.attack,		CONST.ENVELOPE.DEFAULT_ATTACK );
+	self.decay =	utils.customOrDefault( settings.decay,		CONST.ENVELOPE.DEFAULT_DECAY );
+	self.sustain =	utils.customOrDefault( settings.sustain,	CONST.ENVELOPE.DEFAULT_SUSTAIN );
+	self.release =	utils.customOrDefault( settings.release,	CONST.ENVELOPE.DEFAULT_RELEASE );
+}
+
+Envelope.prototype = {
+
+	start: function( time ) {
+		var self = this,
+			audioContext = self.audioContext,
+			node = self.node,
+			attack = self.attack,
+			decay = self.decay,
+			sustain = self.sustain;
+
+		time = utils.customOrDefault( time, audioContext.currentTime );
+
+		node.gain.cancelScheduledValues( time );
+		node.gain.setTargetAtTime( CONST.FAKE_ZERO, time, 0.01 );
+		node.gain.setTargetAtTime( 1, time + 0.01, attack / 2 );
+		node.gain.setTargetAtTime( sustain, time + 0.01 + attack, decay / 2 );
+	},
+
+	end: function( time ) {
+		var self = this,
+			audioContext = self.audioContext,
+			node = self.node,
+			release = self.release;
+
+		time = utils.customOrDefault( time, audioContext.currentTime );
+
+		node.gain.cancelScheduledValues( time );
+		node.gain.setTargetAtTime( CONST.FAKE_ZERO, time, release );
+	}
+
+};
+
+module.exports = Envelope;
+},{"./const":8,"./utils":10}],10:[function(require,module,exports){
+'use strict';
+
+var CONST = require( "./const" );
+
+var SEMITONE_CENTS = 100,
+	OCTAVE_CENTS = 12 * SEMITONE_CENTS,
+	FINE_DETUNE_HALF_SPECTRE = 8,
+	RANGE_DEFAULT_BASE = 3;
+
+var utils = {
+
+	customOrDefault: function( customValue, defaultValue ) {
+		return customValue !== undefined ? customValue : defaultValue;
+	},
 
 	getDetune: function( range, fineDetune, rangeBase ) {
 		rangeBase = rangeBase === undefined ? RANGE_DEFAULT_BASE : rangeBase;
@@ -36197,7 +36003,7 @@ var utils = {
 		// code copied from here:
 		//		http://noisehack.com/generate-noise-web-audio-api/
 		var self = this,
-			bufferSize = self.NOISE_BUFFER_SIZE,
+			bufferSize = CONST.NOISE_BUFFER_SIZE,
 			generator;
 		switch ( type ) {
 			case "white":
@@ -36257,12 +36063,370 @@ var utils = {
 		var self = this;
 
 		return self.getVolume( value ) / 6;
+	},
+
+	getAttack: function( value ) {
+		var self = this;
+
+		return self._getTwoSecTiming( value );
+	},
+
+	getDecay: function( value ) {
+		var self = this;
+
+		return self._getTwoSecTiming( value );
+	},
+
+	getSustain: function( value ) {
+		var self = this;
+
+		// the volume level in %
+		return ( value > 0 ) ?
+			value / 100
+		:
+			0;
+	},
+
+	getRelease: function( value ) {
+		var self = this;
+
+		return self._getTwoSecTiming( value );
+	},
+
+	_getTwoSecTiming: function( value ) {
+		// assumes 0 <= value <= 100
+		return ( value > 0 ) ?
+			2 * value / 100
+		:
+			0;
 	}
 
 };
 
 module.exports = utils;
-},{}],10:[function(require,module,exports){
+},{"./const":8}],11:[function(require,module,exports){
+/* jshint -W098 */
+
+'use strict';
+
+var CONST = require( "./engine/const" ),
+	utils = require( "./engine/utils" ),
+	Envelope = require( "./engine/envelope" );
+
+function Instrument( audioContext ) {
+	var self = this,
+		volumes = [],
+		oscillators = [],
+		noiseVolume = audioContext.createGain(),
+		noiseNode = audioContext.createScriptProcessor( CONST.NOISE_BUFFER_SIZE, 1, 1 ),
+		envelope = new Envelope( audioContext ),
+		masterVolume = audioContext.createGain();
+
+	masterVolume.gain.value = 1.0;
+
+	while ( oscillators.length < 3 ) {
+		var osc = audioContext.createOscillator(),
+			volume = audioContext.createGain();
+
+		volume.gain.value = 0.0;
+		volume.connect( envelope.node );
+
+		osc.frequency.setValueAtTime( 110, 0 );
+		osc.connect( volume );
+		osc.start( 0 );
+
+		volumes.push( volume );
+		oscillators.push( osc );
+	}
+
+	noiseVolume.gain.value = 0.0;
+	noiseVolume.connect( envelope.node );
+
+	envelope.node.connect( masterVolume );
+
+	self.audioContext = audioContext;
+	self.volumes = volumes;
+	self.oscillators = oscillators;
+	self.noiseVolume = noiseVolume;
+	self.noiseNode = noiseNode;
+	self.envelope = envelope;
+	self.outputNode = masterVolume;
+	self.activeNotes = [];
+	self.settings = {
+
+		modulation: null,
+		oscillators: null,
+		mixer: null,
+		envelopes: null
+
+	};
+
+	self._defineProps();
+
+	self.modulationSettings = CONST.DEFAULT_MOD_SETTINGS;
+	self.oscillatorSettings = CONST.DEFAULT_OSC_SETTINGS;
+	self.mixerSettings = CONST.DEFAULT_MIX_SETTINGS;
+	self.envelopesSettings = CONST.DEFAULT_ENVELOPES_SETTINGS;
+
+	self._changeNoise( noiseNode, CONST.NOISE_TYPE[ CONST.DEFAULT_NOISE_TYPE ] );
+}
+
+Instrument.prototype = {
+
+	onMidiMessage: function( eventType, parsed, rawEvent ) {
+		var self = this;
+
+		if ( eventType === "notePress" ) {
+			var methodName = ( parsed.isNoteOn ) ? "onNoteOn" : "onNoteOff";
+
+			self[ methodName ]( parsed.noteFrequency, parsed.velocity );
+		}
+	},
+
+	onNoteOn: function( noteFrequency, velocity ) {
+		var self = this,
+			envelope = self.envelope,
+			activeNotes = self.activeNotes,
+			settings = self.settings;
+
+		activeNotes.push( noteFrequency );
+
+		self.oscillators.forEach( function( osc ) {
+			self._setNoteToOscillator( noteFrequency, settings, osc );
+		} );
+
+		envelope.start();
+	},
+
+	onNoteOff: function( noteFrequency, velocity ) {
+		var self = this,
+			envelope = self.envelope,
+			activeNotes = self.activeNotes,
+			settings = self.settings,
+			position = activeNotes.indexOf( noteFrequency );
+
+		if ( position !== -1 ) {
+			activeNotes.splice( position, 1 );
+		}
+
+		if ( activeNotes.length === 0 ) {
+			envelope.end();
+		} else {
+			noteFrequency = activeNotes[ activeNotes.length - 1 ];
+
+			self.oscillators.forEach( function( osc ) {
+				self._setNoteToOscillator( noteFrequency, settings, osc );
+			} );
+		}
+	},
+
+	_defineProps: function() {
+		var self = this;
+
+		Object.defineProperty( self, "modulationSettings", {
+
+			get: function() {
+				// if slow - use npm clone
+				return JSON.parse( JSON.stringify( self.settings.modulation ) );
+			},
+
+			set: function( settings ) {
+				var oldSettings = self.settings.modulation;
+
+				self.settings.modulation = JSON.parse( JSON.stringify( settings ) );
+			}
+
+		} );
+
+		Object.defineProperty( self, "oscillatorSettings", {
+
+			get: function() {
+				// if slow - use npm clone
+				return JSON.parse( JSON.stringify( self.settings.oscillators ) );
+			},
+
+			set: function( settings ) {
+				var oldSettings = self.settings.oscillators,
+					oscillators = self.oscillators,
+					osc1 = oscillators[ 0 ],
+					osc2 = oscillators[ 1 ],
+					osc3 = oscillators[ 2 ],
+					oscSettings1 = settings.osc1,
+					oscSettings2 = settings.osc2,
+					oscSettings3 = settings.osc3;
+
+				if ( oldSettings ) {
+					var oldOscSettings1 = oldSettings.osc1,
+						oldOscSettings2 = oldSettings.osc2,
+						oldOscSettings3 = oldSettings.osc3,
+						resolveRange = function( oldSettings, settings, osc ) {
+							if ( oldSettings.range !== settings.range ) {
+								osc.detune.value = utils.getDetune(
+									settings.range,
+									8
+								);
+							}
+						},
+						resolveWaveform = function( oldSettings, settings, osc ) {
+							if ( oldSettings.waveform !== settings.waveform ) {
+								var defaultForm = CONST.OSC_WAVEFORM[ settings.waveform ];
+
+								if ( defaultForm ) {
+									osc.type = defaultForm;
+								} else {
+									var waveformFFT = CONST.OSC_WAVEFORM_FFT[ settings.waveform - CONST.OSC_WAVEFORM.length ];
+
+									if ( waveformFFT ) {
+										var audioContext = self.audioContext,
+											fft = waveformFFT.fft,
+											size = fft.real.length,
+											real = new Float32Array( size ),
+											imag = new Float32Array( size );
+
+										for ( var i = 0; i < size; i++ ) {
+											real[ i ] = fft.real[ i ];
+											imag[ i ] = fft.imag[ i ];
+										}
+
+										var waveTable = audioContext.createPeriodicWave( real, imag );
+
+										osc.setPeriodicWave( waveTable );
+									}
+								}
+							}
+						},
+						resolveFineDetune = function( oldSettings, settings, osc, base ) {
+							if ( oldSettings.range !== settings.range ||
+								oldSettings.fineDetune !== settings.fineDetune )
+							{
+								osc.detune.value = utils.getDetune(
+									settings.range,
+									settings.fineDetune,
+									base
+								);
+							}
+						};
+
+					resolveRange( oldOscSettings1, oscSettings1, osc1 );
+					resolveWaveform( oldOscSettings1, oscSettings1, osc1 );
+
+					resolveFineDetune( oldOscSettings2, oscSettings2, osc2 );
+					resolveWaveform( oldOscSettings2, oscSettings2, osc2 );
+
+					resolveFineDetune( oldOscSettings3, oscSettings3, osc3, CONST.OSC3_RANGE_BASE );
+					resolveWaveform( oldOscSettings3, oscSettings3, osc3 );
+				}
+
+				self.settings.oscillators = JSON.parse( JSON.stringify( settings ) );
+			}
+
+		} );
+
+		Object.defineProperty( self, "mixerSettings", {
+
+			get: function() {
+				// if slow - use npm clone
+				return JSON.parse( JSON.stringify( self.settings.mixer ) );
+			},
+
+			set: function( settings ) {
+				var oldSettings = self.settings.mixer,
+					volumes = self.volumes,
+					volume1 = volumes[ 0 ],
+					volume2 = volumes[ 1 ],
+					volume3 = volumes[ 2 ],
+					noiseVolume = self.noiseVolume,
+					noiseNode = self.noiseNode,
+					volumeSettings1 = settings.volume1,
+					volumeSettings2 = settings.volume2,
+					volumeSettings3 = settings.volume3,
+					noiseSettings = settings.noise,
+					resolveVolume = function( settings, volume ) {
+						var value = settings.isEnabled ? settings.value : 0;
+
+						volume.gain.value = utils.getVolume( value );
+					};
+
+				resolveVolume( volumeSettings1, volume1 );
+				resolveVolume( volumeSettings2, volume2 );
+				resolveVolume( volumeSettings3, volume3 );
+
+				if ( oldSettings ) {
+					var oldNoiseSettings = oldSettings.noise;
+
+					if ( noiseSettings.type !== oldNoiseSettings.type ) {
+						self._changeNoise( noiseNode, CONST.NOISE_TYPE[ noiseSettings.type ] );
+					}
+
+					if ( oldNoiseSettings.isEnabled && !noiseSettings.isEnabled ) {
+						noiseNode.disconnect();
+					} else if ( !oldNoiseSettings.isEnabled && noiseSettings.isEnabled ) {
+						noiseNode.connect( noiseVolume );
+					}
+
+					noiseVolume.gain.value = utils.getVolume( noiseSettings.volume );
+				}
+
+				self.settings.mixer = JSON.parse( JSON.stringify( settings ) );
+			}
+
+		} );
+
+		Object.defineProperty( self, "envelopesSettings", {
+
+			get: function() {
+				// if slow - use npm clone
+				return JSON.parse( JSON.stringify( self.settings.envelopes ) );
+			},
+
+			set: function( settings ) {
+				var oldSettings = self.settings.envelopes || {
+						primary: {},
+						filter: {}
+					},
+					resolve = function( oldSettings, settings, envelope ) {
+						[
+							"attack",
+							"decay",
+							"sustain",
+							"release"
+						].forEach( function( name ) {
+							var newVal = settings[ name ];
+
+							if ( oldSettings[ name ] !== newVal ) {
+								var methodName = "get" + name[ 0 ].toUpperCase() + name.slice( 1 );
+								envelope[ name ] = utils[ methodName ]( newVal );
+								console.log( name + ": " + utils[ methodName ]( newVal ) );
+							}
+						} );
+					};
+
+				resolve( oldSettings.primary, settings.primary, self.envelope );
+				// resolve( oldSettings.filter, settings.filter, self.filter );
+
+				self.settings.envelopes = JSON.parse( JSON.stringify( settings ) );
+			}
+
+		} );
+	},
+
+	_setNoteToOscillator: function( noteFrequency, settings, oscillator ) {
+		oscillator.frequency.cancelScheduledValues( 0 );
+		oscillator.frequency.setTargetAtTime(
+			noteFrequency,
+			0,
+			utils.getPortamento( settings.modulation.portamento )
+		);
+	},
+
+	_changeNoise: function( noiseNode, type ) {
+		noiseNode.onaudioprocess = utils.getNoiseGenerator( type );
+	}
+
+};
+
+module.exports = Instrument;
+},{"./engine/const":8,"./engine/envelope":9,"./engine/utils":10}],12:[function(require,module,exports){
 'use strict';
 
 var angular = require( "angular" ),
@@ -36271,7 +36435,8 @@ var angular = require( "angular" ),
 		template.name,
 		require( "./view/template/modulation.html" ).name,
 		require( "./view/template/oscillator-bank.html" ).name,
-		require( "./view/template/mixer.html" ).name
+		require( "./view/template/mixer.html" ).name,
+		require( "./view/template/envelopes.html" ).name
 	] );
 
 mod.directive( "synth", [ "$templateCache", function( $templateCache ) {
@@ -36286,9 +36451,62 @@ mod.directive( "synth", [ "$templateCache", function( $templateCache ) {
 require( "./view/controller/modulation" )( mod );
 require( "./view/controller/oscillator-bank" )( mod );
 require( "./view/controller/mixer" )( mod );
+require( "./view/controller/envelopes" )( mod );
 
 module.exports = mod;
-},{"./view/controller/mixer":11,"./view/controller/modulation":12,"./view/controller/oscillator-bank":13,"./view/template/mixer.html":14,"./view/template/modulation.html":15,"./view/template/oscillator-bank.html":16,"./view/template/synth.html":17,"angular":2}],11:[function(require,module,exports){
+},{"./view/controller/envelopes":13,"./view/controller/mixer":14,"./view/controller/modulation":15,"./view/controller/oscillator-bank":16,"./view/template/envelopes.html":17,"./view/template/mixer.html":18,"./view/template/modulation.html":19,"./view/template/oscillator-bank.html":20,"./view/template/synth.html":21,"angular":2}],13:[function(require,module,exports){
+'use strict';
+
+var $ = require( "jquery" );
+
+module.exports = function( mod ) {
+
+	mod.controller( "EnvelopesCtrl", [ "$scope", "dawEngine", function( $scope, dawEngine ) {
+		var self = this,
+			synth = dawEngine.synth,
+			settingsChangeHandler = function() {
+				synth.envelopesSettings = {
+					primary: self.primary,
+					filter: self.filter
+				};
+			},
+			settings = synth.envelopesSettings;
+
+		self.primary = settings.primary;
+		self.filter = settings.filter;
+
+		[
+			"envs.primary.attack",
+			"envs.primary.decay",
+			"envs.primary.sustain",
+			"envs.primary.release",
+			"envs.filter.attack",
+			"envs.filter.decay",
+			"envs.filter.sustain",
+			"envs.filter.release"
+		].forEach( function( path ) {
+			$scope.$watch( path, settingsChangeHandler );
+		} );
+
+		// fix the lack of attr 'value' update
+		$( ".envelopes webaudio-knob" ).on( "change", function( e ) {
+			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
+				$( e.target ).attr( "value", e.target.value );
+			}
+		} );
+
+	} ] );
+
+	mod.directive( "envelopes", [ "$templateCache", function( $templateCache ) {
+		return {
+			restrict: "E",
+			replace: true,
+			template: $templateCache.get( "envelopes.html" )
+		};
+	} ] );
+
+};
+},{"jquery":3}],14:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -36351,7 +36569,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],12:[function(require,module,exports){
+},{"jquery":3}],15:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -36397,7 +36615,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],13:[function(require,module,exports){
+},{"jquery":3}],16:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -36450,7 +36668,69 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],14:[function(require,module,exports){
+},{"jquery":3}],17:[function(require,module,exports){
+var ngModule = angular.module('envelopes.html', []);
+ngModule.run(['$templateCache', function($templateCache) {
+  $templateCache.put('envelopes.html',
+    '<div class="col-lg-3 envelopes control-bank text-center" ng-controller="EnvelopesCtrl as envs">\n' +
+    '	<div class="envelope row">\n' +
+    '		<h5>Primary</h5>\n' +
+    '		<div class="col-lg-3">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{envs.primary.attack}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Primary attack"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '		<div class="col-lg-3">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{envs.primary.decay}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Primary decay"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '		<div class="col-lg-3">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{envs.primary.sustain}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Primary sustain"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '		<div class="col-lg-3">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{envs.primary.release}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Primary release"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '	</div>\n' +
+    '	<div class="envelope row">\n' +
+    '		<h5>Filter</h5>\n' +
+    '		<div class="col-lg-3">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{envs.filter.attack}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Filter attack"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '		<div class="col-lg-3">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{envs.filter.decay}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Filter decay"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '		<div class="col-lg-3">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{envs.filter.sustain}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Filter sustain"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '		<div class="col-lg-3">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{envs.filter.release}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Filter release"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '	</div>\n' +
+    '	<div class="row">\n' +
+    '		<div class="col-lg-3">Attack</div>\n' +
+    '		<div class="col-lg-3">Decay</div>\n' +
+    '		<div class="col-lg-3">Sustain</div>\n' +
+    '		<div class="col-lg-3">Release</div>\n' +
+    '	</div>\n' +
+    '	<h4>Envelopes</h4>\n' +
+    '</div>');
+}]);
+
+module.exports = ngModule;
+},{}],18:[function(require,module,exports){
 var ngModule = angular.module('mixer.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('mixer.html',
@@ -36510,7 +36790,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],15:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 var ngModule = angular.module('modulation.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('modulation.html',
@@ -36532,7 +36812,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],16:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 var ngModule = angular.module('oscillator-bank.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('oscillator-bank.html',
@@ -36540,14 +36820,14 @@ ngModule.run(['$templateCache', function($templateCache) {
     '	<div class="oscillator row">\n' +
     '		<h5>Oscilator 1</h5>\n' +
     '		<div class="col-lg-4">\n' +
-    '			<webaudio-knob class="range-knob" src="images/range-knob.png"\n' +
+    '			<webaudio-knob src="images/range-knob.png"\n' +
     '				bind-polymer\n' +
     '				value="{{oscillators.osc1.range}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 1 range"></webaudio-knob>\n' +
     '		</div>\n' +
     '		<div class="col-lg-4">\n' +
     '		</div>\n' +
     '		<div class="col-lg-4">\n' +
-    '			<webaudio-knob class="waveform-knob" src="images/range-knob.png"\n' +
+    '			<webaudio-knob src="images/range-knob.png"\n' +
     '				bind-polymer\n' +
     '				value="{{oscillators.osc1.waveform}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 1 waveform"></webaudio-knob>\n' +
     '		</div>\n' +
@@ -36555,17 +36835,17 @@ ngModule.run(['$templateCache', function($templateCache) {
     '	<div class="oscillator row">\n' +
     '		<h5>Oscilator 2</h5>\n' +
     '		<div class="col-lg-4">\n' +
-    '			<webaudio-knob class="range-knob" src="images/range-knob.png"\n' +
+    '			<webaudio-knob src="images/range-knob.png"\n' +
     '				bind-polymer\n' +
     '				value="{{oscillators.osc2.range}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 2 range"></webaudio-knob>\n' +
     '		</div>\n' +
     '		<div class="col-lg-4">\n' +
-    '			<webaudio-knob class="frequency-knob" src="images/frequency-knob.png"\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
     '				bind-polymer\n' +
     '				value="{{oscillators.osc2.fineDetune}}" max="16" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 2 frequency"></webaudio-knob>\n' +
     '		</div>\n' +
     '		<div class="col-lg-4">\n' +
-    '			<webaudio-knob class="waveform-knob" src="images/range-knob.png"\n' +
+    '			<webaudio-knob src="images/range-knob.png"\n' +
     '				bind-polymer\n' +
     '				value="{{oscillators.osc2.waveform}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 2 waveform"></webaudio-knob>\n' +
     '		</div>\n' +
@@ -36573,17 +36853,17 @@ ngModule.run(['$templateCache', function($templateCache) {
     '	<div class="oscillator row">\n' +
     '		<h5>Oscilator 3</h5>\n' +
     '		<div class="col-lg-4">\n' +
-    '			<webaudio-knob class="range-knob" src="images/lfo-knob.png"\n' +
+    '			<webaudio-knob src="images/lfo-knob.png"\n' +
     '				bind-polymer\n' +
     '				value="{{oscillators.osc3.range}}" max="6" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 3 range"></webaudio-knob>\n' +
     '		</div>\n' +
     '		<div class="col-lg-4">\n' +
-    '			<webaudio-knob class="frequency-knob" src="images/frequency-knob.png"\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
     '				bind-polymer\n' +
     '				value="{{oscillators.osc3.fineDetune}}" max="16" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 3 frequency"></webaudio-knob>\n' +
     '		</div>\n' +
     '		<div class="col-lg-4">\n' +
-    '			<webaudio-knob class="waveform-knob" src="images/range-knob.png"\n' +
+    '			<webaudio-knob src="images/range-knob.png"\n' +
     '				bind-polymer\n' +
     '				value="{{oscillators.osc3.waveform}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 3 waveform"></webaudio-knob>\n' +
     '		</div>\n' +
@@ -36598,7 +36878,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],17:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 var ngModule = angular.module('synth.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('synth.html',
@@ -36607,12 +36887,13 @@ ngModule.run(['$templateCache', function($templateCache) {
     '		<modulation></modulation>\n' +
     '		<oscillator-bank></oscillator-bank>\n' +
     '		<mixer></mixer>\n' +
+    '		<envelopes></envelopes>\n' +
     '	</div>\n' +
     '</div>');
 }]);
 
 module.exports = ngModule;
-},{}],18:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 'use strict';
 
 var angular = require( "angular" ),
@@ -36647,7 +36928,7 @@ require( "./view/controller/master" )( mod );
 require( "./view/controller/keyboard" )( mod );
 
 module.exports = mod;
-},{"./instruments/synth/module":10,"./view/controller/keyboard":19,"./view/controller/master":20,"./view/template/daw.html":21,"angular":2}],19:[function(require,module,exports){
+},{"./instruments/synth/module":12,"./view/controller/keyboard":23,"./view/controller/master":24,"./view/template/daw.html":25,"angular":2}],23:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -36677,7 +36958,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],20:[function(require,module,exports){
+},{"jquery":3}],24:[function(require,module,exports){
 'use strict';
 
 module.exports = function( mod ) {
@@ -36685,7 +36966,7 @@ module.exports = function( mod ) {
 	mod.controller( "MasterCtrl", function() {} );
 
 };
-},{}],21:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 var ngModule = angular.module('daw.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('daw.html',
