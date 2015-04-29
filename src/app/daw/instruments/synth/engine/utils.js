@@ -126,6 +126,14 @@ var utils = {
 			2 * value / 100
 		:
 			0;
+	},
+
+	getCutoff: function( value ) {
+		return 8000 * value / 500;
+	},
+
+	getEmphasis: function( value ) {
+		return 40 * value / 100;
 	}
 
 };

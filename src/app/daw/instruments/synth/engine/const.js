@@ -55,6 +55,10 @@ module.exports = {
 			release: 5
 		}
 	},
+	DEFAULT_FILTER_SETTINGS: {
+		cutoff: 25,
+		emphasis: 0
+	},
 
 	OSC_WAVEFORM: [
 		"sine",
@@ -82,12 +86,5 @@ module.exports = {
 	DEFAULT_NOISE_TYPE: 0,
 	NOISE_BUFFER_SIZE: 4096,
 
-	FAKE_ZERO: 0.00001,
-
-	ENVELOPE: {
-		DEFAULT_ATTACK:		0.5,
-		DEFAULT_DECAY:		0.5,
-		DEFAULT_SUSTAIN:	0.5,
-		DEFAULT_RELEASE:	0.1
-	}
+	FAKE_ZERO: 0.00001
 };

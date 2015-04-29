@@ -4,7 +4,8 @@
 
 var CONST = require( "./engine/const" ),
 	utils = require( "./engine/utils" ),
-	Envelope = require( "./engine/envelope" );
+	Envelope = require( "./engine/envelope" ),
+	Filter = require( "./engine/filter" );
 
 function Instrument( audioContext ) {
 	var self = this,
@@ -13,6 +14,7 @@ function Instrument( audioContext ) {
 		noiseVolume = audioContext.createGain(),
 		noiseNode = audioContext.createScriptProcessor( CONST.NOISE_BUFFER_SIZE, 1, 1 ),
 		envelope = new Envelope( audioContext ),
+		filter = new Filter( audioContext ),
 		masterVolume = audioContext.createGain();
 
 	masterVolume.gain.value = 1.0;
@@ -33,9 +35,11 @@ function Instrument( audioContext ) {
 	}
 
 	noiseVolume.gain.value = 0.0;
+
 	noiseVolume.connect( envelope.node );
 
-	envelope.node.connect( masterVolume );
+	envelope.node.connect( filter.node );
+	filter.node.connect( masterVolume );
 
 	self.audioContext = audioContext;
 	self.volumes = volumes;
@@ -43,6 +47,7 @@ function Instrument( audioContext ) {
 	self.noiseVolume = noiseVolume;
 	self.noiseNode = noiseNode;
 	self.envelope = envelope;
+	self.filter = filter;
 	self.outputNode = masterVolume;
 	self.activeNotes = [];
 	self.settings = {
@@ -50,7 +55,8 @@ function Instrument( audioContext ) {
 		modulation: null,
 		oscillators: null,
 		mixer: null,
-		envelopes: null
+		envelopes: null,
+		filter: null
 
 	};
 
@@ -60,6 +66,7 @@ function Instrument( audioContext ) {
 	self.oscillatorSettings = CONST.DEFAULT_OSC_SETTINGS;
 	self.mixerSettings = CONST.DEFAULT_MIX_SETTINGS;
 	self.envelopesSettings = CONST.DEFAULT_ENVELOPES_SETTINGS;
+	self.filterSettings = CONST.DEFAULT_FILTER_SETTINGS;
 
 	self._changeNoise( noiseNode, CONST.NOISE_TYPE[ CONST.DEFAULT_NOISE_TYPE ] );
 }
@@ -298,6 +305,32 @@ Instrument.prototype = {
 				// resolve( oldSettings.filter, settings.filter, self.filter );
 
 				self.settings.envelopes = JSON.parse( JSON.stringify( settings ) );
+			}
+
+		} );
+
+		Object.defineProperty( self, "filterSettings", {
+
+			get: function() {
+				// if slow - use npm clone
+				return JSON.parse( JSON.stringify( self.settings.filter ) );
+			},
+
+			set: function( settings ) {
+				var oldSettings = self.settings.filter || {
+						cutoff: null,
+						emphasis: null
+					},
+					filter = self.filter;
+
+				if ( oldSettings.cutoff !== settings.cutoff ) {
+					filter.cutoff = utils.getCutoff( settings.cutoff );
+				}
+				if ( oldSettings.emphasis !== settings.emphasis ) {
+					filter.emphasis = utils.getEmphasis( settings.emphasis );
+				}
+
+				self.settings.filter = JSON.parse( JSON.stringify( settings ) );
 			}
 
 		} );

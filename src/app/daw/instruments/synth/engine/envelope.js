@@ -14,10 +14,10 @@ function Envelope( audioContext, settings ) {
 
 	self.node = node;
 
-	self.attack =	utils.customOrDefault( settings.attack,		CONST.ENVELOPE.DEFAULT_ATTACK );
-	self.decay =	utils.customOrDefault( settings.decay,		CONST.ENVELOPE.DEFAULT_DECAY );
-	self.sustain =	utils.customOrDefault( settings.sustain,	CONST.ENVELOPE.DEFAULT_SUSTAIN );
-	self.release =	utils.customOrDefault( settings.release,	CONST.ENVELOPE.DEFAULT_RELEASE );
+	self.attack =	settings.attack;
+	self.decay =	settings.decay;
+	self.sustain =	settings.sustain;
+	self.release =	settings.release;
 }
 
 Envelope.prototype = {
