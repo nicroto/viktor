@@ -56,8 +56,8 @@ module.exports = {
 		}
 	},
 	DEFAULT_FILTER_SETTINGS: {
-		cutoff: 25,
-		emphasis: 0
+		cutoff: 250,
+		emphasis: 1
 	},
 
 	OSC_WAVEFORM: [
