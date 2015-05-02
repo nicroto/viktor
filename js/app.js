@@ -35879,8 +35879,8 @@ module.exports = {
 		}
 	},
 	DEFAULT_FILTER_SETTINGS: {
-		cutoff: 25,
-		emphasis: 0
+		cutoff: 250,
+		emphasis: 1
 	},
 
 	OSC_WAVEFORM: [
@@ -35909,7 +35909,9 @@ module.exports = {
 	DEFAULT_NOISE_TYPE: 0,
 	NOISE_BUFFER_SIZE: 4096,
 
-	FAKE_ZERO: 0.00001
+	FAKE_ZERO: 0.00001,
+
+	FILTER_FREQUENCY_UPPER_BOUND: 8000
 };
 },{}],9:[function(require,module,exports){
 'use strict';
@@ -35917,21 +35919,18 @@ module.exports = {
 var utils = require( "./utils" ),
 	CONST = require( "./const" );
 
-function Envelope( audioContext, settings ) {
-	var self = this,
-		node = audioContext.createGain();
+function Envelope( audioContext, propName, upperBound ) {
+	var self = this;
 
-	settings = settings || {};
-
-	node.gain.value = 0.0;
 	self.audioContext = audioContext;
+	self.propName = propName;
+	self.upperBound = upperBound;
 
-	self.node = node;
-
-	self.attack =	settings.attack;
-	self.decay =	settings.decay;
-	self.sustain =	settings.sustain;
-	self.release =	settings.release;
+	self.node =
+	self.attack =
+	self.decay =
+	self.sustain =
+	self.release = null;
 }
 
 Envelope.prototype = {
@@ -35939,6 +35938,8 @@ Envelope.prototype = {
 	start: function( time ) {
 		var self = this,
 			audioContext = self.audioContext,
+			propName = self.propName,
+			upperBound = self.upperBound,
 			node = self.node,
 			attack = self.attack,
 			decay = self.decay,
@@ -35946,22 +35947,23 @@ Envelope.prototype = {
 
 		time = utils.customOrDefault( time, audioContext.currentTime );
 
-		node.gain.cancelScheduledValues( time );
-		node.gain.setTargetAtTime( CONST.FAKE_ZERO, time, 0.01 );
-		node.gain.setTargetAtTime( 1, time + 0.01, attack / 2 );
-		node.gain.setTargetAtTime( sustain, time + 0.01 + attack, decay / 2 );
+		node[ propName ].cancelScheduledValues( time );
+		node[ propName ].setTargetAtTime( CONST.FAKE_ZERO, time, 0.01 );
+		node[ propName ].setTargetAtTime( upperBound, time + 0.01, attack / 2 );
+		node[ propName ].setTargetAtTime( sustain * upperBound, time + 0.01 + attack, decay / 2 );
 	},
 
 	end: function( time ) {
 		var self = this,
 			audioContext = self.audioContext,
+			propName = self.propName,
 			node = self.node,
 			release = self.release;
 
 		time = utils.customOrDefault( time, audioContext.currentTime );
 
-		node.gain.cancelScheduledValues( time );
-		node.gain.setTargetAtTime( CONST.FAKE_ZERO, time, release );
+		node[ propName ].cancelScheduledValues( time );
+		node[ propName ].setTargetAtTime( CONST.FAKE_ZERO, time, release );
 	}
 
 };
@@ -36118,11 +36120,8 @@ var utils = {
 	getSustain: function( value ) {
 		var self = this;
 
-		// the volume level in %
-		return ( value > 0 ) ?
-			value / 100
-		:
-			0;
+		// the volume level in +%
+		return Math.max( value / 100, 0 );
 	},
 
 	getRelease: function( value ) {
@@ -36140,7 +36139,7 @@ var utils = {
 	},
 
 	getCutoff: function( value ) {
-		return 8000 * value / 500;
+		return CONST.FILTER_FREQUENCY_UPPER_BOUND * value / 500;
 	},
 
 	getEmphasis: function( value ) {
@@ -36166,9 +36165,16 @@ function Instrument( audioContext ) {
 		oscillators = [],
 		noiseVolume = audioContext.createGain(),
 		noiseNode = audioContext.createScriptProcessor( CONST.NOISE_BUFFER_SIZE, 1, 1 ),
-		envelope = new Envelope( audioContext ),
+		gainEnvelope = new Envelope( audioContext, "gain", 1 ),
+		gainEnvelopeNode = audioContext.createGain(),
 		filter = new Filter( audioContext ),
+		filterEnvelope = new Envelope( audioContext, "frequency", CONST.FILTER_FREQUENCY_UPPER_BOUND ),
 		masterVolume = audioContext.createGain();
+
+	gainEnvelopeNode.gain.value = 0.0;
+	gainEnvelope.node = gainEnvelopeNode;
+
+	filterEnvelope.node = filter.node;
 
 	masterVolume.gain.value = 1.0;
 
@@ -36177,7 +36183,7 @@ function Instrument( audioContext ) {
 			volume = audioContext.createGain();
 
 		volume.gain.value = 0.0;
-		volume.connect( envelope.node );
+		volume.connect( gainEnvelope.node );
 
 		osc.frequency.setValueAtTime( 110, 0 );
 		osc.connect( volume );
@@ -36189,9 +36195,9 @@ function Instrument( audioContext ) {
 
 	noiseVolume.gain.value = 0.0;
 
-	noiseVolume.connect( envelope.node );
+	noiseVolume.connect( gainEnvelope.node );
 
-	envelope.node.connect( filter.node );
+	gainEnvelope.node.connect( filter.node );
 	filter.node.connect( masterVolume );
 
 	self.audioContext = audioContext;
@@ -36199,8 +36205,9 @@ function Instrument( audioContext ) {
 	self.oscillators = oscillators;
 	self.noiseVolume = noiseVolume;
 	self.noiseNode = noiseNode;
-	self.envelope = envelope;
+	self.gainEnvelope = gainEnvelope;
 	self.filter = filter;
+	self.filterEnvelope = filterEnvelope;
 	self.outputNode = masterVolume;
 	self.activeNotes = [];
 	self.settings = {
@@ -36238,7 +36245,8 @@ Instrument.prototype = {
 
 	onNoteOn: function( noteFrequency, velocity ) {
 		var self = this,
-			envelope = self.envelope,
+			gainEnvelope = self.gainEnvelope,
+			filterEnvelope = self.filterEnvelope,
 			activeNotes = self.activeNotes,
 			settings = self.settings;
 
@@ -36248,12 +36256,14 @@ Instrument.prototype = {
 			self._setNoteToOscillator( noteFrequency, settings, osc );
 		} );
 
-		envelope.start();
+		gainEnvelope.start();
+		filterEnvelope.start();
 	},
 
 	onNoteOff: function( noteFrequency, velocity ) {
 		var self = this,
-			envelope = self.envelope,
+			gainEnvelope = self.gainEnvelope,
+			filterEnvelope = self.filterEnvelope,
 			activeNotes = self.activeNotes,
 			settings = self.settings,
 			position = activeNotes.indexOf( noteFrequency );
@@ -36263,7 +36273,8 @@ Instrument.prototype = {
 		}
 
 		if ( activeNotes.length === 0 ) {
-			envelope.end();
+			gainEnvelope.end();
+			filterEnvelope.end();
 		} else {
 			noteFrequency = activeNotes[ activeNotes.length - 1 ];
 
@@ -36454,8 +36465,10 @@ Instrument.prototype = {
 						} );
 					};
 
-				resolve( oldSettings.primary, settings.primary, self.envelope );
-				// resolve( oldSettings.filter, settings.filter, self.filter );
+				console.log( "gainEnvelope settings:" );
+				resolve( oldSettings.primary, settings.primary, self.gainEnvelope );
+				console.log( "filterEnvelope settings:" );
+				resolve( oldSettings.filter, settings.filter, self.filterEnvelope );
 
 				self.settings.envelopes = JSON.parse( JSON.stringify( settings ) );
 			}
@@ -36866,7 +36879,7 @@ ngModule.run(['$templateCache', function($templateCache) {
     '		<h5>Cutoff</h5>\n' +
     '		<webaudio-knob src="images/frequency-knob.png"\n' +
     '			bind-polymer\n' +
-    '			value="{{filter.cutoff}}" max="500" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Frequency cutoff"></webaudio-knob>\n' +
+    '			value="{{filter.cutoff}}" min="1" max="500" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Frequency cutoff"></webaudio-knob>\n' +
     '	</div>\n' +
     '	<div class="row">\n' +
     '		<h5>Emphasis</h5>\n' +
