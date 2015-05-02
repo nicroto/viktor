@@ -107,11 +107,8 @@ var utils = {
 	getSustain: function( value ) {
 		var self = this;
 
-		// the volume level in %
-		return ( value > 0 ) ?
-			value / 100
-		:
-			0;
+		// the volume level in +%
+		return Math.max( value / 100, 0 );
 	},
 
 	getRelease: function( value ) {
@@ -129,7 +126,7 @@ var utils = {
 	},
 
 	getCutoff: function( value ) {
-		return 8000 * value / 500;
+		return CONST.FILTER_FREQUENCY_UPPER_BOUND * value / 500;
 	},
 
 	getEmphasis: function( value ) {

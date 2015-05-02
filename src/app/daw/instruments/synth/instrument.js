@@ -13,9 +13,16 @@ function Instrument( audioContext ) {
 		oscillators = [],
 		noiseVolume = audioContext.createGain(),
 		noiseNode = audioContext.createScriptProcessor( CONST.NOISE_BUFFER_SIZE, 1, 1 ),
-		envelope = new Envelope( audioContext ),
+		gainEnvelope = new Envelope( audioContext, "gain", 1 ),
+		gainEnvelopeNode = audioContext.createGain(),
 		filter = new Filter( audioContext ),
+		filterEnvelope = new Envelope( audioContext, "frequency", CONST.FILTER_FREQUENCY_UPPER_BOUND ),
 		masterVolume = audioContext.createGain();
+
+	gainEnvelopeNode.gain.value = 0.0;
+	gainEnvelope.node = gainEnvelopeNode;
+
+	filterEnvelope.node = filter.node;
 
 	masterVolume.gain.value = 1.0;
 
@@ -24,7 +31,7 @@ function Instrument( audioContext ) {
 			volume = audioContext.createGain();
 
 		volume.gain.value = 0.0;
-		volume.connect( envelope.node );
+		volume.connect( gainEnvelope.node );
 
 		osc.frequency.setValueAtTime( 110, 0 );
 		osc.connect( volume );
@@ -36,9 +43,9 @@ function Instrument( audioContext ) {
 
 	noiseVolume.gain.value = 0.0;
 
-	noiseVolume.connect( envelope.node );
+	noiseVolume.connect( gainEnvelope.node );
 
-	envelope.node.connect( filter.node );
+	gainEnvelope.node.connect( filter.node );
 	filter.node.connect( masterVolume );
 
 	self.audioContext = audioContext;
@@ -46,8 +53,9 @@ function Instrument( audioContext ) {
 	self.oscillators = oscillators;
 	self.noiseVolume = noiseVolume;
 	self.noiseNode = noiseNode;
-	self.envelope = envelope;
+	self.gainEnvelope = gainEnvelope;
 	self.filter = filter;
+	self.filterEnvelope = filterEnvelope;
 	self.outputNode = masterVolume;
 	self.activeNotes = [];
 	self.settings = {
@@ -85,7 +93,8 @@ Instrument.prototype = {
 
 	onNoteOn: function( noteFrequency, velocity ) {
 		var self = this,
-			envelope = self.envelope,
+			gainEnvelope = self.gainEnvelope,
+			filterEnvelope = self.filterEnvelope,
 			activeNotes = self.activeNotes,
 			settings = self.settings;
 
@@ -95,12 +104,14 @@ Instrument.prototype = {
 			self._setNoteToOscillator( noteFrequency, settings, osc );
 		} );
 
-		envelope.start();
+		gainEnvelope.start();
+		filterEnvelope.start();
 	},
 
 	onNoteOff: function( noteFrequency, velocity ) {
 		var self = this,
-			envelope = self.envelope,
+			gainEnvelope = self.gainEnvelope,
+			filterEnvelope = self.filterEnvelope,
 			activeNotes = self.activeNotes,
 			settings = self.settings,
 			position = activeNotes.indexOf( noteFrequency );
@@ -110,7 +121,8 @@ Instrument.prototype = {
 		}
 
 		if ( activeNotes.length === 0 ) {
-			envelope.end();
+			gainEnvelope.end();
+			filterEnvelope.end();
 		} else {
 			noteFrequency = activeNotes[ activeNotes.length - 1 ];
 
@@ -301,8 +313,10 @@ Instrument.prototype = {
 						} );
 					};
 
-				resolve( oldSettings.primary, settings.primary, self.envelope );
-				// resolve( oldSettings.filter, settings.filter, self.filter );
+				console.log( "gainEnvelope settings:" );
+				resolve( oldSettings.primary, settings.primary, self.gainEnvelope );
+				console.log( "filterEnvelope settings:" );
+				resolve( oldSettings.filter, settings.filter, self.filterEnvelope );
 
 				self.settings.envelopes = JSON.parse( JSON.stringify( settings ) );
 			}
