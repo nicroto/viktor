@@ -131,6 +131,10 @@ var utils = {
 
 	getEmphasis: function( value ) {
 		return 40 * value / 100;
+	},
+
+	getEnvelopeAmount: function( value ) {
+		return value / 100;
 	}
 
 };

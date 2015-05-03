@@ -1,4 +1,4 @@
-<div class="col-lg-1 filter control-bank two-row text-center" ng-controller="FilterCtrl as filter">
+<div class="col-lg-1 filter control-bank text-center" ng-controller="FilterCtrl as filter">
 	<div class="row">
 		<h5>Cutoff</h5>
 		<webaudio-knob src="images/frequency-knob.png"
@@ -10,6 +10,12 @@
 		<webaudio-knob src="images/frequency-knob.png"
 			bind-polymer
 			value="{{filter.emphasis}}" min="1" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Emphasis (Q)"></webaudio-knob>
+	</div>
+	<div class="row">
+		<h5>Simple/Env</h5>
+		<webaudio-knob src="images/frequency-knob.png"
+			bind-polymer
+			value="{{filter.envAmount}}" min="1" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Simple/Envelope Mix"></webaudio-knob>
 	</div>
 	<h4>LP Filter</h4>
 </div>

@@ -10,17 +10,20 @@ module.exports = function( mod ) {
 			settingsChangeHandler = function() {
 				synth.filterSettings = {
 					cutoff: self.cutoff,
-					emphasis: self.emphasis
+					emphasis: self.emphasis,
+					envAmount: self.envAmount
 				};
 			},
 			settings = synth.filterSettings;
 
 		self.cutoff = settings.cutoff;
 		self.emphasis = settings.emphasis;
+		self.envAmount = settings.envAmount;
 
 		[
 			"filter.cutoff",
-			"filter.emphasis"
+			"filter.emphasis",
+			"filter.envAmount"
 		].forEach( function( path ) {
 			$scope.$watch( path, settingsChangeHandler );
 		} );

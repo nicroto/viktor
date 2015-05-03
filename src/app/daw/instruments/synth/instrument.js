@@ -22,7 +22,7 @@ function Instrument( audioContext ) {
 	gainEnvelopeNode.gain.value = 0.0;
 	gainEnvelope.node = gainEnvelopeNode;
 
-	filterEnvelope.node = filter.node;
+	filterEnvelope.node = filter.envelopeFilterNode;
 
 	masterVolume.gain.value = 1.0;
 
@@ -45,8 +45,8 @@ function Instrument( audioContext ) {
 
 	noiseVolume.connect( gainEnvelope.node );
 
-	gainEnvelope.node.connect( filter.node );
-	filter.node.connect( masterVolume );
+	gainEnvelope.node.connect( filter.inputNode );
+	filter.outputNode.connect( masterVolume );
 
 	self.audioContext = audioContext;
 	self.volumes = volumes;
@@ -342,6 +342,9 @@ Instrument.prototype = {
 				}
 				if ( oldSettings.emphasis !== settings.emphasis ) {
 					filter.emphasis = utils.getEmphasis( settings.emphasis );
+				}
+				if ( oldSettings.envAmount !== settings.envAmount ) {
+					filter.envAmount = utils.getEnvelopeAmount( settings.envAmount );
 				}
 
 				self.settings.filter = JSON.parse( JSON.stringify( settings ) );
