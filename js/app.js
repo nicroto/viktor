@@ -35972,23 +35972,46 @@ module.exports = Envelope;
 },{"./const":8,"./utils":11}],10:[function(require,module,exports){
 'use strict';
 
+var CONST = require( "./const" );
+
 function Filter( audioContext ) {
 	var self = this,
-		node = audioContext.createBiquadFilter();
+		input = audioContext.createGain(),
+		simpleFilterNode = audioContext.createBiquadFilter(),
+		envelopeFilterNode = audioContext.createBiquadFilter(),
+		simpleGain = audioContext.createGain(),
+		envelopeGain = audioContext.createGain(),
+		output = audioContext.createGain();
 
-	node.type = "lowpass";
+	input.gain.value = 1.0;
+	simpleGain.gain.value = 1.0;
+	envelopeGain.gain.value = CONST.FAKE_ZERO;
+	output.gain.value = 1.0;
+
+	envelopeFilterNode.type = "lowpass";
+	simpleFilterNode.type = "lowpass";
+
+	input.connect( simpleFilterNode );
+	input.connect( envelopeFilterNode );
+
+	simpleFilterNode.connect( simpleGain );
+	envelopeFilterNode.connect( envelopeGain );
+
+	simpleGain.connect( output );
+	envelopeGain.connect( output );
 
 	Object.defineProperty( self, "cutoff", {
 		get: function() {
 			var self = this;
 
-			return self.node.frequency.value;
+			return self.envelopeFilterNode.frequency.value;
 		},
 
 		set: function( value ) {
 			var self = this;
 
-			self.node.frequency.value = value;
+			self.envelopeFilterNode.frequency.value = value;
+			self.simpleFilterNode.frequency.value = value;
 		}
 	} );
 
@@ -35996,21 +36019,42 @@ function Filter( audioContext ) {
 		get: function() {
 			var self = this;
 
-			return self.node.Q.value;
+			return self.envelopeFilterNode.Q.value;
 		},
 
 		set: function( value ) {
 			var self = this;
 
-			self.node.Q.value = value;
+			self.envelopeFilterNode.Q.value = value;
+			self.simpleFilterNode.Q.value = value;
 		}
 	} );
 
-	self.node = node;
+	Object.defineProperty( self, "envAmount", {
+		get: function() {
+			var self = this;
+
+			return self.envelopeGain.gain.value;
+		},
+
+		set: function( value ) {
+			var self = this;
+
+			self.envelopeGain.gain.value = value;
+			self.simpleGain.gain.value = 1 - value;
+		}
+	} );
+
+	self.inputNode = input;
+	self.simpleFilterNode = simpleFilterNode;
+	self.envelopeFilterNode = envelopeFilterNode;
+	self.simpleGain = simpleGain;
+	self.envelopeGain = envelopeGain;
+	self.outputNode = output;
 }
 
 module.exports = Filter;
-},{}],11:[function(require,module,exports){
+},{"./const":8}],11:[function(require,module,exports){
 'use strict';
 
 var CONST = require( "./const" );
@@ -36144,6 +36188,10 @@ var utils = {
 
 	getEmphasis: function( value ) {
 		return 40 * value / 100;
+	},
+
+	getEnvelopeAmount: function( value ) {
+		return value / 100;
 	}
 
 };
@@ -36174,7 +36222,7 @@ function Instrument( audioContext ) {
 	gainEnvelopeNode.gain.value = 0.0;
 	gainEnvelope.node = gainEnvelopeNode;
 
-	filterEnvelope.node = filter.node;
+	filterEnvelope.node = filter.envelopeFilterNode;
 
 	masterVolume.gain.value = 1.0;
 
@@ -36197,8 +36245,8 @@ function Instrument( audioContext ) {
 
 	noiseVolume.connect( gainEnvelope.node );
 
-	gainEnvelope.node.connect( filter.node );
-	filter.node.connect( masterVolume );
+	gainEnvelope.node.connect( filter.inputNode );
+	filter.outputNode.connect( masterVolume );
 
 	self.audioContext = audioContext;
 	self.volumes = volumes;
@@ -36495,6 +36543,9 @@ Instrument.prototype = {
 				if ( oldSettings.emphasis !== settings.emphasis ) {
 					filter.emphasis = utils.getEmphasis( settings.emphasis );
 				}
+				if ( oldSettings.envAmount !== settings.envAmount ) {
+					filter.envAmount = utils.getEnvelopeAmount( settings.envAmount );
+				}
 
 				self.settings.filter = JSON.parse( JSON.stringify( settings ) );
 			}
@@ -36613,17 +36664,20 @@ module.exports = function( mod ) {
 			settingsChangeHandler = function() {
 				synth.filterSettings = {
 					cutoff: self.cutoff,
-					emphasis: self.emphasis
+					emphasis: self.emphasis,
+					envAmount: self.envAmount
 				};
 			},
 			settings = synth.filterSettings;
 
 		self.cutoff = settings.cutoff;
 		self.emphasis = settings.emphasis;
+		self.envAmount = settings.envAmount;
 
 		[
 			"filter.cutoff",
-			"filter.emphasis"
+			"filter.emphasis",
+			"filter.envAmount"
 		].forEach( function( path ) {
 			$scope.$watch( path, settingsChangeHandler );
 		} );
@@ -36874,7 +36928,7 @@ module.exports = ngModule;
 var ngModule = angular.module('filter.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('filter.html',
-    '<div class="col-lg-1 filter control-bank two-row text-center" ng-controller="FilterCtrl as filter">\n' +
+    '<div class="col-lg-1 filter control-bank text-center" ng-controller="FilterCtrl as filter">\n' +
     '	<div class="row">\n' +
     '		<h5>Cutoff</h5>\n' +
     '		<webaudio-knob src="images/frequency-knob.png"\n' +
@@ -36886,6 +36940,12 @@ ngModule.run(['$templateCache', function($templateCache) {
     '		<webaudio-knob src="images/frequency-knob.png"\n' +
     '			bind-polymer\n' +
     '			value="{{filter.emphasis}}" min="1" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Emphasis (Q)"></webaudio-knob>\n' +
+    '	</div>\n' +
+    '	<div class="row">\n' +
+    '		<h5>Simple/Env</h5>\n' +
+    '		<webaudio-knob src="images/frequency-knob.png"\n' +
+    '			bind-polymer\n' +
+    '			value="{{filter.envAmount}}" min="1" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Simple/Envelope Mix"></webaudio-knob>\n' +
     '	</div>\n' +
     '	<h4>LP Filter</h4>\n' +
     '</div>');
