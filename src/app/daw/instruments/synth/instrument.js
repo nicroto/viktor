@@ -5,7 +5,9 @@
 var CONST = require( "./engine/const" ),
 	utils = require( "./engine/utils" ),
 	Envelope = require( "./engine/envelope" ),
-	Filter = require( "./engine/filter" );
+	Filter = require( "./engine/filter" ),
+	LFO = require( "./engine/lfo" ),
+	Mix = require( "./engine/mix" );
 
 function Instrument( audioContext ) {
 	var self = this,
@@ -15,14 +17,23 @@ function Instrument( audioContext ) {
 		noiseNode = audioContext.createScriptProcessor( CONST.NOISE_BUFFER_SIZE, 1, 1 ),
 		gainEnvelope = new Envelope( audioContext, "gain", 1 ),
 		gainEnvelopeNode = audioContext.createGain(),
-		filter = new Filter( audioContext ),
+		envelopeControlledFilter = new Filter( audioContext ),
+		uiControlledFilter = new Filter( audioContext ),
+		lfoControlledFilter = new Filter( audioContext ),
+
+		envelopeFilterMix = new Mix( audioContext, uiControlledFilter.node, envelopeControlledFilter.node ),
+		lfoFilterMix = new Mix( audioContext, envelopeFilterMix.output, lfoControlledFilter.node ),
 		filterEnvelope = new Envelope( audioContext, "frequency", CONST.FILTER_FREQUENCY_UPPER_BOUND ),
+		lfo = new LFO( audioContext, lfoControlledFilter.node, "frequency", {
+			rate: CONST.LFO_DEFAULT_RATE,
+			defaultForm: CONST.LFO_DEFAULT_FORM
+		} ),
 		masterVolume = audioContext.createGain();
 
 	gainEnvelopeNode.gain.value = 0.0;
 	gainEnvelope.node = gainEnvelopeNode;
 
-	filterEnvelope.node = filter.envelopeFilterNode;
+	filterEnvelope.node = envelopeControlledFilter.node;
 
 	masterVolume.gain.value = 1.0;
 
@@ -45,8 +56,10 @@ function Instrument( audioContext ) {
 
 	noiseVolume.connect( gainEnvelope.node );
 
-	gainEnvelope.node.connect( filter.inputNode );
-	filter.outputNode.connect( masterVolume );
+	gainEnvelope.node.connect( envelopeControlledFilter.node );
+	gainEnvelope.node.connect( uiControlledFilter.node );
+	envelopeFilterMix.output.connect( lfoControlledFilter.node );
+	lfoFilterMix.output.connect( masterVolume );
 
 	self.audioContext = audioContext;
 	self.volumes = volumes;
@@ -54,7 +67,12 @@ function Instrument( audioContext ) {
 	self.noiseVolume = noiseVolume;
 	self.noiseNode = noiseNode;
 	self.gainEnvelope = gainEnvelope;
-	self.filter = filter;
+	self.envelopeControlledFilter = envelopeControlledFilter;
+	self.uiControlledFilter = uiControlledFilter;
+	self.lfoControlledFilter = lfoControlledFilter;
+	self.envelopeFilterMix = envelopeFilterMix;
+	self.lfo = lfo;
+	self.lfoFilterMix = lfoFilterMix;
 	self.filterEnvelope = filterEnvelope;
 	self.outputNode = masterVolume;
 	self.activeNotes = [];
@@ -64,7 +82,8 @@ function Instrument( audioContext ) {
 		oscillators: null,
 		mixer: null,
 		envelopes: null,
-		filter: null
+		filter: null,
+		lfo: null
 
 	};
 
@@ -75,6 +94,7 @@ function Instrument( audioContext ) {
 	self.mixerSettings = CONST.DEFAULT_MIX_SETTINGS;
 	self.envelopesSettings = CONST.DEFAULT_ENVELOPES_SETTINGS;
 	self.filterSettings = CONST.DEFAULT_FILTER_SETTINGS;
+	self.lfoSettings = CONST.DEFAULT_LFO_SETTINGS;
 
 	self._changeNoise( noiseNode, CONST.NOISE_TYPE[ CONST.DEFAULT_NOISE_TYPE ] );
 }
@@ -335,19 +355,58 @@ Instrument.prototype = {
 						cutoff: null,
 						emphasis: null
 					},
-					filter = self.filter;
+					envelopeControlledFilter = self.envelopeControlledFilter,
+					uiControlledFilter = self.uiControlledFilter,
+					lfoControlledFilter = self.lfoControlledFilter,
+					mix = self.envelopeFilterMix;
 
 				if ( oldSettings.cutoff !== settings.cutoff ) {
-					filter.cutoff = utils.getCutoff( settings.cutoff );
+					var cutoff = utils.getCutoff( settings.cutoff );
+					envelopeControlledFilter.node.frequency.value = cutoff;
+					uiControlledFilter.node.frequency.value = cutoff;
 				}
 				if ( oldSettings.emphasis !== settings.emphasis ) {
-					filter.emphasis = utils.getEmphasis( settings.emphasis );
+					var emphasis = utils.getEmphasis( settings.emphasis );
+					envelopeControlledFilter.node.Q.value = emphasis;
+					uiControlledFilter.node.Q.value = emphasis;
+					lfoControlledFilter.node.Q.value = emphasis;
 				}
 				if ( oldSettings.envAmount !== settings.envAmount ) {
-					filter.envAmount = utils.getEnvelopeAmount( settings.envAmount );
+					mix.amount = utils.getGain( settings.envAmount );
 				}
 
 				self.settings.filter = JSON.parse( JSON.stringify( settings ) );
+			}
+
+		} );
+
+		Object.defineProperty( self, "lfoSettings", {
+
+			get: function() {
+				// if slow - use npm clone
+				return JSON.parse( JSON.stringify( self.settings.lfo ) );
+			},
+
+			set: function( settings ) {
+				var oldSettings = self.settings.lfo || {
+						rate: null,
+						waveform: null,
+						amount: null
+					},
+					lfo = self.lfo,
+					mix = self.lfoFilterMix;
+
+				if ( oldSettings.rate !== settings.rate ) {
+					lfo.rate = settings.rate;
+				}
+				if ( oldSettings.waveform !== settings.waveform ) {
+					lfo.waveform = utils.getWaveform( settings.waveform );
+				}
+				if ( oldSettings.amount !== settings.amount ) {
+					mix.amount = utils.getGain( settings.amount );
+				}
+
+				self.settings.lfo = JSON.parse( JSON.stringify( settings ) );
 			}
 
 		} );

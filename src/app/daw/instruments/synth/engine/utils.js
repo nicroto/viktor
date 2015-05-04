@@ -133,8 +133,40 @@ var utils = {
 		return 40 * value / 100;
 	},
 
-	getEnvelopeAmount: function( value ) {
+	getGain: function( value ) {
 		return value / 100;
+	},
+
+	getWaveform: function( index ) {
+		var defaultForm = CONST.OSC_WAVEFORM[ index ],
+			customFormFFT = null;
+
+		if ( !defaultForm ) {
+			var waveformFFT = CONST.OSC_WAVEFORM_FFT[ index - CONST.OSC_WAVEFORM.length ];
+
+			if ( waveformFFT ) {
+				var audioContext = self.audioContext,
+					fft = waveformFFT.fft,
+					size = fft.real.length,
+					real = new Float32Array( size ),
+					imag = new Float32Array( size );
+
+				for ( var i = 0; i < size; i++ ) {
+					real[ i ] = fft.real[ i ];
+					imag[ i ] = fft.imag[ i ];
+				}
+
+				customFormFFT = {
+					real: real,
+					imag: imag
+				};
+			}
+		}
+
+		return {
+			defaultForm: defaultForm,
+			customFormFFT: customFormFFT
+		}
 	}
 
 };

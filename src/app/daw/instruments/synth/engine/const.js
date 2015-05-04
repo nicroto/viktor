@@ -59,6 +59,11 @@ module.exports = {
 		cutoff: 250,
 		emphasis: 1
 	},
+	DEFAULT_LFO_SETTINGS: {
+		waveform: 0,
+		rate: 3,
+		amount: 0
+	},
 
 	OSC_WAVEFORM: [
 		"sine",
@@ -88,5 +93,9 @@ module.exports = {
 
 	FAKE_ZERO: 0.00001,
 
-	FILTER_FREQUENCY_UPPER_BOUND: 8000
+	FILTER_FREQUENCY_UPPER_BOUND: 8000,
+
+	LFO_DEFAULT_RATE: 3,
+	LFO_DEFAULT_FORM: "sine",
+	LFO_DEFAULT_FREQUENCY_RANGE: 500
 };

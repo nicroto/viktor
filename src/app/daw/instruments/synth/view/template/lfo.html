@@ -1,0 +1,21 @@
+<div class="col-lg-1 lfo control-bank tri-row single-column text-center" ng-controller="LFOCtrl as lfo">
+	<div class="row">
+		<h5>Form</h5>
+		<webaudio-knob src="images/range-knob.png"
+			bind-polymer
+			value="{{lfo.waveform}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator waveform"></webaudio-knob>
+	</div>
+	<div class="row">
+		<h5>Rate</h5>
+		<webaudio-knob src="images/frequency-knob.png"
+			bind-polymer
+			value="{{lfo.rate}}" min="1" max="25" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Rate in HZ"></webaudio-knob>
+	</div>
+	<div class="row">
+		<h5>Clean/LFO</h5>
+		<webaudio-knob src="images/frequency-knob.png"
+			bind-polymer
+			value="{{lfo.amount}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Clean/LFO Mix"></webaudio-knob>
+	</div>
+	<h4>LFO</h4>
+</div>

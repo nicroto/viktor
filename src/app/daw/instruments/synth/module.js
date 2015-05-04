@@ -8,7 +8,8 @@ var angular = require( "angular" ),
 		require( "./view/template/oscillator-bank.html" ).name,
 		require( "./view/template/mixer.html" ).name,
 		require( "./view/template/envelopes.html" ).name,
-		require( "./view/template/filter.html" ).name
+		require( "./view/template/filter.html" ).name,
+		require( "./view/template/lfo.html" ).name
 	] );
 
 mod.directive( "synth", [ "$templateCache", function( $templateCache ) {
@@ -25,5 +26,6 @@ require( "./view/controller/oscillator-bank" )( mod );
 require( "./view/controller/mixer" )( mod );
 require( "./view/controller/envelopes" )( mod );
 require( "./view/controller/filter" )( mod );
+require( "./view/controller/lfo" )( mod );
 
 module.exports = mod;
