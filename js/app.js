@@ -35618,7 +35618,7 @@ angular.element( document ).ready( function() {
 
 module.exports = app;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./daw/daw":7,"./daw/module":25,"angular":2,"angular-bind-polymer":4}],6:[function(require,module,exports){
+},{"./daw/daw":7,"./daw/module":29,"angular":2,"angular-bind-polymer":4}],6:[function(require,module,exports){
 'use strict';
 
 function MIDIController() {
@@ -35820,7 +35820,7 @@ DAW.prototype = {
 };
 
 module.exports = DAW;
-},{"./controllers/midi":6,"./instruments/synth/instrument":12}],8:[function(require,module,exports){
+},{"./controllers/midi":6,"./instruments/synth/instrument":14}],8:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -35882,6 +35882,11 @@ module.exports = {
 		cutoff: 250,
 		emphasis: 1
 	},
+	DEFAULT_LFO_SETTINGS: {
+		waveform: 0,
+		rate: 3,
+		amount: 0
+	},
 
 	OSC_WAVEFORM: [
 		"sine",
@@ -35911,7 +35916,11 @@ module.exports = {
 
 	FAKE_ZERO: 0.00001,
 
-	FILTER_FREQUENCY_UPPER_BOUND: 8000
+	FILTER_FREQUENCY_UPPER_BOUND: 8000,
+
+	LFO_DEFAULT_RATE: 3,
+	LFO_DEFAULT_FORM: "sine",
+	LFO_DEFAULT_FREQUENCY_RANGE: 500
 };
 },{}],9:[function(require,module,exports){
 'use strict';
@@ -35969,92 +35978,124 @@ Envelope.prototype = {
 };
 
 module.exports = Envelope;
-},{"./const":8,"./utils":11}],10:[function(require,module,exports){
+},{"./const":8,"./utils":13}],10:[function(require,module,exports){
 'use strict';
 
 var CONST = require( "./const" );
 
 function Filter( audioContext ) {
 	var self = this,
-		input = audioContext.createGain(),
-		simpleFilterNode = audioContext.createBiquadFilter(),
-		envelopeFilterNode = audioContext.createBiquadFilter(),
-		simpleGain = audioContext.createGain(),
-		envelopeGain = audioContext.createGain(),
-		output = audioContext.createGain();
+		node = audioContext.createBiquadFilter();
 
-	input.gain.value = 1.0;
-	simpleGain.gain.value = 1.0;
-	envelopeGain.gain.value = CONST.FAKE_ZERO;
-	output.gain.value = 1.0;
+	node.type = "lowpass";
 
-	envelopeFilterNode.type = "lowpass";
-	simpleFilterNode.type = "lowpass";
-
-	input.connect( simpleFilterNode );
-	input.connect( envelopeFilterNode );
-
-	simpleFilterNode.connect( simpleGain );
-	envelopeFilterNode.connect( envelopeGain );
-
-	simpleGain.connect( output );
-	envelopeGain.connect( output );
-
-	Object.defineProperty( self, "cutoff", {
-		get: function() {
-			var self = this;
-
-			return self.envelopeFilterNode.frequency.value;
-		},
-
-		set: function( value ) {
-			var self = this;
-
-			self.envelopeFilterNode.frequency.value = value;
-			self.simpleFilterNode.frequency.value = value;
-		}
-	} );
-
-	Object.defineProperty( self, "emphasis", {
-		get: function() {
-			var self = this;
-
-			return self.envelopeFilterNode.Q.value;
-		},
-
-		set: function( value ) {
-			var self = this;
-
-			self.envelopeFilterNode.Q.value = value;
-			self.simpleFilterNode.Q.value = value;
-		}
-	} );
-
-	Object.defineProperty( self, "envAmount", {
-		get: function() {
-			var self = this;
-
-			return self.envelopeGain.gain.value;
-		},
-
-		set: function( value ) {
-			var self = this;
-
-			self.envelopeGain.gain.value = value;
-			self.simpleGain.gain.value = 1 - value;
-		}
-	} );
-
-	self.inputNode = input;
-	self.simpleFilterNode = simpleFilterNode;
-	self.envelopeFilterNode = envelopeFilterNode;
-	self.simpleGain = simpleGain;
-	self.envelopeGain = envelopeGain;
-	self.outputNode = output;
+	self.node = node;
 }
 
 module.exports = Filter;
 },{"./const":8}],11:[function(require,module,exports){
+'use strict';
+
+var CONST = require( "./const" );
+
+function LFO( audioContext, controlledNode, propName, settings ) {
+	var self = this,
+		oscillator = audioContext.createOscillator(),
+		gain = audioContext.createGain();
+
+	if ( !settings || !settings.rate || !( settings.defaultForm || settings.customFormFFT ) ) {
+		throw new Error( "Bad settings." );
+	}
+
+	Object.defineProperty( self, "rate", {
+		set: function( value ) {
+			var self = this;
+
+			self.oscillator.frequency.value = value;
+		}
+	} );
+
+	Object.defineProperty( self, "waveform", {
+		set: function( value ) {
+			var self = this,
+				audioContext = self.audioContext,
+				oscillator = self.oscillator,
+				defaultForm = value.defaultForm,
+				customFormFFT = value.customFormFFT;
+
+			if ( defaultForm ) {
+				oscillator.type = defaultForm;
+			} else {
+				var waveTable = audioContext.createPeriodicWave(
+					customFormFFT.real,
+					customFormFFT.imag
+				);
+
+				oscillator.setPeriodicWave( waveTable );
+			}
+		}
+	} );
+
+	gain.gain.value =
+	controlledNode[ propName ].value = CONST.LFO_DEFAULT_FREQUENCY_RANGE;
+
+	oscillator.connect( gain );
+	gain.connect( controlledNode[ propName ] )
+
+	self.audioContext = audioContext;
+	self.oscillator = oscillator;
+
+	self.rate = settings.rate;
+	self.waveform = settings;
+
+	oscillator.start( 0 );
+}
+
+module.exports = LFO;
+},{"./const":8}],12:[function(require,module,exports){
+'use strict';
+
+var CONST = require( "./const" );
+
+function Mix( audioContext, firstMixNode, secondMixNode ) {
+	var self = this,
+		firstGain = audioContext.createGain(),
+		secondGain = audioContext.createGain(),
+		output = audioContext.createGain();
+
+	firstGain.gain.value = 1.0;
+	secondGain.gain.value = CONST.FAKE_ZERO;
+	output.gain.value = 1.0;
+
+	firstMixNode.connect( firstGain );
+	secondMixNode.connect( secondGain );
+
+	firstGain.connect( output );
+	secondGain.connect( output );
+
+	Object.defineProperty( self, "amount", {
+		get: function() {
+			var self = this;
+
+			return self.secondGain.gain.value;
+		},
+
+		set: function( value ) {
+			var self = this;
+			self.secondGain.gain.value = value;
+			self.firstGain.gain.value = 1 - value;
+console.log( "firstGain: " + self.firstGain.gain.value );
+console.log( "secondGain: " + self.secondGain.gain.value );
+		}
+	} );
+
+	self.firstGain = firstGain;
+	self.secondGain = secondGain;
+	self.output = output;
+}
+
+module.exports = Mix;
+},{"./const":8}],13:[function(require,module,exports){
 'use strict';
 
 var CONST = require( "./const" );
@@ -36190,14 +36231,46 @@ var utils = {
 		return 40 * value / 100;
 	},
 
-	getEnvelopeAmount: function( value ) {
+	getGain: function( value ) {
 		return value / 100;
+	},
+
+	getWaveform: function( index ) {
+		var defaultForm = CONST.OSC_WAVEFORM[ index ],
+			customFormFFT = null;
+
+		if ( !defaultForm ) {
+			var waveformFFT = CONST.OSC_WAVEFORM_FFT[ index - CONST.OSC_WAVEFORM.length ];
+
+			if ( waveformFFT ) {
+				var audioContext = self.audioContext,
+					fft = waveformFFT.fft,
+					size = fft.real.length,
+					real = new Float32Array( size ),
+					imag = new Float32Array( size );
+
+				for ( var i = 0; i < size; i++ ) {
+					real[ i ] = fft.real[ i ];
+					imag[ i ] = fft.imag[ i ];
+				}
+
+				customFormFFT = {
+					real: real,
+					imag: imag
+				};
+			}
+		}
+
+		return {
+			defaultForm: defaultForm,
+			customFormFFT: customFormFFT
+		}
 	}
 
 };
 
 module.exports = utils;
-},{"./const":8}],12:[function(require,module,exports){
+},{"./const":8}],14:[function(require,module,exports){
 /* jshint -W098 */
 
 'use strict';
@@ -36205,7 +36278,9 @@ module.exports = utils;
 var CONST = require( "./engine/const" ),
 	utils = require( "./engine/utils" ),
 	Envelope = require( "./engine/envelope" ),
-	Filter = require( "./engine/filter" );
+	Filter = require( "./engine/filter" ),
+	LFO = require( "./engine/lfo" ),
+	Mix = require( "./engine/mix" );
 
 function Instrument( audioContext ) {
 	var self = this,
@@ -36215,14 +36290,23 @@ function Instrument( audioContext ) {
 		noiseNode = audioContext.createScriptProcessor( CONST.NOISE_BUFFER_SIZE, 1, 1 ),
 		gainEnvelope = new Envelope( audioContext, "gain", 1 ),
 		gainEnvelopeNode = audioContext.createGain(),
-		filter = new Filter( audioContext ),
+		envelopeControlledFilter = new Filter( audioContext ),
+		uiControlledFilter = new Filter( audioContext ),
+		lfoControlledFilter = new Filter( audioContext ),
+
+		envelopeFilterMix = new Mix( audioContext, uiControlledFilter.node, envelopeControlledFilter.node ),
+		lfoFilterMix = new Mix( audioContext, envelopeFilterMix.output, lfoControlledFilter.node ),
 		filterEnvelope = new Envelope( audioContext, "frequency", CONST.FILTER_FREQUENCY_UPPER_BOUND ),
+		lfo = new LFO( audioContext, lfoControlledFilter.node, "frequency", {
+			rate: CONST.LFO_DEFAULT_RATE,
+			defaultForm: CONST.LFO_DEFAULT_FORM
+		} ),
 		masterVolume = audioContext.createGain();
 
 	gainEnvelopeNode.gain.value = 0.0;
 	gainEnvelope.node = gainEnvelopeNode;
 
-	filterEnvelope.node = filter.envelopeFilterNode;
+	filterEnvelope.node = envelopeControlledFilter.node;
 
 	masterVolume.gain.value = 1.0;
 
@@ -36245,8 +36329,10 @@ function Instrument( audioContext ) {
 
 	noiseVolume.connect( gainEnvelope.node );
 
-	gainEnvelope.node.connect( filter.inputNode );
-	filter.outputNode.connect( masterVolume );
+	gainEnvelope.node.connect( envelopeControlledFilter.node );
+	gainEnvelope.node.connect( uiControlledFilter.node );
+	envelopeFilterMix.output.connect( lfoControlledFilter.node );
+	lfoFilterMix.output.connect( masterVolume );
 
 	self.audioContext = audioContext;
 	self.volumes = volumes;
@@ -36254,7 +36340,12 @@ function Instrument( audioContext ) {
 	self.noiseVolume = noiseVolume;
 	self.noiseNode = noiseNode;
 	self.gainEnvelope = gainEnvelope;
-	self.filter = filter;
+	self.envelopeControlledFilter = envelopeControlledFilter;
+	self.uiControlledFilter = uiControlledFilter;
+	self.lfoControlledFilter = lfoControlledFilter;
+	self.envelopeFilterMix = envelopeFilterMix;
+	self.lfo = lfo;
+	self.lfoFilterMix = lfoFilterMix;
 	self.filterEnvelope = filterEnvelope;
 	self.outputNode = masterVolume;
 	self.activeNotes = [];
@@ -36264,7 +36355,8 @@ function Instrument( audioContext ) {
 		oscillators: null,
 		mixer: null,
 		envelopes: null,
-		filter: null
+		filter: null,
+		lfo: null
 
 	};
 
@@ -36275,6 +36367,7 @@ function Instrument( audioContext ) {
 	self.mixerSettings = CONST.DEFAULT_MIX_SETTINGS;
 	self.envelopesSettings = CONST.DEFAULT_ENVELOPES_SETTINGS;
 	self.filterSettings = CONST.DEFAULT_FILTER_SETTINGS;
+	self.lfoSettings = CONST.DEFAULT_LFO_SETTINGS;
 
 	self._changeNoise( noiseNode, CONST.NOISE_TYPE[ CONST.DEFAULT_NOISE_TYPE ] );
 }
@@ -36535,19 +36628,58 @@ Instrument.prototype = {
 						cutoff: null,
 						emphasis: null
 					},
-					filter = self.filter;
+					envelopeControlledFilter = self.envelopeControlledFilter,
+					uiControlledFilter = self.uiControlledFilter,
+					lfoControlledFilter = self.lfoControlledFilter,
+					mix = self.envelopeFilterMix;
 
 				if ( oldSettings.cutoff !== settings.cutoff ) {
-					filter.cutoff = utils.getCutoff( settings.cutoff );
+					var cutoff = utils.getCutoff( settings.cutoff );
+					envelopeControlledFilter.node.frequency.value = cutoff;
+					uiControlledFilter.node.frequency.value = cutoff;
 				}
 				if ( oldSettings.emphasis !== settings.emphasis ) {
-					filter.emphasis = utils.getEmphasis( settings.emphasis );
+					var emphasis = utils.getEmphasis( settings.emphasis );
+					envelopeControlledFilter.node.Q.value = emphasis;
+					uiControlledFilter.node.Q.value = emphasis;
+					lfoControlledFilter.node.Q.value = emphasis;
 				}
 				if ( oldSettings.envAmount !== settings.envAmount ) {
-					filter.envAmount = utils.getEnvelopeAmount( settings.envAmount );
+					mix.amount = utils.getGain( settings.envAmount );
 				}
 
 				self.settings.filter = JSON.parse( JSON.stringify( settings ) );
+			}
+
+		} );
+
+		Object.defineProperty( self, "lfoSettings", {
+
+			get: function() {
+				// if slow - use npm clone
+				return JSON.parse( JSON.stringify( self.settings.lfo ) );
+			},
+
+			set: function( settings ) {
+				var oldSettings = self.settings.lfo || {
+						rate: null,
+						waveform: null,
+						amount: null
+					},
+					lfo = self.lfo,
+					mix = self.lfoFilterMix;
+
+				if ( oldSettings.rate !== settings.rate ) {
+					lfo.rate = settings.rate;
+				}
+				if ( oldSettings.waveform !== settings.waveform ) {
+					lfo.waveform = utils.getWaveform( settings.waveform );
+				}
+				if ( oldSettings.amount !== settings.amount ) {
+					mix.amount = utils.getGain( settings.amount );
+				}
+
+				self.settings.lfo = JSON.parse( JSON.stringify( settings ) );
 			}
 
 		} );
@@ -36569,7 +36701,7 @@ Instrument.prototype = {
 };
 
 module.exports = Instrument;
-},{"./engine/const":8,"./engine/envelope":9,"./engine/filter":10,"./engine/utils":11}],13:[function(require,module,exports){
+},{"./engine/const":8,"./engine/envelope":9,"./engine/filter":10,"./engine/lfo":11,"./engine/mix":12,"./engine/utils":13}],15:[function(require,module,exports){
 'use strict';
 
 var angular = require( "angular" ),
@@ -36580,7 +36712,8 @@ var angular = require( "angular" ),
 		require( "./view/template/oscillator-bank.html" ).name,
 		require( "./view/template/mixer.html" ).name,
 		require( "./view/template/envelopes.html" ).name,
-		require( "./view/template/filter.html" ).name
+		require( "./view/template/filter.html" ).name,
+		require( "./view/template/lfo.html" ).name
 	] );
 
 mod.directive( "synth", [ "$templateCache", function( $templateCache ) {
@@ -36597,9 +36730,10 @@ require( "./view/controller/oscillator-bank" )( mod );
 require( "./view/controller/mixer" )( mod );
 require( "./view/controller/envelopes" )( mod );
 require( "./view/controller/filter" )( mod );
+require( "./view/controller/lfo" )( mod );
 
 module.exports = mod;
-},{"./view/controller/envelopes":14,"./view/controller/filter":15,"./view/controller/mixer":16,"./view/controller/modulation":17,"./view/controller/oscillator-bank":18,"./view/template/envelopes.html":19,"./view/template/filter.html":20,"./view/template/mixer.html":21,"./view/template/modulation.html":22,"./view/template/oscillator-bank.html":23,"./view/template/synth.html":24,"angular":2}],14:[function(require,module,exports){
+},{"./view/controller/envelopes":16,"./view/controller/filter":17,"./view/controller/lfo":18,"./view/controller/mixer":19,"./view/controller/modulation":20,"./view/controller/oscillator-bank":21,"./view/template/envelopes.html":22,"./view/template/filter.html":23,"./view/template/lfo.html":24,"./view/template/mixer.html":25,"./view/template/modulation.html":26,"./view/template/oscillator-bank.html":27,"./view/template/synth.html":28,"angular":2}],16:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -36651,7 +36785,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],15:[function(require,module,exports){
+},{"jquery":3}],17:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -36700,7 +36834,56 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],16:[function(require,module,exports){
+},{"jquery":3}],18:[function(require,module,exports){
+'use strict';
+
+var $ = require( "jquery" );
+
+module.exports = function( mod ) {
+
+	mod.controller( "LFOCtrl", [ "$scope", "dawEngine", function( $scope, dawEngine ) {
+		var self = this,
+			synth = dawEngine.synth,
+			settingsChangeHandler = function() {
+				synth.lfoSettings = {
+					waveform: self.waveform,
+					rate: self.rate,
+					amount: self.amount
+				};
+			},
+			settings = synth.lfoSettings;
+
+		self.waveform = settings.waveform;
+		self.rate = settings.rate;
+		self.amount = settings.amount;
+
+		[
+			"lfo.waveform",
+			"lfo.rate",
+			"lfo.amount"
+		].forEach( function( path ) {
+			$scope.$watch( path, settingsChangeHandler );
+		} );
+
+		// fix the lack of attr 'value' update
+		$( ".lfo webaudio-knob" ).on( "change", function( e ) {
+			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
+				$( e.target ).attr( "value", e.target.value );
+			}
+		} );
+
+	} ] );
+
+	mod.directive( "lfo", [ "$templateCache", function( $templateCache ) {
+		return {
+			restrict: "E",
+			replace: true,
+			template: $templateCache.get( "lfo.html" )
+		};
+	} ] );
+
+};
+},{"jquery":3}],19:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -36763,7 +36946,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],17:[function(require,module,exports){
+},{"jquery":3}],20:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -36809,7 +36992,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],18:[function(require,module,exports){
+},{"jquery":3}],21:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -36862,7 +37045,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],19:[function(require,module,exports){
+},{"jquery":3}],22:[function(require,module,exports){
 var ngModule = angular.module('envelopes.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('envelopes.html',
@@ -36924,11 +37107,11 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],20:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 var ngModule = angular.module('filter.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('filter.html',
-    '<div class="col-lg-1 filter control-bank text-center" ng-controller="FilterCtrl as filter">\n' +
+    '<div class="col-lg-1 filter control-bank tri-row single-column text-center" ng-controller="FilterCtrl as filter">\n' +
     '	<div class="row">\n' +
     '		<h5>Cutoff</h5>\n' +
     '		<webaudio-knob src="images/frequency-knob.png"\n' +
@@ -36952,7 +37135,35 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],21:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
+var ngModule = angular.module('lfo.html', []);
+ngModule.run(['$templateCache', function($templateCache) {
+  $templateCache.put('lfo.html',
+    '<div class="col-lg-1 lfo control-bank tri-row single-column text-center" ng-controller="LFOCtrl as lfo">\n' +
+    '	<div class="row">\n' +
+    '		<h5>Form</h5>\n' +
+    '		<webaudio-knob src="images/range-knob.png"\n' +
+    '			bind-polymer\n' +
+    '			value="{{lfo.waveform}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator waveform"></webaudio-knob>\n' +
+    '	</div>\n' +
+    '	<div class="row">\n' +
+    '		<h5>Rate</h5>\n' +
+    '		<webaudio-knob src="images/frequency-knob.png"\n' +
+    '			bind-polymer\n' +
+    '			value="{{lfo.rate}}" min="1" max="25" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Rate in HZ"></webaudio-knob>\n' +
+    '	</div>\n' +
+    '	<div class="row">\n' +
+    '		<h5>Clean/LFO</h5>\n' +
+    '		<webaudio-knob src="images/frequency-knob.png"\n' +
+    '			bind-polymer\n' +
+    '			value="{{lfo.amount}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Clean/LFO Mix"></webaudio-knob>\n' +
+    '	</div>\n' +
+    '	<h4>LFO</h4>\n' +
+    '</div>');
+}]);
+
+module.exports = ngModule;
+},{}],25:[function(require,module,exports){
 var ngModule = angular.module('mixer.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('mixer.html',
@@ -37012,7 +37223,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],22:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 var ngModule = angular.module('modulation.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('modulation.html',
@@ -37034,7 +37245,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],23:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 var ngModule = angular.module('oscillator-bank.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('oscillator-bank.html',
@@ -37100,7 +37311,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],24:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 var ngModule = angular.module('synth.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('synth.html',
@@ -37111,12 +37322,13 @@ ngModule.run(['$templateCache', function($templateCache) {
     '		<mixer></mixer>\n' +
     '		<envelopes></envelopes>\n' +
     '		<filter></filter>\n' +
+    '		<lfo></lfo>\n' +
     '	</div>\n' +
     '</div>');
 }]);
 
 module.exports = ngModule;
-},{}],25:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 'use strict';
 
 var angular = require( "angular" ),
@@ -37151,7 +37363,7 @@ require( "./view/controller/master" )( mod );
 require( "./view/controller/keyboard" )( mod );
 
 module.exports = mod;
-},{"./instruments/synth/module":13,"./view/controller/keyboard":26,"./view/controller/master":27,"./view/template/daw.html":28,"angular":2}],26:[function(require,module,exports){
+},{"./instruments/synth/module":15,"./view/controller/keyboard":30,"./view/controller/master":31,"./view/template/daw.html":32,"angular":2}],30:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -37181,7 +37393,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],27:[function(require,module,exports){
+},{"jquery":3}],31:[function(require,module,exports){
 'use strict';
 
 module.exports = function( mod ) {
@@ -37189,7 +37401,7 @@ module.exports = function( mod ) {
 	mod.controller( "MasterCtrl", function() {} );
 
 };
-},{}],28:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 var ngModule = angular.module('daw.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('daw.html',
