@@ -167,6 +167,10 @@ var utils = {
 			defaultForm: defaultForm,
 			customFormFFT: customFormFFT
 		}
+	},
+
+	getPitchBendDetune: function( value ) {
+		return value * 1200;
 	}
 
 };

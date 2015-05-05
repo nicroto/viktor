@@ -73,7 +73,7 @@ MIDIController.prototype = {
 	onMidiMessage: function( event ) {
 		var self = this,
 			parsed = self.parseEventData( event ),
-			type = parsed ? "notePress" : "other";
+			type = parsed ? ( parsed.isPitchBend ? "pitchBend" : "notePress" ) : "other";
 
 		self.messageHandler(
 			type,
@@ -97,8 +97,10 @@ MIDIController.prototype = {
 			noteFrequency = function( number ) {
 				return 440 * Math.pow( 2, ( number - 69 ) / 12 );
 			},
+			isPitchBend = false,
 			isNoteOn = false,
-			parsed = false;
+			parsed = false,
+			pitchBend;
 
 		// 10011111 & 11110000 = 10010000
 		firstByte = firstByte & binary( "11110000" );
@@ -108,11 +110,17 @@ MIDIController.prototype = {
 				isNoteOn = true;
 			}
 			parsed = true;
+		} else if ( firstByte === binary( "11100000" ) ) {
+			isPitchBend = true;
+			pitchBend = ( ( thirdByte * 128 + secondByte ) - 8192 ) / 8192;
+			parsed = true;
 		} else if ( firstByte === binary( "10000000" ) ) {
 			parsed = true;
 		}
 
 		return parsed ? {
+			isPitchBend: isPitchBend,
+			pitchBend: pitchBend,
 			isNoteOn: isNoteOn,
 			noteFrequency: noteFrequency( secondByte ),
 			velocity: thirdByte

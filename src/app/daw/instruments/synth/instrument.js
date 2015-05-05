@@ -83,7 +83,8 @@ function Instrument( audioContext ) {
 		mixer: null,
 		envelopes: null,
 		filter: null,
-		lfo: null
+		lfo: null,
+		pitch: null
 
 	};
 
@@ -95,6 +96,7 @@ function Instrument( audioContext ) {
 	self.envelopesSettings = CONST.DEFAULT_ENVELOPES_SETTINGS;
 	self.filterSettings = CONST.DEFAULT_FILTER_SETTINGS;
 	self.lfoSettings = CONST.DEFAULT_LFO_SETTINGS;
+	self.pitchSettings = CONST.DEFAULT_PITCH_SETTINGS;
 
 	self._changeNoise( noiseNode, CONST.NOISE_TYPE[ CONST.DEFAULT_NOISE_TYPE ] );
 }
@@ -108,6 +110,8 @@ Instrument.prototype = {
 			var methodName = ( parsed.isNoteOn ) ? "onNoteOn" : "onNoteOff";
 
 			self[ methodName ]( parsed.noteFrequency, parsed.velocity );
+		} else if ( eventType === "pitchBend" ) {
+			self.onPitchBend( parsed.pitchBend );
 		}
 	},
 
@@ -116,7 +120,12 @@ Instrument.prototype = {
 			gainEnvelope = self.gainEnvelope,
 			filterEnvelope = self.filterEnvelope,
 			activeNotes = self.activeNotes,
-			settings = self.settings;
+			settings = self.settings,
+			hasANoteDown = activeNotes.length > 0;
+
+		if ( !hasANoteDown ) {
+			self._detuneOscillators( self.oscillators, activeNotes, self.oscillatorSettings, self.pitchSettings );
+		}
 
 		activeNotes.push( noteFrequency );
 
@@ -150,6 +159,14 @@ Instrument.prototype = {
 				self._setNoteToOscillator( noteFrequency, settings, osc );
 			} );
 		}
+	},
+
+	onPitchBend: function( pitchBend ) {
+		var self = this;
+
+		self.pitchSettings = {
+			bend: pitchBend
+		};
 	},
 
 	_defineProps: function() {
@@ -191,12 +208,13 @@ Instrument.prototype = {
 					var oldOscSettings1 = oldSettings.osc1,
 						oldOscSettings2 = oldSettings.osc2,
 						oldOscSettings3 = oldSettings.osc3,
-						resolveRange = function( oldSettings, settings, osc ) {
+						pitchDetune = utils.getPitchBendDetune( self.pitchSettings.bend ),
+						resolveRange = function( oldSettings, settings, pitchDetune, osc ) {
 							if ( oldSettings.range !== settings.range ) {
 								osc.detune.value = utils.getDetune(
 									settings.range,
 									8
-								);
+								) + pitchDetune;
 							}
 						},
 						resolveWaveform = function( oldSettings, settings, osc ) {
@@ -227,7 +245,7 @@ Instrument.prototype = {
 								}
 							}
 						},
-						resolveFineDetune = function( oldSettings, settings, osc, base ) {
+						resolveFineDetune = function( oldSettings, settings, pitchDetune, osc, base ) {
 							if ( oldSettings.range !== settings.range ||
 								oldSettings.fineDetune !== settings.fineDetune )
 							{
@@ -235,17 +253,17 @@ Instrument.prototype = {
 									settings.range,
 									settings.fineDetune,
 									base
-								);
+								) + pitchDetune;
 							}
 						};
 
-					resolveRange( oldOscSettings1, oscSettings1, osc1 );
+					resolveRange( oldOscSettings1, oscSettings1, pitchDetune, osc1 );
 					resolveWaveform( oldOscSettings1, oscSettings1, osc1 );
 
-					resolveFineDetune( oldOscSettings2, oscSettings2, osc2 );
+					resolveFineDetune( oldOscSettings2, oscSettings2, pitchDetune, osc2 );
 					resolveWaveform( oldOscSettings2, oscSettings2, osc2 );
 
-					resolveFineDetune( oldOscSettings3, oscSettings3, osc3, CONST.OSC3_RANGE_BASE );
+					resolveFineDetune( oldOscSettings3, oscSettings3, pitchDetune, osc3, CONST.OSC3_RANGE_BASE );
 					resolveWaveform( oldOscSettings3, oscSettings3, osc3 );
 				}
 
@@ -410,6 +428,47 @@ Instrument.prototype = {
 			}
 
 		} );
+
+		Object.defineProperty( self, "pitchSettings", {
+			get: function() {
+				var self = this;
+
+				return JSON.parse( JSON.stringify( self.settings.pitch ) );
+			},
+			set: function( settings ) {
+				var self = this,
+					oldSettings = self.settings.pitch || {},
+					hasANoteDown = self.activeNotes.length > 0;
+
+				if ( hasANoteDown && oldSettings.bend !== settings.bend ) {
+					self._detuneOscillators( self.oscillators, self.activeNotes, self.oscillatorSettings, settings );
+				}
+
+				self.settings.pitch = JSON.parse( JSON.stringify( settings ) );;
+			}
+		} );
+	},
+
+	_detuneOscillators: function( oscillators, activeNotes, oscillatorSettings, pitchSettings ) {
+		var self = this,
+			pitchDetune = utils.getPitchBendDetune( pitchSettings.bend ),
+			osc1 = oscillators[ 0 ],
+			osc2 = oscillators[ 1 ],
+			osc3 = oscillators[ 2 ];
+
+		osc1.detune.setValueAtTime( ( utils.getDetune(
+			oscillatorSettings.osc1.range,
+			8
+		) + pitchDetune ), 0 );
+		osc2.detune.setValueAtTime( ( utils.getDetune(
+			oscillatorSettings.osc2.range,
+			oscillatorSettings.osc2.fineDetune
+		) + pitchDetune ), 0 );
+		osc3.detune.setValueAtTime( ( utils.getDetune(
+			oscillatorSettings.osc3.range,
+			oscillatorSettings.osc3.fineDetune,
+			CONST.OSC3_RANGE_BASE
+		) + pitchDetune ), 0 );
 	},
 
 	_setNoteToOscillator: function( noteFrequency, settings, oscillator ) {

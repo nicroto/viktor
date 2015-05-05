@@ -1,6 +1,7 @@
 'use strict';
 
-var MIDIController = require( "./controllers/midi" );
+var CONST = require( "./engine/const" ),
+	MIDIController = require( "./engine/midi" );
 
 function DAW( AudioContext ) {
 	var self = this;
@@ -9,6 +10,27 @@ function DAW( AudioContext ) {
 	self.midiController = new MIDIController();
 	self.synth = null;
 	self.externalMidiMessageHandlers = [];
+	self.settings = {
+		pitch: null
+	};
+
+	Object.defineProperty( self, "pitchSettings", {
+		get: function() {
+			var self = this;
+
+			return JSON.parse( JSON.stringify( self.settings.pitch ) );
+		},
+		set: function( settings ) {
+			var self = this,
+				oldSettings = self.settings.pitch || {};
+
+			if ( oldSettings.bend !== settings.bend ) {
+				self.synth.pitchSettings = settings;
+			}
+
+			self.settings.pitch = JSON.parse( JSON.stringify( settings ) );;
+		}
+	} );
 }
 
 DAW.prototype = {
@@ -26,6 +48,8 @@ DAW.prototype = {
 			self.synth = self.createInstrument(
 				require( "./instruments/synth/instrument" )
 			);
+
+			self.pitchSettings = CONST.DEFAULT_PITCH_SETTINGS;
 
 			if ( callback ) {
 				callback();
