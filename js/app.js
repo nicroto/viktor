@@ -36148,7 +36148,8 @@ var CONST = require( "./const" );
 var SEMITONE_CENTS = 100,
 	OCTAVE_CENTS = 12 * SEMITONE_CENTS,
 	FINE_DETUNE_HALF_SPECTRE = 8,
-	RANGE_DEFAULT_BASE = 3;
+	RANGE_DEFAULT_BASE = 3,
+	SIMPLE_PITCH_HALF_RANGE = 64;
 
 var utils = {
 
@@ -36313,7 +36314,15 @@ var utils = {
 	},
 
 	getPitchBendDetune: function( value ) {
-		return value * 1200;
+		return value * 200;
+	},
+
+	getSimplePitch: function( value ) {
+		return Math.floor( value * SIMPLE_PITCH_HALF_RANGE + SIMPLE_PITCH_HALF_RANGE );
+	},
+
+	getNormalPitch: function( value ) {
+		return ( value - SIMPLE_PITCH_HALF_RANGE ) / SIMPLE_PITCH_HALF_RANGE;
 	}
 
 };
@@ -36766,7 +36775,7 @@ Instrument.prototype = {
 					self._detuneOscillators( self.oscillators, self.activeNotes, self.oscillatorSettings, settings );
 				}
 
-				self.settings.pitch = JSON.parse( JSON.stringify( settings ) );;
+				self.settings.pitch = JSON.parse( JSON.stringify( settings ) );
 			}
 		} );
 	},
@@ -37442,8 +37451,10 @@ module.exports = ngModule;
 var angular = require( "angular" ),
 	template = require( "./view/template/daw.html" ),
 	mod = angular.module( "dawModule", [
+		template.name,
 		require( "./instruments/synth/module" ).name,
-		template.name
+		require( "./view/template/pitch-bend.html" ).name,
+		require( "./view/template/keyboard.html" ).name
 	] );
 
 mod.provider( "dawEngine", function dawEngineProvider() {
@@ -37458,6 +37469,10 @@ mod.provider( "dawEngine", function dawEngineProvider() {
 
 } );
 
+mod.factory( "synthUtils", function() {
+	return require( "./instruments/synth/engine/utils" );
+} );
+
 mod.directive( "dawContainer", [ "$templateCache", function($templateCache) {
 	return {
 		restrict: "E",
@@ -37468,10 +37483,11 @@ mod.directive( "dawContainer", [ "$templateCache", function($templateCache) {
 
 // Controllers
 require( "./view/controller/master" )( mod );
+require( "./view/controller/pitch-bend" )( mod );
 require( "./view/controller/keyboard" )( mod );
 
 module.exports = mod;
-},{"./instruments/synth/module":16,"./view/controller/keyboard":31,"./view/controller/master":32,"./view/template/daw.html":33,"angular":2}],31:[function(require,module,exports){
+},{"./instruments/synth/engine/utils":14,"./instruments/synth/module":16,"./view/controller/keyboard":31,"./view/controller/master":32,"./view/controller/pitch-bend":33,"./view/template/daw.html":34,"./view/template/keyboard.html":35,"./view/template/pitch-bend.html":36,"angular":2}],31:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -37500,6 +37516,14 @@ module.exports = function( mod ) {
 
 	} ] );
 
+	mod.directive( "keyboard", [ "$templateCache", function( $templateCache ) {
+		return {
+			restrict: "E",
+			replace: true,
+			template: $templateCache.get( "keyboard.html" )
+		};
+	} ] );
+
 };
 },{"jquery":3}],32:[function(require,module,exports){
 'use strict';
@@ -37510,6 +37534,76 @@ module.exports = function( mod ) {
 
 };
 },{}],33:[function(require,module,exports){
+'use strict';
+
+var $ = require( "jquery" );
+
+module.exports = function( mod ) {
+
+	mod.controller( "PitchBendCtrl", [ "$scope", "$timeout", "dawEngine", "synthUtils", function( $scope, $timeout, dawEngine, synthUtils ) {
+		var self = this,
+			synth = dawEngine.synth,
+			settingsChangeHandler = function() {
+				synth.pitchSettings = {
+					bend: synthUtils.getNormalPitch( self.bend )
+				};
+			},
+			settings = synth.pitchSettings,
+			$pitchBend = $( ".pitch-bend webaudio-slider" );
+
+		self.RANGE = 128;
+		self.bend = synthUtils.getSimplePitch( settings.bend );
+
+		[
+			"pitch.bend"
+		].forEach( function( path ) {
+			$scope.$watch( path, settingsChangeHandler );
+		} );
+
+		dawEngine.addExternalMidiMessageHandler( function( type, parsed, rawEvent ) {
+			if ( type === "pitchBend" ) {
+				$pitchBend[ 0 ].setValue( synthUtils.getSimplePitch( parsed.pitchBend ) );
+			}
+		} );
+
+		// fix issue with initial value settings
+		$timeout( function() {
+			$pitchBend[ 0 ].setValue( self.bend );
+		}, 500 );
+
+		// fix the lack of attr 'value' update
+		$pitchBend.on( "change", function( e ) {
+			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
+				$( e.target ).attr( "value", e.target.value );
+			}
+		} );
+
+		// handle pitch return to center
+		var isPitchBending = false;
+		$( "body" ).on( "mouseup", function() {
+			if ( isPitchBending ) {
+				isPitchBending = false;
+				self.bend = self.RANGE / 2;
+				$pitchBend[ 0 ].setValue( self.bend );
+				settingsChangeHandler();
+			}
+		} );
+		$pitchBend.on( "mousedown", function() {
+			isPitchBending = true;
+		} );
+
+	} ] );
+
+	mod.directive( "pitchBend", [ "$templateCache", function( $templateCache ) {
+		return {
+			restrict: "E",
+			replace: true,
+			template: $templateCache.get( "pitch-bend.html" )
+		};
+	} ] );
+
+};
+},{"jquery":3}],34:[function(require,module,exports){
 var ngModule = angular.module('daw.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('daw.html',
@@ -37517,9 +37611,32 @@ ngModule.run(['$templateCache', function($templateCache) {
     '	<div>\n' +
     '		<synth></synth>\n' +
     '	</div>\n' +
-    '	<div id="dawKeyboard" ng-controller="KeyboardCtrl as keyboard">\n' +
-    '		<webaudio-keyboard keys="88" min="33" width="900"></webaudio-keyboard>\n' +
+    '	<div id="bottomRow" class="row">\n' +
+    '		<pitch-bend></pitch-bend>\n' +
+    '		<keyboard></keyboard>\n' +
     '	</div>\n' +
+    '</div>');
+}]);
+
+module.exports = ngModule;
+},{}],35:[function(require,module,exports){
+var ngModule = angular.module('keyboard.html', []);
+ngModule.run(['$templateCache', function($templateCache) {
+  $templateCache.put('keyboard.html',
+    '<div class="col-lg-10 keyboard" ng-controller="KeyboardCtrl as keyboard">\n' +
+    '	<webaudio-keyboard keys="88" min="33" width="900"></webaudio-keyboard>\n' +
+    '</div>');
+}]);
+
+module.exports = ngModule;
+},{}],36:[function(require,module,exports){
+var ngModule = angular.module('pitch-bend.html', []);
+ngModule.run(['$templateCache', function($templateCache) {
+  $templateCache.put('pitch-bend.html',
+    '<div class="col-lg-1 col-lg-offset-1 pitch-bend" ng-controller="PitchBendCtrl as pitch">\n' +
+    '	<webaudio-slider value="{{pitch.bend}}" direction="vert" min="0" max="{{pitch.RANGE}}" step="1"\n' +
+    '		bind-polymer\n' +
+    '		width="16" height="120"></webaudio-slider>\n' +
     '</div>');
 }]);
 
