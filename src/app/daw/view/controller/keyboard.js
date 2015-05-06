@@ -26,4 +26,12 @@ module.exports = function( mod ) {
 
 	} ] );
 
+	mod.directive( "keyboard", [ "$templateCache", function( $templateCache ) {
+		return {
+			restrict: "E",
+			replace: true,
+			template: $templateCache.get( "keyboard.html" )
+		};
+	} ] );
+
 };

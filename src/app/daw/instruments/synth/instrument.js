@@ -444,7 +444,7 @@ Instrument.prototype = {
 					self._detuneOscillators( self.oscillators, self.activeNotes, self.oscillatorSettings, settings );
 				}
 
-				self.settings.pitch = JSON.parse( JSON.stringify( settings ) );;
+				self.settings.pitch = JSON.parse( JSON.stringify( settings ) );
 			}
 		} );
 	},

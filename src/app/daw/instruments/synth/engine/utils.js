@@ -5,7 +5,8 @@ var CONST = require( "./const" );
 var SEMITONE_CENTS = 100,
 	OCTAVE_CENTS = 12 * SEMITONE_CENTS,
 	FINE_DETUNE_HALF_SPECTRE = 8,
-	RANGE_DEFAULT_BASE = 3;
+	RANGE_DEFAULT_BASE = 3,
+	SIMPLE_PITCH_HALF_RANGE = 64;
 
 var utils = {
 
@@ -170,7 +171,15 @@ var utils = {
 	},
 
 	getPitchBendDetune: function( value ) {
-		return value * 1200;
+		return value * 200;
+	},
+
+	getSimplePitch: function( value ) {
+		return Math.floor( value * SIMPLE_PITCH_HALF_RANGE + SIMPLE_PITCH_HALF_RANGE );
+	},
+
+	getNormalPitch: function( value ) {
+		return ( value - SIMPLE_PITCH_HALF_RANGE ) / SIMPLE_PITCH_HALF_RANGE;
 	}
 
 };
