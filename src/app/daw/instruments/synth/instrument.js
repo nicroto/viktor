@@ -24,9 +24,10 @@ function Instrument( audioContext ) {
 		envelopeFilterMix = new Mix( audioContext, uiControlledFilter.node, envelopeControlledFilter.node ),
 		lfoFilterMix = new Mix( audioContext, envelopeFilterMix.output, lfoControlledFilter.node ),
 		filterEnvelope = new Envelope( audioContext, "frequency", CONST.FILTER_FREQUENCY_UPPER_BOUND ),
-		lfo = new LFO( audioContext, lfoControlledFilter.node, "frequency", {
+		filterLfo = new LFO( audioContext, [ lfoControlledFilter.node ], "frequency", {
 			rate: CONST.LFO_DEFAULT_RATE,
-			defaultForm: CONST.LFO_DEFAULT_FORM
+			defaultForm: CONST.LFO_DEFAULT_FORM,
+			centerFrequency: CONST.LFO_DEFAULT_FREQUENCY_RANGE
 		} ),
 		masterVolume = audioContext.createGain();
 
@@ -52,6 +53,12 @@ function Instrument( audioContext ) {
 		oscillators.push( osc );
 	}
 
+	var modulationLfo = new LFO( audioContext, oscillators, "frequency", {
+		rate: 0,
+		defaultForm: CONST.LFO_DEFAULT_FORM,
+		frequencyRange: CONST.MODULATION_LFO_FREQUENCY_RANGE
+	} );
+
 	noiseVolume.gain.value = 0.0;
 
 	noiseVolume.connect( gainEnvelope.node );
@@ -64,6 +71,7 @@ function Instrument( audioContext ) {
 	self.audioContext = audioContext;
 	self.volumes = volumes;
 	self.oscillators = oscillators;
+	self.modulationLfo = modulationLfo;
 	self.noiseVolume = noiseVolume;
 	self.noiseNode = noiseNode;
 	self.gainEnvelope = gainEnvelope;
@@ -71,7 +79,7 @@ function Instrument( audioContext ) {
 	self.uiControlledFilter = uiControlledFilter;
 	self.lfoControlledFilter = lfoControlledFilter;
 	self.envelopeFilterMix = envelopeFilterMix;
-	self.lfo = lfo;
+	self.filterLfo = filterLfo;
 	self.lfoFilterMix = lfoFilterMix;
 	self.filterEnvelope = filterEnvelope;
 	self.outputNode = masterVolume;
@@ -112,6 +120,8 @@ Instrument.prototype = {
 			self[ methodName ]( parsed.noteFrequency, parsed.velocity );
 		} else if ( eventType === "pitchBend" ) {
 			self.onPitchBend( parsed.pitchBend );
+		} else if ( eventType === "modulationWheel" ) {
+			self.onModulationWheelTurn( parsed.modulation );
 		}
 	},
 
@@ -169,6 +179,20 @@ Instrument.prototype = {
 		};
 	},
 
+	onModulationWheelTurn: function( modulation ) {
+		var self = this,
+			oldSettings = self.modulationSettings,
+			newRate = utils.getRateFromModulation( modulation );
+
+		if ( oldSettings.rate !== newRate ) {
+			self.modulationSettings = {
+				waveform: oldSettings.waveform,
+				portamento: oldSettings.portamento,
+				rate: newRate
+			}
+		}
+	},
+
 	_defineProps: function() {
 		var self = this;
 
@@ -180,7 +204,16 @@ Instrument.prototype = {
 			},
 
 			set: function( settings ) {
-				var oldSettings = self.settings.modulation;
+				var oldSettings = self.settings.modulation,
+					modulationLfo = self.modulationLfo;
+
+				if ( !oldSettings || ( oldSettings.rate !== settings.rate ) ) {
+					modulationLfo.rate = settings.rate;
+				}
+
+				if ( !oldSettings || ( oldSettings.waveform !== settings.waveform ) ) {
+					modulationLfo.waveform = utils.getWaveform( settings.waveform );
+				}
 
 				self.settings.modulation = JSON.parse( JSON.stringify( settings ) );
 			}
@@ -411,14 +444,14 @@ Instrument.prototype = {
 						waveform: null,
 						amount: null
 					},
-					lfo = self.lfo,
+					filterLfo = self.filterLfo,
 					mix = self.lfoFilterMix;
 
 				if ( oldSettings.rate !== settings.rate ) {
-					lfo.rate = settings.rate;
+					filterLfo.rate = settings.rate;
 				}
 				if ( oldSettings.waveform !== settings.waveform ) {
-					lfo.waveform = utils.getWaveform( settings.waveform );
+					filterLfo.waveform = utils.getWaveform( settings.waveform );
 				}
 				if ( oldSettings.amount !== settings.amount ) {
 					mix.amount = utils.getGain( settings.amount );

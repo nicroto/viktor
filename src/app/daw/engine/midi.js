@@ -73,7 +73,8 @@ MIDIController.prototype = {
 	onMidiMessage: function( event ) {
 		var self = this,
 			parsed = self.parseEventData( event ),
-			type = parsed ? ( parsed.isPitchBend ? "pitchBend" : "notePress" ) : "other";
+			type = parsed ?
+				( parsed.isPitchBend ? "pitchBend" : ( parsed.isModulationWheel ? "modulationWheel" : "notePress" ) ) : "other";
 
 		self.messageHandler(
 			type,
@@ -98,29 +99,37 @@ MIDIController.prototype = {
 				return 440 * Math.pow( 2, ( number - 69 ) / 12 );
 			},
 			isPitchBend = false,
+			isModulationWheel = false,
 			isNoteOn = false,
 			parsed = false,
-			pitchBend;
+			pitchBend,
+			modulation;
 
 		// 10011111 & 11110000 = 10010000
-		firstByte = firstByte & binary( "11110000" );
+		var simpleFirstByte = firstByte & binary( "11110000" );
 
-		if ( firstByte === binary( "10010000" ) ) {
+		if ( simpleFirstByte === binary( "10010000" ) ) {
 			if ( thirdByte !== 0 ) {
 				isNoteOn = true;
 			}
 			parsed = true;
-		} else if ( firstByte === binary( "11100000" ) ) {
+		} else if ( simpleFirstByte === binary( "11100000" ) ) {
 			isPitchBend = true;
 			pitchBend = ( ( thirdByte * 128 + secondByte ) - 8192 ) / 8192;
 			parsed = true;
-		} else if ( firstByte === binary( "10000000" ) ) {
+		} else if ( simpleFirstByte === binary( "10000000" ) ) {
+			parsed = true;
+		} else if ( simpleFirstByte === binary( "10110000" ) ) {
+			isModulationWheel = true;
+			modulation = thirdByte > 0 ? ( thirdByte + 1 ) / 128 : 0;
 			parsed = true;
 		}
 
 		return parsed ? {
 			isPitchBend: isPitchBend,
+			isModulationWheel: isModulationWheel,
 			pitchBend: pitchBend,
+			modulation: modulation,
 			isNoteOn: isNoteOn,
 			noteFrequency: noteFrequency( secondByte ),
 			velocity: thirdByte

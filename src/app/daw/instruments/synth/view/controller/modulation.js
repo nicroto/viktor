@@ -9,18 +9,19 @@ module.exports = function( mod ) {
 			synth = dawEngine.synth,
 			settingsChangeHandler = function() {
 				synth.modulationSettings = {
+					waveform: self.waveform,
 					portamento: self.portamento,
-					mix: self.mix
+					rate: synth.modulationSettings.rate
 				};
 			},
 			settings = synth.modulationSettings;
 
+		self.waveform = settings.waveform;
 		self.portamento = settings.portamento;
-		self.mix = settings.mix;
 
 		[
-			"modulation.portamento",
-			"modulation.mix"
+			"modulation.waveform",
+			"modulation.portamento"
 		].forEach( function( path ) {
 			$scope.$watch( path, settingsChangeHandler );
 		} );

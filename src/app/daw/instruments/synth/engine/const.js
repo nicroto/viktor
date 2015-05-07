@@ -22,8 +22,9 @@ module.exports = {
 		}
 	},
 	DEFAULT_MOD_SETTINGS: {
+		waveform: 0,
 		portamento: 5,
-		mix: 50
+		rate: 0
 	},
 	DEFAULT_MIX_SETTINGS: {
 		volume1: {
@@ -100,5 +101,7 @@ module.exports = {
 
 	LFO_DEFAULT_RATE: 3,
 	LFO_DEFAULT_FORM: "sine",
-	LFO_DEFAULT_FREQUENCY_RANGE: 500
+	LFO_DEFAULT_FREQUENCY_RANGE: 500,
+
+	MODULATION_LFO_FREQUENCY_RANGE: 10
 };

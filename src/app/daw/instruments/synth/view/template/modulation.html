@@ -1,15 +1,15 @@
-<div class="col-lg-1 modulation control-bank two-row text-center" ng-controller="ModulationCtrl as modulation">
+<div class="col-lg-1 modulation control-bank two-row single-column text-center" ng-controller="ModulationCtrl as modulation">
+	<div class="row">
+		<h5>Form</h5>
+		<webaudio-knob src="images/range-knob.png"
+			bind-polymer
+			value="{{modulation.waveform}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Modulation Oscillator waveform"></webaudio-knob>
+	</div>
 	<div class="row">
 		<h5>Glide</h5>
 		<webaudio-knob src="images/frequency-knob.png"
 			bind-polymer
 			value="{{modulation.portamento}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Glide/Portamento"></webaudio-knob>
-	</div>
-	<div class="row">
-		<h5>Mix</h5>
-		<webaudio-knob src="images/frequency-knob.png"
-			bind-polymer
-			value="{{modulation.mix}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Osc/Noise Mix"></webaudio-knob>
 	</div>
 	<h4>Modulation</h4>
 </div>

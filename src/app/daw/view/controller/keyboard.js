@@ -9,7 +9,9 @@ module.exports = function( mod ) {
 		var $keyboard = $( "webaudio-keyboard" );
 
 		dawEngine.addExternalMidiMessageHandler( function( type, parsed, rawEvent ) {
-			$keyboard[ 0 ].setNote( parsed.isNoteOn ? 1 : 0, rawEvent.data[ 1 ] );
+			if ( type === "notePress" ) {
+				$keyboard[ 0 ].setNote( parsed.isNoteOn ? 1 : 0, rawEvent.data[ 1 ] );
+			}
 		} );
 
 		$keyboard.on( "change", function( e ) {

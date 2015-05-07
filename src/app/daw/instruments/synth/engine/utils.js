@@ -180,6 +180,10 @@ var utils = {
 
 	getNormalPitch: function( value ) {
 		return ( value - SIMPLE_PITCH_HALF_RANGE ) / SIMPLE_PITCH_HALF_RANGE;
+	},
+
+	getRateFromModulation: function( modulation ) {
+		return 15 * modulation;
 	}
 
 };
