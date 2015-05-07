@@ -35805,7 +35805,8 @@ MIDIController.prototype = {
 	onMidiMessage: function( event ) {
 		var self = this,
 			parsed = self.parseEventData( event ),
-			type = parsed ? ( parsed.isPitchBend ? "pitchBend" : "notePress" ) : "other";
+			type = parsed ?
+				( parsed.isPitchBend ? "pitchBend" : ( parsed.isModulationWheel ? "modulationWheel" : "notePress" ) ) : "other";
 
 		self.messageHandler(
 			type,
@@ -35830,29 +35831,37 @@ MIDIController.prototype = {
 				return 440 * Math.pow( 2, ( number - 69 ) / 12 );
 			},
 			isPitchBend = false,
+			isModulationWheel = false,
 			isNoteOn = false,
 			parsed = false,
-			pitchBend;
+			pitchBend,
+			modulation;
 
 		// 10011111 & 11110000 = 10010000
-		firstByte = firstByte & binary( "11110000" );
+		var simpleFirstByte = firstByte & binary( "11110000" );
 
-		if ( firstByte === binary( "10010000" ) ) {
+		if ( simpleFirstByte === binary( "10010000" ) ) {
 			if ( thirdByte !== 0 ) {
 				isNoteOn = true;
 			}
 			parsed = true;
-		} else if ( firstByte === binary( "11100000" ) ) {
+		} else if ( simpleFirstByte === binary( "11100000" ) ) {
 			isPitchBend = true;
 			pitchBend = ( ( thirdByte * 128 + secondByte ) - 8192 ) / 8192;
 			parsed = true;
-		} else if ( firstByte === binary( "10000000" ) ) {
+		} else if ( simpleFirstByte === binary( "10000000" ) ) {
+			parsed = true;
+		} else if ( simpleFirstByte === binary( "10110000" ) ) {
+			isModulationWheel = true;
+			modulation = thirdByte > 0 ? ( thirdByte + 1 ) / 128 : 0;
 			parsed = true;
 		}
 
 		return parsed ? {
 			isPitchBend: isPitchBend,
+			isModulationWheel: isModulationWheel,
 			pitchBend: pitchBend,
+			modulation: modulation,
 			isNoteOn: isNoteOn,
 			noteFrequency: noteFrequency( secondByte ),
 			velocity: thirdByte
@@ -35887,8 +35896,9 @@ module.exports = {
 		}
 	},
 	DEFAULT_MOD_SETTINGS: {
+		waveform: 0,
 		portamento: 5,
-		mix: 50
+		rate: 0
 	},
 	DEFAULT_MIX_SETTINGS: {
 		volume1: {
@@ -35965,7 +35975,9 @@ module.exports = {
 
 	LFO_DEFAULT_RATE: 3,
 	LFO_DEFAULT_FORM: "sine",
-	LFO_DEFAULT_FREQUENCY_RANGE: 500
+	LFO_DEFAULT_FREQUENCY_RANGE: 500,
+
+	MODULATION_LFO_FREQUENCY_RANGE: 10
 };
 },{}],10:[function(require,module,exports){
 'use strict';
@@ -36043,58 +36055,103 @@ module.exports = Filter;
 
 var CONST = require( "./const" );
 
-function LFO( audioContext, controlledNode, propName, settings ) {
+function LFO( audioContext, controlledNodes, propName, settings ) {
 	var self = this,
 		oscillator = audioContext.createOscillator(),
 		gain = audioContext.createGain();
 
-	if ( !settings || !settings.rate || !( settings.defaultForm || settings.customFormFFT ) ) {
+	if ( !settings || settings.rate === undefined || !( settings.defaultForm || settings.customFormFFT ) ) {
 		throw new Error( "Bad settings." );
 	}
 
-	Object.defineProperty( self, "rate", {
-		set: function( value ) {
-			var self = this;
-
-			self.oscillator.frequency.value = value;
-		}
-	} );
-
-	Object.defineProperty( self, "waveform", {
-		set: function( value ) {
-			var self = this,
-				audioContext = self.audioContext,
-				oscillator = self.oscillator,
-				defaultForm = value.defaultForm,
-				customFormFFT = value.customFormFFT;
-
-			if ( defaultForm ) {
-				oscillator.type = defaultForm;
-			} else {
-				var waveTable = audioContext.createPeriodicWave(
-					customFormFFT.real,
-					customFormFFT.imag
-				);
-
-				oscillator.setPeriodicWave( waveTable );
-			}
-		}
-	} );
-
-	gain.gain.value =
-	controlledNode[ propName ].value = CONST.LFO_DEFAULT_FREQUENCY_RANGE;
-
-	oscillator.connect( gain );
-	gain.connect( controlledNode[ propName ] )
-
+	self.propName = propName;
+	self.controlledNodes = controlledNodes;
+	self.settings = settings;
 	self.audioContext = audioContext;
 	self.oscillator = oscillator;
+	self.gain = gain;
+
+	self._defineProps();
 
 	self.rate = settings.rate;
 	self.waveform = settings;
 
+	self._initCenterFrequency();
+	self._initGain();
+
+	oscillator.connect( gain );
+	controlledNodes.forEach( function( node ) {
+		gain.connect( node[ propName ] );
+	} );
+
 	oscillator.start( 0 );
 }
+
+LFO.prototype = {
+
+	_defineProps: function() {
+		var self = this;
+
+		Object.defineProperty( self, "rate", {
+			set: function( value ) {
+				var self = this,
+					gain = self.gain;
+
+				if ( value === 0 ) {
+					gain.gain.value = 0;
+				} else if ( gain.gain.value === 0 ) {
+					self._initGain();
+				}
+
+				self.oscillator.frequency.value = value;
+			}
+		} );
+
+		Object.defineProperty( self, "waveform", {
+			set: function( value ) {
+				var self = this,
+					audioContext = self.audioContext,
+					oscillator = self.oscillator,
+					defaultForm = value.defaultForm,
+					customFormFFT = value.customFormFFT;
+
+				if ( defaultForm ) {
+					oscillator.type = defaultForm;
+				} else {
+					var waveTable = audioContext.createPeriodicWave(
+						customFormFFT.real,
+						customFormFFT.imag
+					);
+
+					oscillator.setPeriodicWave( waveTable );
+				}
+			}
+		} );
+	},
+
+	_initCenterFrequency: function() {
+		var self = this,
+			controlledNodes = self.controlledNodes,
+			settings = self.settings,
+			propName = self.propName;
+
+		if ( settings.centerFrequency ) {
+			controlledNodes.forEach( function( node ) {
+				node[ propName ].value = settings.centerFrequency;
+			} );
+		}
+	},
+
+	_initGain: function() {
+		var self = this,
+			gain = self.gain,
+			settings = self.settings;
+
+		gain.gain.value = settings.frequencyRange ?
+			settings.frequencyRange : CONST.LFO_DEFAULT_FREQUENCY_RANGE;
+	}
+
+};
 
 module.exports = LFO;
 },{"./const":9}],13:[function(require,module,exports){
@@ -36323,6 +36380,10 @@ var utils = {
 
 	getNormalPitch: function( value ) {
 		return ( value - SIMPLE_PITCH_HALF_RANGE ) / SIMPLE_PITCH_HALF_RANGE;
+	},
+
+	getRateFromModulation: function( modulation ) {
+		return 15 * modulation;
 	}
 
 };
@@ -36355,9 +36416,10 @@ function Instrument( audioContext ) {
 		envelopeFilterMix = new Mix( audioContext, uiControlledFilter.node, envelopeControlledFilter.node ),
 		lfoFilterMix = new Mix( audioContext, envelopeFilterMix.output, lfoControlledFilter.node ),
 		filterEnvelope = new Envelope( audioContext, "frequency", CONST.FILTER_FREQUENCY_UPPER_BOUND ),
-		lfo = new LFO( audioContext, lfoControlledFilter.node, "frequency", {
+		filterLfo = new LFO( audioContext, [ lfoControlledFilter.node ], "frequency", {
 			rate: CONST.LFO_DEFAULT_RATE,
-			defaultForm: CONST.LFO_DEFAULT_FORM
+			defaultForm: CONST.LFO_DEFAULT_FORM,
+			centerFrequency: CONST.LFO_DEFAULT_FREQUENCY_RANGE
 		} ),
 		masterVolume = audioContext.createGain();
 
@@ -36383,6 +36445,12 @@ function Instrument( audioContext ) {
 		oscillators.push( osc );
 	}
 
+	var modulationLfo = new LFO( audioContext, oscillators, "frequency", {
+		rate: 0,
+		defaultForm: CONST.LFO_DEFAULT_FORM,
+		frequencyRange: CONST.MODULATION_LFO_FREQUENCY_RANGE
+	} );
+
 	noiseVolume.gain.value = 0.0;
 
 	noiseVolume.connect( gainEnvelope.node );
@@ -36395,6 +36463,7 @@ function Instrument( audioContext ) {
 	self.audioContext = audioContext;
 	self.volumes = volumes;
 	self.oscillators = oscillators;
+	self.modulationLfo = modulationLfo;
 	self.noiseVolume = noiseVolume;
 	self.noiseNode = noiseNode;
 	self.gainEnvelope = gainEnvelope;
@@ -36402,7 +36471,7 @@ function Instrument( audioContext ) {
 	self.uiControlledFilter = uiControlledFilter;
 	self.lfoControlledFilter = lfoControlledFilter;
 	self.envelopeFilterMix = envelopeFilterMix;
-	self.lfo = lfo;
+	self.filterLfo = filterLfo;
 	self.lfoFilterMix = lfoFilterMix;
 	self.filterEnvelope = filterEnvelope;
 	self.outputNode = masterVolume;
@@ -36443,6 +36512,8 @@ Instrument.prototype = {
 			self[ methodName ]( parsed.noteFrequency, parsed.velocity );
 		} else if ( eventType === "pitchBend" ) {
 			self.onPitchBend( parsed.pitchBend );
+		} else if ( eventType === "modulationWheel" ) {
+			self.onModulationWheelTurn( parsed.modulation );
 		}
 	},
 
@@ -36500,6 +36571,20 @@ Instrument.prototype = {
 		};
 	},
 
+	onModulationWheelTurn: function( modulation ) {
+		var self = this,
+			oldSettings = self.modulationSettings,
+			newRate = utils.getRateFromModulation( modulation );
+
+		if ( oldSettings.rate !== newRate ) {
+			self.modulationSettings = {
+				waveform: oldSettings.waveform,
+				portamento: oldSettings.portamento,
+				rate: newRate
+			}
+		}
+	},
+
 	_defineProps: function() {
 		var self = this;
 
@@ -36511,7 +36596,16 @@ Instrument.prototype = {
 			},
 
 			set: function( settings ) {
-				var oldSettings = self.settings.modulation;
+				var oldSettings = self.settings.modulation,
+					modulationLfo = self.modulationLfo;
+
+				if ( !oldSettings || ( oldSettings.rate !== settings.rate ) ) {
+					modulationLfo.rate = settings.rate;
+				}
+
+				if ( !oldSettings || ( oldSettings.waveform !== settings.waveform ) ) {
+					modulationLfo.waveform = utils.getWaveform( settings.waveform );
+				}
 
 				self.settings.modulation = JSON.parse( JSON.stringify( settings ) );
 			}
@@ -36742,14 +36836,14 @@ Instrument.prototype = {
 						waveform: null,
 						amount: null
 					},
-					lfo = self.lfo,
+					filterLfo = self.filterLfo,
 					mix = self.lfoFilterMix;
 
 				if ( oldSettings.rate !== settings.rate ) {
-					lfo.rate = settings.rate;
+					filterLfo.rate = settings.rate;
 				}
 				if ( oldSettings.waveform !== settings.waveform ) {
-					lfo.waveform = utils.getWaveform( settings.waveform );
+					filterLfo.waveform = utils.getWaveform( settings.waveform );
 				}
 				if ( oldSettings.amount !== settings.amount ) {
 					mix.amount = utils.getGain( settings.amount );
@@ -37075,18 +37169,19 @@ module.exports = function( mod ) {
 			synth = dawEngine.synth,
 			settingsChangeHandler = function() {
 				synth.modulationSettings = {
+					waveform: self.waveform,
 					portamento: self.portamento,
-					mix: self.mix
+					rate: synth.modulationSettings.rate
 				};
 			},
 			settings = synth.modulationSettings;
 
+		self.waveform = settings.waveform;
 		self.portamento = settings.portamento;
-		self.mix = settings.mix;
 
 		[
-			"modulation.portamento",
-			"modulation.mix"
+			"modulation.waveform",
+			"modulation.portamento"
 		].forEach( function( path ) {
 			$scope.$watch( path, settingsChangeHandler );
 		} );
@@ -37344,18 +37439,18 @@ module.exports = ngModule;
 var ngModule = angular.module('modulation.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('modulation.html',
-    '<div class="col-lg-1 modulation control-bank two-row text-center" ng-controller="ModulationCtrl as modulation">\n' +
+    '<div class="col-lg-1 modulation control-bank two-row single-column text-center" ng-controller="ModulationCtrl as modulation">\n' +
+    '	<div class="row">\n' +
+    '		<h5>Form</h5>\n' +
+    '		<webaudio-knob src="images/range-knob.png"\n' +
+    '			bind-polymer\n' +
+    '			value="{{modulation.waveform}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Modulation Oscillator waveform"></webaudio-knob>\n' +
+    '	</div>\n' +
     '	<div class="row">\n' +
     '		<h5>Glide</h5>\n' +
     '		<webaudio-knob src="images/frequency-knob.png"\n' +
     '			bind-polymer\n' +
     '			value="{{modulation.portamento}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Glide/Portamento"></webaudio-knob>\n' +
-    '	</div>\n' +
-    '	<div class="row">\n' +
-    '		<h5>Mix</h5>\n' +
-    '		<webaudio-knob src="images/frequency-knob.png"\n' +
-    '			bind-polymer\n' +
-    '			value="{{modulation.mix}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Osc/Noise Mix"></webaudio-knob>\n' +
     '	</div>\n' +
     '	<h4>Modulation</h4>\n' +
     '</div>');
@@ -37499,7 +37594,9 @@ module.exports = function( mod ) {
 		var $keyboard = $( "webaudio-keyboard" );
 
 		dawEngine.addExternalMidiMessageHandler( function( type, parsed, rawEvent ) {
-			$keyboard[ 0 ].setNote( parsed.isNoteOn ? 1 : 0, rawEvent.data[ 1 ] );
+			if ( type === "notePress" ) {
+				$keyboard[ 0 ].setNote( parsed.isNoteOn ? 1 : 0, rawEvent.data[ 1 ] );
+			}
 		} );
 
 		$keyboard.on( "change", function( e ) {
@@ -37633,7 +37730,7 @@ module.exports = ngModule;
 var ngModule = angular.module('pitch-bend.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('pitch-bend.html',
-    '<div class="col-lg-1 col-lg-offset-1 pitch-bend" ng-controller="PitchBendCtrl as pitch">\n' +
+    '<div class="col-lg-1 col-lg-offset-1 pitch-bend text-center" ng-controller="PitchBendCtrl as pitch">\n' +
     '	<webaudio-slider value="{{pitch.bend}}" direction="vert" min="0" max="{{pitch.RANGE}}" step="1"\n' +
     '		bind-polymer\n' +
     '		width="16" height="120"></webaudio-slider>\n' +
