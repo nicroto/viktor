@@ -121,7 +121,7 @@ MIDIController.prototype = {
 			parsed = true;
 		} else if ( simpleFirstByte === binary( "10110000" ) ) {
 			isModulationWheel = true;
-			modulation = thirdByte > 0 ? ( thirdByte + 1 ) / 128 : 0;
+			modulation = thirdByte / 127;
 			parsed = true;
 		}
 

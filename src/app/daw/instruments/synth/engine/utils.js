@@ -184,6 +184,16 @@ var utils = {
 
 	getRateFromModulation: function( modulation ) {
 		return 15 * modulation;
+	},
+
+	getSimpleModulationFromRate: function( value ) {
+		return Math.round( ( value / 15 ) * 127 );
+	},
+
+	getRateFromSimpleModulation: function( value ) {
+		var self = this;
+
+		return self.getRateFromModulation( value / 127 );
 	}
 
 };

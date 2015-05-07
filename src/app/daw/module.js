@@ -6,6 +6,7 @@ var angular = require( "angular" ),
 		template.name,
 		require( "./instruments/synth/module" ).name,
 		require( "./view/template/pitch-bend.html" ).name,
+		require( "./view/template/modulation-wheel.html" ).name,
 		require( "./view/template/keyboard.html" ).name
 	] );
 
@@ -36,6 +37,7 @@ mod.directive( "dawContainer", [ "$templateCache", function($templateCache) {
 // Controllers
 require( "./view/controller/master" )( mod );
 require( "./view/controller/pitch-bend" )( mod );
+require( "./view/controller/modulation-wheel" )( mod );
 require( "./view/controller/keyboard" )( mod );
 
 module.exports = mod;
