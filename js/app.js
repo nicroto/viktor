@@ -35853,7 +35853,7 @@ MIDIController.prototype = {
 			parsed = true;
 		} else if ( simpleFirstByte === binary( "10110000" ) ) {
 			isModulationWheel = true;
-			modulation = thirdByte > 0 ? ( thirdByte + 1 ) / 128 : 0;
+			modulation = thirdByte / 127;
 			parsed = true;
 		}
 
@@ -36384,6 +36384,16 @@ var utils = {
 
 	getRateFromModulation: function( modulation ) {
 		return 15 * modulation;
+	},
+
+	getSimpleModulationFromRate: function( value ) {
+		return Math.round( ( value / 15 ) * 127 );
+	},
+
+	getRateFromSimpleModulation: function( value ) {
+		var self = this;
+
+		return self.getRateFromModulation( value / 127 );
 	}
 
 };
@@ -37549,6 +37559,7 @@ var angular = require( "angular" ),
 		template.name,
 		require( "./instruments/synth/module" ).name,
 		require( "./view/template/pitch-bend.html" ).name,
+		require( "./view/template/modulation-wheel.html" ).name,
 		require( "./view/template/keyboard.html" ).name
 	] );
 
@@ -37579,10 +37590,11 @@ mod.directive( "dawContainer", [ "$templateCache", function($templateCache) {
 // Controllers
 require( "./view/controller/master" )( mod );
 require( "./view/controller/pitch-bend" )( mod );
+require( "./view/controller/modulation-wheel" )( mod );
 require( "./view/controller/keyboard" )( mod );
 
 module.exports = mod;
-},{"./instruments/synth/engine/utils":14,"./instruments/synth/module":16,"./view/controller/keyboard":31,"./view/controller/master":32,"./view/controller/pitch-bend":33,"./view/template/daw.html":34,"./view/template/keyboard.html":35,"./view/template/pitch-bend.html":36,"angular":2}],31:[function(require,module,exports){
+},{"./instruments/synth/engine/utils":14,"./instruments/synth/module":16,"./view/controller/keyboard":31,"./view/controller/master":32,"./view/controller/modulation-wheel":33,"./view/controller/pitch-bend":34,"./view/template/daw.html":35,"./view/template/keyboard.html":36,"./view/template/modulation-wheel.html":37,"./view/template/pitch-bend.html":38,"angular":2}],31:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -37631,6 +37643,68 @@ module.exports = function( mod ) {
 
 };
 },{}],33:[function(require,module,exports){
+'use strict';
+
+var $ = require( "jquery" );
+
+module.exports = function( mod ) {
+
+	mod.controller( "ModulationWheelCtrl", [ "$scope", "$timeout", "dawEngine", "synthUtils", function( $scope, $timeout, dawEngine, synthUtils ) {
+		var self = this,
+			synth = dawEngine.synth,
+			settingsChangeHandler = function() {
+				var modulationSettings = synth.modulationSettings;
+
+				modulationSettings.rate = synthUtils.getRateFromSimpleModulation( self.modulation );
+
+				synth.modulationSettings = modulationSettings;
+			},
+			settings = synth.modulationSettings,
+			$modulationWheel = $( ".modulation-wheel webaudio-slider" );
+
+		self.RANGE = 127;
+		self.modulation = synthUtils.getSimpleModulationFromRate( settings.rate );
+
+		[
+			"modulationWheel.modulation"
+		].forEach( function( path ) {
+			$scope.$watch( path, settingsChangeHandler );
+		} );
+
+		dawEngine.addExternalMidiMessageHandler( function( type, parsed, rawEvent ) {
+			if ( type === "modulationWheel" ) {
+				$modulationWheel[ 0 ].setValue(
+					synthUtils.getSimpleModulationFromRate(
+						synthUtils.getRateFromModulation( parsed.modulation )
+					)
+				);
+			}
+		} );
+
+		// fix issue with initial value settings
+		$timeout( function() {
+			$modulationWheel[ 0 ].setValue( self.modulation );
+		}, 500 );
+
+		// fix the lack of attr 'value' update
+		$modulationWheel.on( "change", function( e ) {
+			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
+				$( e.target ).attr( "value", e.target.value );
+			}
+		} );
+
+	} ] );
+
+	mod.directive( "modulationWheel", [ "$templateCache", function( $templateCache ) {
+		return {
+			restrict: "E",
+			replace: true,
+			template: $templateCache.get( "modulation-wheel.html" )
+		};
+	} ] );
+
+};
+},{"jquery":3}],34:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -37700,7 +37774,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],34:[function(require,module,exports){
+},{"jquery":3}],35:[function(require,module,exports){
 var ngModule = angular.module('daw.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('daw.html',
@@ -37709,14 +37783,17 @@ ngModule.run(['$templateCache', function($templateCache) {
     '		<synth></synth>\n' +
     '	</div>\n' +
     '	<div id="bottomRow" class="row">\n' +
-    '		<pitch-bend></pitch-bend>\n' +
+    '		<div class="col-lg-2 text-center">\n' +
+    '			<pitch-bend></pitch-bend>\n' +
+    '			<modulation-wheel></modulation-wheel>\n' +
+    '		</div>\n' +
     '		<keyboard></keyboard>\n' +
     '	</div>\n' +
     '</div>');
 }]);
 
 module.exports = ngModule;
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 var ngModule = angular.module('keyboard.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('keyboard.html',
@@ -37726,11 +37803,23 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
+var ngModule = angular.module('modulation-wheel.html', []);
+ngModule.run(['$templateCache', function($templateCache) {
+  $templateCache.put('modulation-wheel.html',
+    '<div class="modulation-wheel wheel inline-block" ng-controller="ModulationWheelCtrl as modulationWheel">\n' +
+    '	<webaudio-slider value="{{modulationWheel.modulation}}" direction="vert" min="0" max="{{modulationWheel.RANGE}}" step="1"\n' +
+    '		bind-polymer\n' +
+    '		width="16" height="120"></webaudio-slider>\n' +
+    '</div>');
+}]);
+
+module.exports = ngModule;
+},{}],38:[function(require,module,exports){
 var ngModule = angular.module('pitch-bend.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('pitch-bend.html',
-    '<div class="col-lg-1 col-lg-offset-1 pitch-bend text-center" ng-controller="PitchBendCtrl as pitch">\n' +
+    '<div class="pitch-bend wheel inline-block" ng-controller="PitchBendCtrl as pitch">\n' +
     '	<webaudio-slider value="{{pitch.bend}}" direction="vert" min="0" max="{{pitch.RANGE}}" step="1"\n' +
     '		bind-polymer\n' +
     '		width="16" height="120"></webaudio-slider>\n' +
