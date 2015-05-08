@@ -54,7 +54,8 @@
   },
   "browser": {
     "angular-local-storage": "./node_modules/angular-local-storage/dist/angular-local-storage.js",
-    "angular-bind-polymer": "./non-npm/angular-bind-polymer.js"
+    "angular-bind-polymer": "./non-npm/angular-bind-polymer.js",
+    "tuna": "./non-npm/tuna/tuna.js"
   },
   "browserify-shim": {
     "angular-local-storage": {

@@ -1,5 +1,6 @@
 node_modules
 src/server/client/bower_components
+src/server/client/impulses
 src/server/client/css
 src/server/client/js
 src/server/client/images

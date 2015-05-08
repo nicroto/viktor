@@ -14,6 +14,7 @@ module.exports = function(grunt) {
 				'src/server/client/index.html',
 				'src/server/client/css',
 				'src/server/client/images',
+				'src/server/client/impulses',
 				'src/server/client/js/app.js'
 			],
 			build: ['build/']
@@ -72,6 +73,12 @@ module.exports = function(grunt) {
 						cwd: "src/client/",
 						src: "*.html",
 						dest: "src/server/client/"
+					},
+/* Tuna resources */{
+						expand: true,
+						cwd: "non-npm/tuna/impulses/",
+						src: "**",
+						dest: "src/server/client/impulses/"
 					}
 				]
 			}

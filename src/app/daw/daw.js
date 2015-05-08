@@ -1,36 +1,31 @@
 'use strict';
 
 var CONST = require( "./engine/const" ),
-	MIDIController = require( "./engine/midi" );
+	utils = require( "./engine/utils" ),
+	MIDIController = require( "./engine/midi" ),
+	Tuna = require( "tuna" );
 
 function DAW( AudioContext ) {
-	var self = this;
+	var self = this,
+		audioContext = new AudioContext(),
+		tuna = new Tuna( audioContext ),
+		reverb = new tuna.Convolver( CONST.TUNA_REVERB_DEFAULT_SETTINGS );
 
-	self.audioContext = new AudioContext();
+	reverb.connect( audioContext.destination );
+
+	self.audioContext = audioContext;
 	self.midiController = new MIDIController();
+	self.reverb = reverb;
 	self.synth = null;
 	self.externalMidiMessageHandlers = [];
 	self.settings = {
-		pitch: null
+		pitch: null,
+		reverb: null
 	};
 
-	Object.defineProperty( self, "pitchSettings", {
-		get: function() {
-			var self = this;
+	self._defineProps();
 
-			return JSON.parse( JSON.stringify( self.settings.pitch ) );
-		},
-		set: function( settings ) {
-			var self = this,
-				oldSettings = self.settings.pitch || {};
-
-			if ( oldSettings.bend !== settings.bend ) {
-				self.synth.pitchSettings = settings;
-			}
-
-			self.settings.pitch = JSON.parse( JSON.stringify( settings ) );;
-		}
-	} );
+	self.reverbSettings = CONST.DEFAULT_REVERB_SETTINGS;
 }
 
 DAW.prototype = {
@@ -64,7 +59,7 @@ DAW.prototype = {
 			audioContext = self.audioContext,
 			newInstrument = new Instrument( audioContext, settings );
 
-		newInstrument.outputNode.connect( audioContext.destination );
+		newInstrument.outputNode.connect( self.reverb.input );
 
 		return newInstrument;
 	},
@@ -93,6 +88,50 @@ DAW.prototype = {
 			handlers = self.externalMidiMessageHandlers;
 
 		handlers.push( handler );
+	},
+
+	_defineProps: function() {
+		var self = this;
+
+		Object.defineProperty( self, "pitchSettings", {
+			get: function() {
+				var self = this;
+
+				return JSON.parse( JSON.stringify( self.settings.pitch ) );
+			},
+			set: function( settings ) {
+				var self = this,
+					oldSettings = self.settings.pitch || {};
+
+				if ( oldSettings.bend !== settings.bend ) {
+					self.synth.pitchSettings = settings;
+				}
+
+				self.settings.pitch = JSON.parse( JSON.stringify( settings ) );
+			}
+		} );
+
+		Object.defineProperty( self, "reverbSettings", {
+			get: function() {
+				var self = this;
+
+				return JSON.parse( JSON.stringify( self.settings.reverb ) );
+			},
+			set: function( settings ) {
+				var self = this,
+					oldSettings = self.settings.reverb || {};
+
+				if ( oldSettings.level !== settings.level ) {
+					var newGain = utils.getGain( settings.level );
+
+					self.reverb.wetLevel = newGain;
+					self.reverb.dry = 1 - newGain;
+				}
+
+				self.settings.reverb = JSON.parse( JSON.stringify( settings ) );
+			}
+		} );
+
 	}
 
 };

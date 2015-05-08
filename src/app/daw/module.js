@@ -5,6 +5,8 @@ var angular = require( "angular" ),
 	mod = angular.module( "dawModule", [
 		template.name,
 		require( "./instruments/synth/module" ).name,
+		require( "./view/template/master-controls.html" ).name,
+		require( "./view/template/reverb.html" ).name,
 		require( "./view/template/pitch-bend.html" ).name,
 		require( "./view/template/modulation-wheel.html" ).name,
 		require( "./view/template/keyboard.html" ).name
@@ -34,8 +36,11 @@ mod.directive( "dawContainer", [ "$templateCache", function($templateCache) {
 	};
 } ] );
 
+// Directives (without a controller)
+require( "./view/controller/master-controls" )( mod );
+
 // Controllers
-require( "./view/controller/master" )( mod );
+require( "./view/controller/reverb" )( mod );
 require( "./view/controller/pitch-bend" )( mod );
 require( "./view/controller/modulation-wheel" )( mod );
 require( "./view/controller/keyboard" )( mod );
