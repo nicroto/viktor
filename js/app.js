@@ -37530,7 +37530,7 @@ module.exports = {
 		dryLevel: 1,
 		wetLevel: 0,
 		level: 1,
-		impulse: "/impulses/impulse_rev.wav",
+		impulse: "impulses/impulse_rev.wav",
 		bypass: 0
 	}
 
