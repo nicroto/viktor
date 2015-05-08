@@ -37384,22 +37384,27 @@ function DAW( AudioContext ) {
 	var self = this,
 		audioContext = new AudioContext(),
 		tuna = new Tuna( audioContext ),
+		delay = new tuna.Delay( CONST.TUNA_DELAY_DEFAULT_SETTINGS ),
 		reverb = new tuna.Convolver( CONST.TUNA_REVERB_DEFAULT_SETTINGS );
 
+	delay.connect( reverb.input );
 	reverb.connect( audioContext.destination );
 
 	self.audioContext = audioContext;
 	self.midiController = new MIDIController();
+	self.delay = delay;
 	self.reverb = reverb;
 	self.synth = null;
 	self.externalMidiMessageHandlers = [];
 	self.settings = {
 		pitch: null,
+		delay: null,
 		reverb: null
 	};
 
 	self._defineProps();
 
+	self.delaySettings = CONST.DEFAULT_DELAY_SETTINGS;
 	self.reverbSettings = CONST.DEFAULT_REVERB_SETTINGS;
 }
 
@@ -37434,7 +37439,7 @@ DAW.prototype = {
 			audioContext = self.audioContext,
 			newInstrument = new Instrument( audioContext, settings );
 
-		newInstrument.outputNode.connect( self.reverb.input );
+		newInstrument.outputNode.connect( self.delay.input );
 
 		return newInstrument;
 	},
@@ -37486,6 +37491,34 @@ DAW.prototype = {
 			}
 		} );
 
+		Object.defineProperty( self, "delaySettings", {
+			get: function() {
+				var self = this;
+
+				return JSON.parse( JSON.stringify( self.settings.delay ) );
+			},
+			set: function( settings ) {
+				var self = this,
+					oldSettings = self.settings.delay || {},
+					delay = self.delay;
+
+				if ( oldSettings.time !== settings.time ) {
+					delay.delayTime = utils.getTime( settings.time );
+				}
+				if ( oldSettings.feedback !== settings.feedback ) {
+					delay.feedback = utils.getFeedback( settings.feedback );
+				}
+				if ( oldSettings.dry !== settings.dry ) {
+					delay.dryLevel = utils.getDryLevel( settings.dry );
+				}
+				if ( oldSettings.wet !== settings.wet ) {
+					delay.wetLevel = utils.getWetLevel( settings.wet );
+				}
+
+				self.settings.delay = JSON.parse( JSON.stringify( settings ) );
+			}
+		} );
+
 		Object.defineProperty( self, "reverbSettings", {
 			get: function() {
 				var self = this;
@@ -37494,13 +37527,14 @@ DAW.prototype = {
 			},
 			set: function( settings ) {
 				var self = this,
-					oldSettings = self.settings.reverb || {};
+					oldSettings = self.settings.reverb || {},
+					reverb = self.reverb;
 
 				if ( oldSettings.level !== settings.level ) {
 					var newGain = utils.getGain( settings.level );
 
-					self.reverb.wetLevel = newGain;
-					self.reverb.dry = 1 - newGain;
+					reverb.wetLevel = newGain;
+					reverb.dryLevel = utils.getReverbDryLevel( newGain );
 				}
 
 				self.settings.reverb = JSON.parse( JSON.stringify( settings ) );
@@ -37520,10 +37554,24 @@ module.exports = {
 	DEFAULT_PITCH_SETTINGS: {
 		bend: 0
 	},
+	DEFAULT_DELAY_SETTINGS: {
+		time: 15,
+		feedback: 30,
+		dry: 100,
+		wet: 0
+	},
 	DEFAULT_REVERB_SETTINGS: {
 		level: 0
 	},
 
+	TUNA_DELAY_DEFAULT_SETTINGS: {
+		feedback: 0.45,
+		delayTime: 150,
+		wetLevel: 0.25,
+		dryLevel: 1,
+		cutoff: 2000,
+		bypass: 0
+	},
 	TUNA_REVERB_DEFAULT_SETTINGS: {
 		highCut: 22050,
 		lowCut: 20,
@@ -37684,6 +37732,33 @@ module.exports = {
 
 	getGain: function( value ) {
 		return value / 100;
+	},
+
+	getReverbDryLevel: function( value ) {
+		return 1 - ( value / 2 );
+	},
+
+	getTime: function( value ) {
+		return value * 10;
+	},
+
+	_getValueBetweenZeroAndOne: function( value ) {
+		return value / 100;
+	},
+
+	getFeedback: function( value ) {
+		var self = this;
+		return self._getValueBetweenZeroAndOne( value );
+	},
+
+	getDryLevel: function( value ) {
+		var self = this;
+		return self._getValueBetweenZeroAndOne( value );
+	},
+
+	getWetLevel: function( value ) {
+		var self = this;
+		return self._getValueBetweenZeroAndOne( value );
 	}
 
 };
@@ -39376,6 +39451,7 @@ var angular = require( "angular" ),
 		template.name,
 		require( "./instruments/synth/module" ).name,
 		require( "./view/template/master-controls.html" ).name,
+		require( "./view/template/delay.html" ).name,
 		require( "./view/template/reverb.html" ).name,
 		require( "./view/template/pitch-bend.html" ).name,
 		require( "./view/template/modulation-wheel.html" ).name,
@@ -39410,13 +39486,65 @@ mod.directive( "dawContainer", [ "$templateCache", function($templateCache) {
 require( "./view/controller/master-controls" )( mod );
 
 // Controllers
+require( "./view/controller/delay" )( mod );
 require( "./view/controller/reverb" )( mod );
 require( "./view/controller/pitch-bend" )( mod );
 require( "./view/controller/modulation-wheel" )( mod );
 require( "./view/controller/keyboard" )( mod );
 
 module.exports = mod;
-},{"./instruments/synth/engine/utils":16,"./instruments/synth/module":18,"./view/controller/keyboard":33,"./view/controller/master-controls":34,"./view/controller/modulation-wheel":35,"./view/controller/pitch-bend":36,"./view/controller/reverb":37,"./view/template/daw.html":38,"./view/template/keyboard.html":39,"./view/template/master-controls.html":40,"./view/template/modulation-wheel.html":41,"./view/template/pitch-bend.html":42,"./view/template/reverb.html":43,"angular":2}],33:[function(require,module,exports){
+},{"./instruments/synth/engine/utils":16,"./instruments/synth/module":18,"./view/controller/delay":33,"./view/controller/keyboard":34,"./view/controller/master-controls":35,"./view/controller/modulation-wheel":36,"./view/controller/pitch-bend":37,"./view/controller/reverb":38,"./view/template/daw.html":39,"./view/template/delay.html":40,"./view/template/keyboard.html":41,"./view/template/master-controls.html":42,"./view/template/modulation-wheel.html":43,"./view/template/pitch-bend.html":44,"./view/template/reverb.html":45,"angular":2}],33:[function(require,module,exports){
+'use strict';
+
+var $ = require( "jquery" );
+
+module.exports = function( mod ) {
+
+	mod.controller( "DelayCtrl", [ "$scope", "dawEngine", function( $scope, dawEngine ) {
+		var self = this,
+			settingsChangeHandler = function() {
+				dawEngine.delaySettings = {
+					time: self.time,
+					feedback: self.feedback,
+					dry: self.dry,
+					wet: self.wet
+				};
+			},
+			settings = dawEngine.delaySettings;
+
+		self.time = settings.time;
+		self.feedback = settings.feedback;
+		self.dry = settings.dry;
+		self.wet = settings.wet;
+
+		[
+			"delay.time",
+			"delay.feedback",
+			"delay.dry",
+			"delay.wet"
+		].forEach( function( path ) {
+			$scope.$watch( path, settingsChangeHandler );
+		} );
+
+		// fix the lack of attr 'value' update
+		$( ".delay webaudio-knob" ).on( "change", function( e ) {
+			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
+				$( e.target ).attr( "value", e.target.value );
+			}
+		} );
+
+	} ] );
+
+	mod.directive( "delay", [ "$templateCache", function( $templateCache ) {
+		return {
+			restrict: "E",
+			replace: true,
+			template: $templateCache.get( "delay.html" )
+		};
+	} ] );
+
+};
+},{"jquery":3}],34:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -39456,7 +39584,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],34:[function(require,module,exports){
+},{"jquery":3}],35:[function(require,module,exports){
 'use strict';
 
 module.exports = function( mod ) {
@@ -39470,7 +39598,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -39532,7 +39660,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],36:[function(require,module,exports){
+},{"jquery":3}],37:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -39602,7 +39730,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],37:[function(require,module,exports){
+},{"jquery":3}],38:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -39644,7 +39772,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],38:[function(require,module,exports){
+},{"jquery":3}],39:[function(require,module,exports){
 var ngModule = angular.module('daw.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('daw.html',
@@ -39664,7 +39792,43 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
+var ngModule = angular.module('delay.html', []);
+ngModule.run(['$templateCache', function($templateCache) {
+  $templateCache.put('delay.html',
+    '<div class="col-lg-3 col-lg-offset-1 delay master-control-bank text-center" ng-controller="DelayCtrl as delay">\n' +
+    '	<div class="row">\n' +
+    '		<div class="col-lg-3">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{delay.time}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Delay Time"></webaudio-knob>\n' +
+    '			<h5>Time</h5>\n' +
+    '		</div>\n' +
+    '		<div class="col-lg-3">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{delay.feedback}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Delay Feedback"></webaudio-knob>\n' +
+    '			<h5>Feedback</h5>\n' +
+    '		</div>\n' +
+    '		<div class="col-lg-3">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{delay.dry}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Delay Dry Level"></webaudio-knob>\n' +
+    '			<h5>Dry</h5>\n' +
+    '		</div>\n' +
+    '		<div class="col-lg-3">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{delay.wet}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Delay Wet Level"></webaudio-knob>\n' +
+    '			<h5>Wet</h5>\n' +
+    '		</div>\n' +
+    '	</div>\n' +
+    '	<h4>Delay</h4>\n' +
+    '</div>');
+}]);
+
+module.exports = ngModule;
+},{}],41:[function(require,module,exports){
 var ngModule = angular.module('keyboard.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('keyboard.html',
@@ -39674,19 +39838,20 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],40:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 var ngModule = angular.module('master-controls.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('master-controls.html',
     '<div id="masterControlls" class="container">\n' +
     '	<div class="row">\n' +
+    '		<delay></delay>\n' +
     '		<reverb></reverb>\n' +
     '	</div>\n' +
     '</div>');
 }]);
 
 module.exports = ngModule;
-},{}],41:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 var ngModule = angular.module('modulation-wheel.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('modulation-wheel.html',
@@ -39698,7 +39863,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],42:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 var ngModule = angular.module('pitch-bend.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('pitch-bend.html',
@@ -39710,17 +39875,18 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],43:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 var ngModule = angular.module('reverb.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('reverb.html',
-    '<div class="col-lg-1 col-lg-offset-1 reverb master-control-bank text-center" ng-controller="ReverbCtrl as reverb">\n' +
+    '<div class="col-lg-1 reverb master-control-bank text-center" ng-controller="ReverbCtrl as reverb">\n' +
     '	<div class="row">\n' +
     '		<webaudio-knob src="images/frequency-knob.png"\n' +
     '			bind-polymer\n' +
     '			value="{{reverb.level}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Reverb"></webaudio-knob>\n' +
-    '		<h5>Reverb</h5>\n' +
+    '		<h5>Level</h5>\n' +
     '	</div>\n' +
+    '	<h4>Reverb</h4>\n' +
     '</div>');
 }]);
 
