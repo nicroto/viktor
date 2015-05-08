@@ -10,27 +10,34 @@ function DAW( AudioContext ) {
 		audioContext = new AudioContext(),
 		tuna = new Tuna( audioContext ),
 		delay = new tuna.Delay( CONST.TUNA_DELAY_DEFAULT_SETTINGS ),
-		reverb = new tuna.Convolver( CONST.TUNA_REVERB_DEFAULT_SETTINGS );
+		reverb = new tuna.Convolver( CONST.TUNA_REVERB_DEFAULT_SETTINGS ),
+		masterVolume = audioContext.createGain();
+
+	masterVolume.gain.value = 1;
 
 	delay.connect( reverb.input );
-	reverb.connect( audioContext.destination );
+	reverb.connect( masterVolume );
+	masterVolume.connect( audioContext.destination );
 
 	self.audioContext = audioContext;
 	self.midiController = new MIDIController();
 	self.delay = delay;
 	self.reverb = reverb;
+	self.masterVolume = masterVolume;
 	self.synth = null;
 	self.externalMidiMessageHandlers = [];
 	self.settings = {
 		pitch: null,
 		delay: null,
-		reverb: null
+		reverb: null,
+		masterVolume: null
 	};
 
 	self._defineProps();
 
 	self.delaySettings = CONST.DEFAULT_DELAY_SETTINGS;
 	self.reverbSettings = CONST.DEFAULT_REVERB_SETTINGS;
+	self.masterVolumeSettings = CONST.DEFAULT_MASTER_VOLUME_SETTINGS;
 }
 
 DAW.prototype = {
@@ -163,6 +170,25 @@ DAW.prototype = {
 				}
 
 				self.settings.reverb = JSON.parse( JSON.stringify( settings ) );
+			}
+		} );
+
+		Object.defineProperty( self, "masterVolumeSettings", {
+			get: function() {
+				var self = this;
+
+				return JSON.parse( JSON.stringify( self.settings.masterVolume ) );
+			},
+			set: function( settings ) {
+				var self = this,
+					oldSettings = self.settings.masterVolume || {},
+					masterVolume = self.masterVolume;
+
+				if ( oldSettings.level !== settings.level ) {
+					masterVolume.gain.value = utils.getGain( settings.level );
+				}
+
+				self.settings.masterVolume = JSON.parse( JSON.stringify( settings ) );
 			}
 		} );
 

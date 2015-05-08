@@ -1,0 +1,9 @@
+<div class="col-lg-1 master-volume master-control-bank text-center" ng-controller="MasterVolumeCtrl as masterVolume">
+	<div class="row">
+		<webaudio-knob src="images/frequency-knob.png"
+			bind-polymer
+			value="{{masterVolume.level}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Master Volume"></webaudio-knob>
+		<h5>Level</h5>
+	</div>
+	<h4>Volume</h4>
+</div>

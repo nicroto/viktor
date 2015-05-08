@@ -8,6 +8,7 @@ var angular = require( "angular" ),
 		require( "./view/template/master-controls.html" ).name,
 		require( "./view/template/delay.html" ).name,
 		require( "./view/template/reverb.html" ).name,
+		require( "./view/template/master-volume.html" ).name,
 		require( "./view/template/pitch-bend.html" ).name,
 		require( "./view/template/modulation-wheel.html" ).name,
 		require( "./view/template/keyboard.html" ).name
@@ -43,6 +44,7 @@ require( "./view/controller/master-controls" )( mod );
 // Controllers
 require( "./view/controller/delay" )( mod );
 require( "./view/controller/reverb" )( mod );
+require( "./view/controller/master-volume" )( mod );
 require( "./view/controller/pitch-bend" )( mod );
 require( "./view/controller/modulation-wheel" )( mod );
 require( "./view/controller/keyboard" )( mod );

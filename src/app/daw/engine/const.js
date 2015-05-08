@@ -14,6 +14,9 @@ module.exports = {
 	DEFAULT_REVERB_SETTINGS: {
 		level: 0
 	},
+	DEFAULT_MASTER_VOLUME_SETTINGS: {
+		level: 80
+	},
 
 	TUNA_DELAY_DEFAULT_SETTINGS: {
 		feedback: 0.45,
