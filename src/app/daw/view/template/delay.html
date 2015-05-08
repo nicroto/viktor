@@ -1,0 +1,29 @@
+<div class="col-lg-3 col-lg-offset-1 delay master-control-bank text-center" ng-controller="DelayCtrl as delay">
+	<div class="row">
+		<div class="col-lg-3">
+			<webaudio-knob src="images/frequency-knob.png"
+				bind-polymer
+				value="{{delay.time}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Delay Time"></webaudio-knob>
+			<h5>Time</h5>
+		</div>
+		<div class="col-lg-3">
+			<webaudio-knob src="images/frequency-knob.png"
+				bind-polymer
+				value="{{delay.feedback}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Delay Feedback"></webaudio-knob>
+			<h5>Feedback</h5>
+		</div>
+		<div class="col-lg-3">
+			<webaudio-knob src="images/frequency-knob.png"
+				bind-polymer
+				value="{{delay.dry}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Delay Dry Level"></webaudio-knob>
+			<h5>Dry</h5>
+		</div>
+		<div class="col-lg-3">
+			<webaudio-knob src="images/frequency-knob.png"
+				bind-polymer
+				value="{{delay.wet}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Delay Wet Level"></webaudio-knob>
+			<h5>Wet</h5>
+		</div>
+	</div>
+	<h4>Delay</h4>
+</div>

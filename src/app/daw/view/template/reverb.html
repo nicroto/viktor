@@ -1,8 +1,9 @@
-<div class="col-lg-1 col-lg-offset-1 reverb master-control-bank text-center" ng-controller="ReverbCtrl as reverb">
+<div class="col-lg-1 reverb master-control-bank text-center" ng-controller="ReverbCtrl as reverb">
 	<div class="row">
 		<webaudio-knob src="images/frequency-knob.png"
 			bind-polymer
 			value="{{reverb.level}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Reverb"></webaudio-knob>
-		<h5>Reverb</h5>
+		<h5>Level</h5>
 	</div>
+	<h4>Reverb</h4>
 </div>

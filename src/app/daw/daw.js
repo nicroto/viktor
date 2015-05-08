@@ -9,22 +9,27 @@ function DAW( AudioContext ) {
 	var self = this,
 		audioContext = new AudioContext(),
 		tuna = new Tuna( audioContext ),
+		delay = new tuna.Delay( CONST.TUNA_DELAY_DEFAULT_SETTINGS ),
 		reverb = new tuna.Convolver( CONST.TUNA_REVERB_DEFAULT_SETTINGS );
 
+	delay.connect( reverb.input );
 	reverb.connect( audioContext.destination );
 
 	self.audioContext = audioContext;
 	self.midiController = new MIDIController();
+	self.delay = delay;
 	self.reverb = reverb;
 	self.synth = null;
 	self.externalMidiMessageHandlers = [];
 	self.settings = {
 		pitch: null,
+		delay: null,
 		reverb: null
 	};
 
 	self._defineProps();
 
+	self.delaySettings = CONST.DEFAULT_DELAY_SETTINGS;
 	self.reverbSettings = CONST.DEFAULT_REVERB_SETTINGS;
 }
 
@@ -59,7 +64,7 @@ DAW.prototype = {
 			audioContext = self.audioContext,
 			newInstrument = new Instrument( audioContext, settings );
 
-		newInstrument.outputNode.connect( self.reverb.input );
+		newInstrument.outputNode.connect( self.delay.input );
 
 		return newInstrument;
 	},
@@ -111,6 +116,34 @@ DAW.prototype = {
 			}
 		} );
 
+		Object.defineProperty( self, "delaySettings", {
+			get: function() {
+				var self = this;
+
+				return JSON.parse( JSON.stringify( self.settings.delay ) );
+			},
+			set: function( settings ) {
+				var self = this,
+					oldSettings = self.settings.delay || {},
+					delay = self.delay;
+
+				if ( oldSettings.time !== settings.time ) {
+					delay.delayTime = utils.getTime( settings.time );
+				}
+				if ( oldSettings.feedback !== settings.feedback ) {
+					delay.feedback = utils.getFeedback( settings.feedback );
+				}
+				if ( oldSettings.dry !== settings.dry ) {
+					delay.dryLevel = utils.getDryLevel( settings.dry );
+				}
+				if ( oldSettings.wet !== settings.wet ) {
+					delay.wetLevel = utils.getWetLevel( settings.wet );
+				}
+
+				self.settings.delay = JSON.parse( JSON.stringify( settings ) );
+			}
+		} );
+
 		Object.defineProperty( self, "reverbSettings", {
 			get: function() {
 				var self = this;
@@ -119,13 +152,14 @@ DAW.prototype = {
 			},
 			set: function( settings ) {
 				var self = this,
-					oldSettings = self.settings.reverb || {};
+					oldSettings = self.settings.reverb || {},
+					reverb = self.reverb;
 
 				if ( oldSettings.level !== settings.level ) {
 					var newGain = utils.getGain( settings.level );
 
-					self.reverb.wetLevel = newGain;
-					self.reverb.dry = 1 - newGain;
+					reverb.wetLevel = newGain;
+					reverb.dryLevel = utils.getReverbDryLevel( newGain );
 				}
 
 				self.settings.reverb = JSON.parse( JSON.stringify( settings ) );
