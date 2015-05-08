@@ -37385,27 +37385,34 @@ function DAW( AudioContext ) {
 		audioContext = new AudioContext(),
 		tuna = new Tuna( audioContext ),
 		delay = new tuna.Delay( CONST.TUNA_DELAY_DEFAULT_SETTINGS ),
-		reverb = new tuna.Convolver( CONST.TUNA_REVERB_DEFAULT_SETTINGS );
+		reverb = new tuna.Convolver( CONST.TUNA_REVERB_DEFAULT_SETTINGS ),
+		masterVolume = audioContext.createGain();
+
+	masterVolume.gain.value = 1;
 
 	delay.connect( reverb.input );
-	reverb.connect( audioContext.destination );
+	reverb.connect( masterVolume );
+	masterVolume.connect( audioContext.destination );
 
 	self.audioContext = audioContext;
 	self.midiController = new MIDIController();
 	self.delay = delay;
 	self.reverb = reverb;
+	self.masterVolume = masterVolume;
 	self.synth = null;
 	self.externalMidiMessageHandlers = [];
 	self.settings = {
 		pitch: null,
 		delay: null,
-		reverb: null
+		reverb: null,
+		masterVolume: null
 	};
 
 	self._defineProps();
 
 	self.delaySettings = CONST.DEFAULT_DELAY_SETTINGS;
 	self.reverbSettings = CONST.DEFAULT_REVERB_SETTINGS;
+	self.masterVolumeSettings = CONST.DEFAULT_MASTER_VOLUME_SETTINGS;
 }
 
 DAW.prototype = {
@@ -37541,6 +37548,25 @@ DAW.prototype = {
 			}
 		} );
 
+		Object.defineProperty( self, "masterVolumeSettings", {
+			get: function() {
+				var self = this;
+
+				return JSON.parse( JSON.stringify( self.settings.masterVolume ) );
+			},
+			set: function( settings ) {
+				var self = this,
+					oldSettings = self.settings.masterVolume || {},
+					masterVolume = self.masterVolume;
+
+				if ( oldSettings.level !== settings.level ) {
+					masterVolume.gain.value = utils.getGain( settings.level );
+				}
+
+				self.settings.masterVolume = JSON.parse( JSON.stringify( settings ) );
+			}
+		} );
+
 	}
 
 };
@@ -37562,6 +37588,9 @@ module.exports = {
 	},
 	DEFAULT_REVERB_SETTINGS: {
 		level: 0
+	},
+	DEFAULT_MASTER_VOLUME_SETTINGS: {
+		level: 80
 	},
 
 	TUNA_DELAY_DEFAULT_SETTINGS: {
@@ -39453,6 +39482,7 @@ var angular = require( "angular" ),
 		require( "./view/template/master-controls.html" ).name,
 		require( "./view/template/delay.html" ).name,
 		require( "./view/template/reverb.html" ).name,
+		require( "./view/template/master-volume.html" ).name,
 		require( "./view/template/pitch-bend.html" ).name,
 		require( "./view/template/modulation-wheel.html" ).name,
 		require( "./view/template/keyboard.html" ).name
@@ -39488,12 +39518,13 @@ require( "./view/controller/master-controls" )( mod );
 // Controllers
 require( "./view/controller/delay" )( mod );
 require( "./view/controller/reverb" )( mod );
+require( "./view/controller/master-volume" )( mod );
 require( "./view/controller/pitch-bend" )( mod );
 require( "./view/controller/modulation-wheel" )( mod );
 require( "./view/controller/keyboard" )( mod );
 
 module.exports = mod;
-},{"./instruments/synth/engine/utils":16,"./instruments/synth/module":18,"./view/controller/delay":33,"./view/controller/keyboard":34,"./view/controller/master-controls":35,"./view/controller/modulation-wheel":36,"./view/controller/pitch-bend":37,"./view/controller/reverb":38,"./view/template/daw.html":39,"./view/template/delay.html":40,"./view/template/keyboard.html":41,"./view/template/master-controls.html":42,"./view/template/modulation-wheel.html":43,"./view/template/pitch-bend.html":44,"./view/template/reverb.html":45,"angular":2}],33:[function(require,module,exports){
+},{"./instruments/synth/engine/utils":16,"./instruments/synth/module":18,"./view/controller/delay":33,"./view/controller/keyboard":34,"./view/controller/master-controls":35,"./view/controller/master-volume":36,"./view/controller/modulation-wheel":37,"./view/controller/pitch-bend":38,"./view/controller/reverb":39,"./view/template/daw.html":40,"./view/template/delay.html":41,"./view/template/keyboard.html":42,"./view/template/master-controls.html":43,"./view/template/master-volume.html":44,"./view/template/modulation-wheel.html":45,"./view/template/pitch-bend.html":46,"./view/template/reverb.html":47,"angular":2}],33:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -39605,6 +39636,48 @@ var $ = require( "jquery" );
 
 module.exports = function( mod ) {
 
+	mod.controller( "MasterVolumeCtrl", [ "$scope", "dawEngine", function( $scope, dawEngine ) {
+		var self = this,
+			settingsChangeHandler = function() {
+				dawEngine.masterVolumeSettings = {
+					level: self.level
+				};
+			},
+			settings = dawEngine.masterVolumeSettings;
+
+		self.level = settings.level;
+
+		[
+			"masterVolume.level"
+		].forEach( function( path ) {
+			$scope.$watch( path, settingsChangeHandler );
+		} );
+
+		// fix the lack of attr 'value' update
+		$( ".master-volume webaudio-knob" ).on( "change", function( e ) {
+			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
+				$( e.target ).attr( "value", e.target.value );
+			}
+		} );
+
+	} ] );
+
+	mod.directive( "masterVolume", [ "$templateCache", function( $templateCache ) {
+		return {
+			restrict: "E",
+			replace: true,
+			template: $templateCache.get( "master-volume.html" )
+		};
+	} ] );
+
+};
+},{"jquery":3}],37:[function(require,module,exports){
+'use strict';
+
+var $ = require( "jquery" );
+
+module.exports = function( mod ) {
+
 	mod.controller( "ModulationWheelCtrl", [ "$scope", "$timeout", "dawEngine", "synthUtils", function( $scope, $timeout, dawEngine, synthUtils ) {
 		var self = this,
 			synth = dawEngine.synth,
@@ -39660,7 +39733,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],37:[function(require,module,exports){
+},{"jquery":3}],38:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -39730,7 +39803,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],38:[function(require,module,exports){
+},{"jquery":3}],39:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -39772,7 +39845,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],39:[function(require,module,exports){
+},{"jquery":3}],40:[function(require,module,exports){
 var ngModule = angular.module('daw.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('daw.html',
@@ -39792,11 +39865,11 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],40:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 var ngModule = angular.module('delay.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('delay.html',
-    '<div class="col-lg-3 col-lg-offset-1 delay master-control-bank text-center" ng-controller="DelayCtrl as delay">\n' +
+    '<div class="col-lg-3 col-lg-offset-3 delay master-control-bank text-center" ng-controller="DelayCtrl as delay">\n' +
     '	<div class="row">\n' +
     '		<div class="col-lg-3">\n' +
     '			<webaudio-knob src="images/frequency-knob.png"\n' +
@@ -39828,7 +39901,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 var ngModule = angular.module('keyboard.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('keyboard.html',
@@ -39838,20 +39911,37 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],42:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 var ngModule = angular.module('master-controls.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('master-controls.html',
-    '<div id="masterControlls" class="container">\n' +
+    '<div id="masterControls" class="container">\n' +
     '	<div class="row">\n' +
     '		<delay></delay>\n' +
     '		<reverb></reverb>\n' +
+    '		<master-volume></master-volume>\n' +
     '	</div>\n' +
     '</div>');
 }]);
 
 module.exports = ngModule;
-},{}],43:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
+var ngModule = angular.module('master-volume.html', []);
+ngModule.run(['$templateCache', function($templateCache) {
+  $templateCache.put('master-volume.html',
+    '<div class="col-lg-1 master-volume master-control-bank text-center" ng-controller="MasterVolumeCtrl as masterVolume">\n' +
+    '	<div class="row">\n' +
+    '		<webaudio-knob src="images/frequency-knob.png"\n' +
+    '			bind-polymer\n' +
+    '			value="{{masterVolume.level}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Master Volume"></webaudio-knob>\n' +
+    '		<h5>Level</h5>\n' +
+    '	</div>\n' +
+    '	<h4>Volume</h4>\n' +
+    '</div>');
+}]);
+
+module.exports = ngModule;
+},{}],45:[function(require,module,exports){
 var ngModule = angular.module('modulation-wheel.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('modulation-wheel.html',
@@ -39863,7 +39953,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],44:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 var ngModule = angular.module('pitch-bend.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('pitch-bend.html',
@@ -39875,7 +39965,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],45:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 var ngModule = angular.module('reverb.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('reverb.html',
