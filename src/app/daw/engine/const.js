@@ -5,6 +5,9 @@ module.exports = {
 	DEFAULT_PITCH_SETTINGS: {
 		bend: 0
 	},
+	DEFAULT_MODULATION_SETTINGS: {
+		rate: 0
+	},
 	DEFAULT_DELAY_SETTINGS: {
 		time: 15,
 		feedback: 30,

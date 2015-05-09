@@ -28,12 +28,15 @@ function DAW( AudioContext ) {
 	self.externalMidiMessageHandlers = [];
 	self.settings = {
 		pitch: null,
+		modulation: null,
 		delay: null,
 		reverb: null,
 		masterVolume: null
 	};
 
 	self._defineProps();
+
+	// pitch & modulation settings are set in init
 
 	self.delaySettings = CONST.DEFAULT_DELAY_SETTINGS;
 	self.reverbSettings = CONST.DEFAULT_REVERB_SETTINGS;
@@ -57,6 +60,7 @@ DAW.prototype = {
 			);
 
 			self.pitchSettings = CONST.DEFAULT_PITCH_SETTINGS;
+			self.modulationSettings = CONST.DEFAULT_MODULATION_SETTINGS;
 
 			if ( callback ) {
 				callback();
@@ -120,6 +124,29 @@ DAW.prototype = {
 				}
 
 				self.settings.pitch = JSON.parse( JSON.stringify( settings ) );
+			}
+		} );
+
+		Object.defineProperty( self, "modulationSettings", {
+			get: function() {
+				var self = this;
+
+				return JSON.parse( JSON.stringify( self.settings.modulation ) );
+			},
+			set: function( settings ) {
+				var self = this,
+					synth = self.synth,
+					oldSettings = self.settings.modulation || {};
+
+				if ( oldSettings.rate !== settings.rate ) {
+					var alteredSettings = synth.modulationSettings;
+
+					alteredSettings.rate = settings.rate;
+
+					synth.modulationSettings = alteredSettings;
+				}
+
+				self.settings.modulation = JSON.parse( JSON.stringify( settings ) );
 			}
 		} );
 

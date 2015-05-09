@@ -6,15 +6,14 @@ module.exports = function( mod ) {
 
 	mod.controller( "ModulationWheelCtrl", [ "$scope", "$timeout", "dawEngine", "synthUtils", function( $scope, $timeout, dawEngine, synthUtils ) {
 		var self = this,
-			synth = dawEngine.synth,
 			settingsChangeHandler = function() {
-				var modulationSettings = synth.modulationSettings;
+				var modulationSettings = dawEngine.modulationSettings;
 
 				modulationSettings.rate = synthUtils.getRateFromSimpleModulation( self.modulation );
 
-				synth.modulationSettings = modulationSettings;
+				dawEngine.modulationSettings = modulationSettings;
 			},
-			settings = synth.modulationSettings,
+			settings = dawEngine.modulationSettings,
 			$modulationWheel = $( ".modulation-wheel webaudio-slider" );
 
 		self.RANGE = 127;

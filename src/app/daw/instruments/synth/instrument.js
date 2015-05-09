@@ -196,6 +196,27 @@ Instrument.prototype = {
 	_defineProps: function() {
 		var self = this;
 
+		Object.defineProperty( self, "pitchSettings", {
+
+			get: function() {
+				var self = this;
+
+				return JSON.parse( JSON.stringify( self.settings.pitch ) );
+			},
+			set: function( settings ) {
+				var self = this,
+					oldSettings = self.settings.pitch || {},
+					hasANoteDown = self.activeNotes.length > 0;
+
+				if ( hasANoteDown && oldSettings.bend !== settings.bend ) {
+					self._detuneOscillators( self.oscillators, self.activeNotes, self.oscillatorSettings, settings );
+				}
+
+				self.settings.pitch = JSON.parse( JSON.stringify( settings ) );
+			}
+
+		} );
+
 		Object.defineProperty( self, "modulationSettings", {
 
 			get: function() {
@@ -460,25 +481,6 @@ Instrument.prototype = {
 				self.settings.lfo = JSON.parse( JSON.stringify( settings ) );
 			}
 
-		} );
-
-		Object.defineProperty( self, "pitchSettings", {
-			get: function() {
-				var self = this;
-
-				return JSON.parse( JSON.stringify( self.settings.pitch ) );
-			},
-			set: function( settings ) {
-				var self = this,
-					oldSettings = self.settings.pitch || {},
-					hasANoteDown = self.activeNotes.length > 0;
-
-				if ( hasANoteDown && oldSettings.bend !== settings.bend ) {
-					self._detuneOscillators( self.oscillators, self.activeNotes, self.oscillatorSettings, settings );
-				}
-
-				self.settings.pitch = JSON.parse( JSON.stringify( settings ) );
-			}
 		} );
 	},
 
