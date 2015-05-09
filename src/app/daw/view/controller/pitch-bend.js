@@ -6,13 +6,12 @@ module.exports = function( mod ) {
 
 	mod.controller( "PitchBendCtrl", [ "$scope", "$timeout", "dawEngine", "synthUtils", function( $scope, $timeout, dawEngine, synthUtils ) {
 		var self = this,
-			synth = dawEngine.synth,
 			settingsChangeHandler = function() {
-				synth.pitchSettings = {
+				dawEngine.pitchSettings = {
 					bend: synthUtils.getNormalPitch( self.bend )
 				};
 			},
-			settings = synth.pitchSettings,
+			settings = dawEngine.pitchSettings,
 			$pitchBend = $( ".pitch-bend webaudio-slider" );
 
 		self.RANGE = 128;
