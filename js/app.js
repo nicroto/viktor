@@ -37340,6 +37340,36 @@ Tuna.toString = Tuna.prototype.toString = function () {
 
 module.exports = Tuna;
 },{}],6:[function(require,module,exports){
+'use strict';
+
+var SIMPLE_PITCH_HALF_RANGE = 64;
+
+module.exports = {
+
+	getSimplePitch: function( value ) {
+		return Math.floor( value * SIMPLE_PITCH_HALF_RANGE + SIMPLE_PITCH_HALF_RANGE );
+	},
+
+	getNormalPitch: function( value ) {
+		return ( value - SIMPLE_PITCH_HALF_RANGE ) / SIMPLE_PITCH_HALF_RANGE;
+	},
+
+	getRateFromModulation: function( modulation ) {
+		return 15 * modulation;
+	},
+
+	getSimpleModulationFromRate: function( value ) {
+		return Math.round( ( value / 15 ) * 127 );
+	},
+
+	getRateFromSimpleModulation: function( value ) {
+		var self = this;
+
+		return self.getRateFromModulation( value / 127 );
+	}
+
+};
+},{}],7:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -37372,7 +37402,7 @@ angular.element( document ).ready( function() {
 
 module.exports = app;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./daw/daw":7,"./daw/module":32,"angular":2,"angular-bind-polymer":4}],7:[function(require,module,exports){
+},{"./daw/daw":8,"./daw/module":33,"angular":2,"angular-bind-polymer":4}],8:[function(require,module,exports){
 'use strict';
 
 var CONST = require( "./engine/const" ),
@@ -37403,12 +37433,15 @@ function DAW( AudioContext ) {
 	self.externalMidiMessageHandlers = [];
 	self.settings = {
 		pitch: null,
+		modulation: null,
 		delay: null,
 		reverb: null,
 		masterVolume: null
 	};
 
 	self._defineProps();
+
+	// pitch & modulation settings are set in init
 
 	self.delaySettings = CONST.DEFAULT_DELAY_SETTINGS;
 	self.reverbSettings = CONST.DEFAULT_REVERB_SETTINGS;
@@ -37432,6 +37465,7 @@ DAW.prototype = {
 			);
 
 			self.pitchSettings = CONST.DEFAULT_PITCH_SETTINGS;
+			self.modulationSettings = CONST.DEFAULT_MODULATION_SETTINGS;
 
 			if ( callback ) {
 				callback();
@@ -37495,6 +37529,29 @@ DAW.prototype = {
 				}
 
 				self.settings.pitch = JSON.parse( JSON.stringify( settings ) );
+			}
+		} );
+
+		Object.defineProperty( self, "modulationSettings", {
+			get: function() {
+				var self = this;
+
+				return JSON.parse( JSON.stringify( self.settings.modulation ) );
+			},
+			set: function( settings ) {
+				var self = this,
+					synth = self.synth,
+					oldSettings = self.settings.modulation || {};
+
+				if ( oldSettings.rate !== settings.rate ) {
+					var alteredSettings = synth.modulationSettings;
+
+					alteredSettings.rate = settings.rate;
+
+					synth.modulationSettings = alteredSettings;
+				}
+
+				self.settings.modulation = JSON.parse( JSON.stringify( settings ) );
 			}
 		} );
 
@@ -37572,13 +37629,16 @@ DAW.prototype = {
 };
 
 module.exports = DAW;
-},{"./engine/const":8,"./engine/midi":9,"./engine/utils":10,"./instruments/synth/instrument":17,"tuna":5}],8:[function(require,module,exports){
+},{"./engine/const":9,"./engine/midi":10,"./engine/utils":11,"./instruments/synth/instrument":18,"tuna":5}],9:[function(require,module,exports){
 'use strict';
 
 module.exports = {
 
 	DEFAULT_PITCH_SETTINGS: {
 		bend: 0
+	},
+	DEFAULT_MODULATION_SETTINGS: {
+		rate: 0
 	},
 	DEFAULT_DELAY_SETTINGS: {
 		time: 15,
@@ -37612,7 +37672,7 @@ module.exports = {
 	}
 
 };
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 'use strict';
 
 function MIDIController() {
@@ -37754,7 +37814,7 @@ MIDIController.prototype = {
 };
 
 module.exports = MIDIController;
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -37791,7 +37851,7 @@ module.exports = {
 	}
 
 };
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -37900,7 +37960,7 @@ module.exports = {
 	MODULATION_LFO_FREQUENCY_RANGE: 10
 
 };
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 'use strict';
 
 var utils = require( "./utils" ),
@@ -37956,7 +38016,7 @@ Envelope.prototype = {
 };
 
 module.exports = Envelope;
-},{"./const":11,"./utils":16}],13:[function(require,module,exports){
+},{"./const":12,"./utils":17}],14:[function(require,module,exports){
 'use strict';
 
 var CONST = require( "./const" );
@@ -37971,7 +38031,7 @@ function Filter( audioContext ) {
 }
 
 module.exports = Filter;
-},{"./const":11}],14:[function(require,module,exports){
+},{"./const":12}],15:[function(require,module,exports){
 'use strict';
 
 var CONST = require( "./const" );
@@ -38075,7 +38135,7 @@ LFO.prototype = {
 };
 
 module.exports = LFO;
-},{"./const":11}],15:[function(require,module,exports){
+},{"./const":12}],16:[function(require,module,exports){
 'use strict';
 
 var CONST = require( "./const" );
@@ -38118,7 +38178,7 @@ console.log( "secondGain: " + self.secondGain.gain.value );
 }
 
 module.exports = Mix;
-},{"./const":11}],16:[function(require,module,exports){
+},{"./const":12}],17:[function(require,module,exports){
 'use strict';
 
 var CONST = require( "./const" );
@@ -38126,8 +38186,7 @@ var CONST = require( "./const" );
 var SEMITONE_CENTS = 100,
 	OCTAVE_CENTS = 12 * SEMITONE_CENTS,
 	FINE_DETUNE_HALF_SPECTRE = 8,
-	RANGE_DEFAULT_BASE = 3,
-	SIMPLE_PITCH_HALF_RANGE = 64;
+	RANGE_DEFAULT_BASE = 3;
 
 var utils = {
 
@@ -38293,39 +38352,18 @@ var utils = {
 
 	getPitchBendDetune: function( value ) {
 		return value * 200;
-	},
-
-	getSimplePitch: function( value ) {
-		return Math.floor( value * SIMPLE_PITCH_HALF_RANGE + SIMPLE_PITCH_HALF_RANGE );
-	},
-
-	getNormalPitch: function( value ) {
-		return ( value - SIMPLE_PITCH_HALF_RANGE ) / SIMPLE_PITCH_HALF_RANGE;
-	},
-
-	getRateFromModulation: function( modulation ) {
-		return 15 * modulation;
-	},
-
-	getSimpleModulationFromRate: function( value ) {
-		return Math.round( ( value / 15 ) * 127 );
-	},
-
-	getRateFromSimpleModulation: function( value ) {
-		var self = this;
-
-		return self.getRateFromModulation( value / 127 );
 	}
 
 };
 
 module.exports = utils;
-},{"./const":11}],17:[function(require,module,exports){
+},{"./const":12}],18:[function(require,module,exports){
 /* jshint -W098 */
 
 'use strict';
 
-var CONST = require( "./engine/const" ),
+var settingsConvertor = require( "settings-convertor" ),
+	CONST = require( "./engine/const" ),
 	utils = require( "./engine/utils" ),
 	Envelope = require( "./engine/envelope" ),
 	Filter = require( "./engine/filter" ),
@@ -38505,7 +38543,7 @@ Instrument.prototype = {
 	onModulationWheelTurn: function( modulation ) {
 		var self = this,
 			oldSettings = self.modulationSettings,
-			newRate = utils.getRateFromModulation( modulation );
+			newRate = settingsConvertor.getRateFromModulation( modulation );
 
 		if ( oldSettings.rate !== newRate ) {
 			self.modulationSettings = {
@@ -38518,6 +38556,27 @@ Instrument.prototype = {
 
 	_defineProps: function() {
 		var self = this;
+
+		Object.defineProperty( self, "pitchSettings", {
+
+			get: function() {
+				var self = this;
+
+				return JSON.parse( JSON.stringify( self.settings.pitch ) );
+			},
+			set: function( settings ) {
+				var self = this,
+					oldSettings = self.settings.pitch || {},
+					hasANoteDown = self.activeNotes.length > 0;
+
+				if ( hasANoteDown && oldSettings.bend !== settings.bend ) {
+					self._detuneOscillators( self.oscillators, self.activeNotes, self.oscillatorSettings, settings );
+				}
+
+				self.settings.pitch = JSON.parse( JSON.stringify( settings ) );
+			}
+
+		} );
 
 		Object.defineProperty( self, "modulationSettings", {
 
@@ -38784,25 +38843,6 @@ Instrument.prototype = {
 			}
 
 		} );
-
-		Object.defineProperty( self, "pitchSettings", {
-			get: function() {
-				var self = this;
-
-				return JSON.parse( JSON.stringify( self.settings.pitch ) );
-			},
-			set: function( settings ) {
-				var self = this,
-					oldSettings = self.settings.pitch || {},
-					hasANoteDown = self.activeNotes.length > 0;
-
-				if ( hasANoteDown && oldSettings.bend !== settings.bend ) {
-					self._detuneOscillators( self.oscillators, self.activeNotes, self.oscillatorSettings, settings );
-				}
-
-				self.settings.pitch = JSON.parse( JSON.stringify( settings ) );
-			}
-		} );
 	},
 
 	_detuneOscillators: function( oscillators, activeNotes, oscillatorSettings, pitchSettings ) {
@@ -38843,7 +38883,7 @@ Instrument.prototype = {
 };
 
 module.exports = Instrument;
-},{"./engine/const":11,"./engine/envelope":12,"./engine/filter":13,"./engine/lfo":14,"./engine/mix":15,"./engine/utils":16}],18:[function(require,module,exports){
+},{"./engine/const":12,"./engine/envelope":13,"./engine/filter":14,"./engine/lfo":15,"./engine/mix":16,"./engine/utils":17,"settings-convertor":6}],19:[function(require,module,exports){
 'use strict';
 
 var angular = require( "angular" ),
@@ -38875,16 +38915,15 @@ require( "./view/controller/filter" )( mod );
 require( "./view/controller/lfo" )( mod );
 
 module.exports = mod;
-},{"./view/controller/envelopes":19,"./view/controller/filter":20,"./view/controller/lfo":21,"./view/controller/mixer":22,"./view/controller/modulation":23,"./view/controller/oscillator-bank":24,"./view/template/envelopes.html":25,"./view/template/filter.html":26,"./view/template/lfo.html":27,"./view/template/mixer.html":28,"./view/template/modulation.html":29,"./view/template/oscillator-bank.html":30,"./view/template/synth.html":31,"angular":2}],19:[function(require,module,exports){
+},{"./view/controller/envelopes":20,"./view/controller/filter":21,"./view/controller/lfo":22,"./view/controller/mixer":23,"./view/controller/modulation":24,"./view/controller/oscillator-bank":25,"./view/template/envelopes.html":26,"./view/template/filter.html":27,"./view/template/lfo.html":28,"./view/template/mixer.html":29,"./view/template/modulation.html":30,"./view/template/oscillator-bank.html":31,"./view/template/synth.html":32,"angular":2}],20:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
 
 module.exports = function( mod ) {
 
-	mod.controller( "EnvelopesCtrl", [ "$scope", "dawEngine", function( $scope, dawEngine ) {
+	mod.controller( "EnvelopesCtrl", [ "$scope", "synth", function( $scope, synth ) {
 		var self = this,
-			synth = dawEngine.synth,
 			settingsChangeHandler = function() {
 				synth.envelopesSettings = {
 					primary: self.primary,
@@ -38927,16 +38966,15 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],20:[function(require,module,exports){
+},{"jquery":3}],21:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
 
 module.exports = function( mod ) {
 
-	mod.controller( "FilterCtrl", [ "$scope", "dawEngine", function( $scope, dawEngine ) {
+	mod.controller( "FilterCtrl", [ "$scope", "synth", function( $scope, synth ) {
 		var self = this,
-			synth = dawEngine.synth,
 			settingsChangeHandler = function() {
 				synth.filterSettings = {
 					cutoff: self.cutoff,
@@ -38976,16 +39014,15 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],21:[function(require,module,exports){
+},{"jquery":3}],22:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
 
 module.exports = function( mod ) {
 
-	mod.controller( "LFOCtrl", [ "$scope", "dawEngine", function( $scope, dawEngine ) {
+	mod.controller( "LFOCtrl", [ "$scope", "synth", function( $scope, synth ) {
 		var self = this,
-			synth = dawEngine.synth,
 			settingsChangeHandler = function() {
 				synth.lfoSettings = {
 					waveform: self.waveform,
@@ -39025,16 +39062,15 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],22:[function(require,module,exports){
+},{"jquery":3}],23:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
 
 module.exports = function( mod ) {
 
-	mod.controller( "MixerCtrl", [ "$scope", "dawEngine", function( $scope, dawEngine ) {
+	mod.controller( "MixerCtrl", [ "$scope", "synth", function( $scope, synth ) {
 		var self = this,
-			synth = dawEngine.synth,
 			settingsChangeHandler = function() {
 				synth.mixerSettings = {
 					volume1: self.volume1,
@@ -39088,16 +39124,15 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],23:[function(require,module,exports){
+},{"jquery":3}],24:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
 
 module.exports = function( mod ) {
 
-	mod.controller( "ModulationCtrl", [ "$scope", "dawEngine", function( $scope, dawEngine ) {
+	mod.controller( "ModulationCtrl", [ "$scope", "synth", function( $scope, synth ) {
 		var self = this,
-			synth = dawEngine.synth,
 			settingsChangeHandler = function() {
 				synth.modulationSettings = {
 					waveform: self.waveform,
@@ -39135,16 +39170,15 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],24:[function(require,module,exports){
+},{"jquery":3}],25:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
 
 module.exports = function( mod ) {
 
-	mod.controller( "OscillatorBankCtrl", [ "$scope", "dawEngine", function( $scope, dawEngine ) {
+	mod.controller( "OscillatorBankCtrl", [ "$scope", "synth", function( $scope, synth ) {
 		var self = this,
-			synth = dawEngine.synth,
 			settingsChangeHandler = function() {
 				synth.oscillatorSettings = {
 					osc1: self.osc1,
@@ -39188,7 +39222,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],25:[function(require,module,exports){
+},{"jquery":3}],26:[function(require,module,exports){
 var ngModule = angular.module('envelopes.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('envelopes.html',
@@ -39250,7 +39284,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 var ngModule = angular.module('filter.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('filter.html',
@@ -39278,7 +39312,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 var ngModule = angular.module('lfo.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('lfo.html',
@@ -39306,7 +39340,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 var ngModule = angular.module('mixer.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('mixer.html',
@@ -39366,7 +39400,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 var ngModule = angular.module('modulation.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('modulation.html',
@@ -39388,7 +39422,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 var ngModule = angular.module('oscillator-bank.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('oscillator-bank.html',
@@ -39454,7 +39488,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 var ngModule = angular.module('synth.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('synth.html',
@@ -39471,7 +39505,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 'use strict';
 
 var angular = require( "angular" ),
@@ -39500,9 +39534,9 @@ mod.provider( "dawEngine", function dawEngineProvider() {
 
 } );
 
-mod.factory( "synthUtils", function() {
-	return require( "./instruments/synth/engine/utils" );
-} );
+mod.factory( "synth",[ "dawEngine", function( dawEngine ) {
+	return dawEngine.synth;
+} ] );
 
 mod.directive( "dawContainer", [ "$templateCache", function($templateCache) {
 	return {
@@ -39524,7 +39558,7 @@ require( "./view/controller/modulation-wheel" )( mod );
 require( "./view/controller/keyboard" )( mod );
 
 module.exports = mod;
-},{"./instruments/synth/engine/utils":16,"./instruments/synth/module":18,"./view/controller/delay":33,"./view/controller/keyboard":34,"./view/controller/master-controls":35,"./view/controller/master-volume":36,"./view/controller/modulation-wheel":37,"./view/controller/pitch-bend":38,"./view/controller/reverb":39,"./view/template/daw.html":40,"./view/template/delay.html":41,"./view/template/keyboard.html":42,"./view/template/master-controls.html":43,"./view/template/master-volume.html":44,"./view/template/modulation-wheel.html":45,"./view/template/pitch-bend.html":46,"./view/template/reverb.html":47,"angular":2}],33:[function(require,module,exports){
+},{"./instruments/synth/module":19,"./view/controller/delay":34,"./view/controller/keyboard":35,"./view/controller/master-controls":36,"./view/controller/master-volume":37,"./view/controller/modulation-wheel":38,"./view/controller/pitch-bend":39,"./view/controller/reverb":40,"./view/template/daw.html":41,"./view/template/delay.html":42,"./view/template/keyboard.html":43,"./view/template/master-controls.html":44,"./view/template/master-volume.html":45,"./view/template/modulation-wheel.html":46,"./view/template/pitch-bend.html":47,"./view/template/reverb.html":48,"angular":2}],34:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -39575,7 +39609,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],34:[function(require,module,exports){
+},{"jquery":3}],35:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -39615,7 +39649,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],35:[function(require,module,exports){
+},{"jquery":3}],36:[function(require,module,exports){
 'use strict';
 
 module.exports = function( mod ) {
@@ -39629,7 +39663,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -39671,28 +39705,28 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],37:[function(require,module,exports){
+},{"jquery":3}],38:[function(require,module,exports){
 'use strict';
 
-var $ = require( "jquery" );
+var $ = require( "jquery" ),
+	settingsConvertor = require( "settings-convertor" );
 
 module.exports = function( mod ) {
 
-	mod.controller( "ModulationWheelCtrl", [ "$scope", "$timeout", "dawEngine", "synthUtils", function( $scope, $timeout, dawEngine, synthUtils ) {
+	mod.controller( "ModulationWheelCtrl", [ "$scope", "$timeout", "dawEngine", function( $scope, $timeout, dawEngine ) {
 		var self = this,
-			synth = dawEngine.synth,
 			settingsChangeHandler = function() {
-				var modulationSettings = synth.modulationSettings;
+				var modulationSettings = dawEngine.modulationSettings;
 
-				modulationSettings.rate = synthUtils.getRateFromSimpleModulation( self.modulation );
+				modulationSettings.rate = settingsConvertor.getRateFromSimpleModulation( self.modulation );
 
-				synth.modulationSettings = modulationSettings;
+				dawEngine.modulationSettings = modulationSettings;
 			},
-			settings = synth.modulationSettings,
+			settings = dawEngine.modulationSettings,
 			$modulationWheel = $( ".modulation-wheel webaudio-slider" );
 
 		self.RANGE = 127;
-		self.modulation = synthUtils.getSimpleModulationFromRate( settings.rate );
+		self.modulation = settingsConvertor.getSimpleModulationFromRate( settings.rate );
 
 		[
 			"modulationWheel.modulation"
@@ -39703,8 +39737,8 @@ module.exports = function( mod ) {
 		dawEngine.addExternalMidiMessageHandler( function( type, parsed, rawEvent ) {
 			if ( type === "modulationWheel" ) {
 				$modulationWheel[ 0 ].setValue(
-					synthUtils.getSimpleModulationFromRate(
-						synthUtils.getRateFromModulation( parsed.modulation )
+					settingsConvertor.getSimpleModulationFromRate(
+						settingsConvertor.getRateFromModulation( parsed.modulation )
 					)
 				);
 			}
@@ -39733,26 +39767,26 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],38:[function(require,module,exports){
+},{"jquery":3,"settings-convertor":6}],39:[function(require,module,exports){
 'use strict';
 
-var $ = require( "jquery" );
+var $ = require( "jquery" ),
+	settingsConvertor = require( "settings-convertor" );
 
 module.exports = function( mod ) {
 
-	mod.controller( "PitchBendCtrl", [ "$scope", "$timeout", "dawEngine", "synthUtils", function( $scope, $timeout, dawEngine, synthUtils ) {
+	mod.controller( "PitchBendCtrl", [ "$scope", "$timeout", "dawEngine", function( $scope, $timeout, dawEngine ) {
 		var self = this,
-			synth = dawEngine.synth,
 			settingsChangeHandler = function() {
-				synth.pitchSettings = {
-					bend: synthUtils.getNormalPitch( self.bend )
+				dawEngine.pitchSettings = {
+					bend: settingsConvertor.getNormalPitch( self.bend )
 				};
 			},
-			settings = synth.pitchSettings,
+			settings = dawEngine.pitchSettings,
 			$pitchBend = $( ".pitch-bend webaudio-slider" );
 
 		self.RANGE = 128;
-		self.bend = synthUtils.getSimplePitch( settings.bend );
+		self.bend = settingsConvertor.getSimplePitch( settings.bend );
 
 		[
 			"pitch.bend"
@@ -39762,7 +39796,7 @@ module.exports = function( mod ) {
 
 		dawEngine.addExternalMidiMessageHandler( function( type, parsed, rawEvent ) {
 			if ( type === "pitchBend" ) {
-				$pitchBend[ 0 ].setValue( synthUtils.getSimplePitch( parsed.pitchBend ) );
+				$pitchBend[ 0 ].setValue( settingsConvertor.getSimplePitch( parsed.pitchBend ) );
 			}
 		} );
 
@@ -39803,7 +39837,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],39:[function(require,module,exports){
+},{"jquery":3,"settings-convertor":6}],40:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -39845,7 +39879,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],40:[function(require,module,exports){
+},{"jquery":3}],41:[function(require,module,exports){
 var ngModule = angular.module('daw.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('daw.html',
@@ -39865,7 +39899,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 var ngModule = angular.module('delay.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('delay.html',
@@ -39901,7 +39935,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],42:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 var ngModule = angular.module('keyboard.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('keyboard.html',
@@ -39911,7 +39945,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],43:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 var ngModule = angular.module('master-controls.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('master-controls.html',
@@ -39925,7 +39959,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],44:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 var ngModule = angular.module('master-volume.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('master-volume.html',
@@ -39941,7 +39975,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],45:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 var ngModule = angular.module('modulation-wheel.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('modulation-wheel.html',
@@ -39953,7 +39987,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],46:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 var ngModule = angular.module('pitch-bend.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('pitch-bend.html',
@@ -39965,7 +39999,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],47:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 var ngModule = angular.module('reverb.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('reverb.html',
@@ -39981,4 +40015,4 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}]},{},[6]);
+},{}]},{},[7]);
