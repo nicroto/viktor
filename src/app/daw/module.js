@@ -26,9 +26,9 @@ mod.provider( "dawEngine", function dawEngineProvider() {
 
 } );
 
-mod.factory( "synthUtils", function() {
-	return require( "./instruments/synth/engine/utils" );
-} );
+mod.factory( "synth",[ "dawEngine", function( dawEngine ) {
+	return dawEngine.synth;
+} ] );
 
 mod.directive( "dawContainer", [ "$templateCache", function($templateCache) {
 	return {

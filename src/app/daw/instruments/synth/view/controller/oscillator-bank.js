@@ -4,9 +4,8 @@ var $ = require( "jquery" );
 
 module.exports = function( mod ) {
 
-	mod.controller( "OscillatorBankCtrl", [ "$scope", "dawEngine", function( $scope, dawEngine ) {
+	mod.controller( "OscillatorBankCtrl", [ "$scope", "synth", function( $scope, synth ) {
 		var self = this,
-			synth = dawEngine.synth,
 			settingsChangeHandler = function() {
 				synth.oscillatorSettings = {
 					osc1: self.osc1,

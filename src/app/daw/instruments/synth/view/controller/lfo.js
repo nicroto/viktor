@@ -4,9 +4,8 @@ var $ = require( "jquery" );
 
 module.exports = function( mod ) {
 
-	mod.controller( "LFOCtrl", [ "$scope", "dawEngine", function( $scope, dawEngine ) {
+	mod.controller( "LFOCtrl", [ "$scope", "synth", function( $scope, synth ) {
 		var self = this,
-			synth = dawEngine.synth,
 			settingsChangeHandler = function() {
 				synth.lfoSettings = {
 					waveform: self.waveform,

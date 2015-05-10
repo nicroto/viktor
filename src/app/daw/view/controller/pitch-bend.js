@@ -1,21 +1,22 @@
 'use strict';
 
-var $ = require( "jquery" );
+var $ = require( "jquery" ),
+	settingsConvertor = require( "settings-convertor" );
 
 module.exports = function( mod ) {
 
-	mod.controller( "PitchBendCtrl", [ "$scope", "$timeout", "dawEngine", "synthUtils", function( $scope, $timeout, dawEngine, synthUtils ) {
+	mod.controller( "PitchBendCtrl", [ "$scope", "$timeout", "dawEngine", function( $scope, $timeout, dawEngine ) {
 		var self = this,
 			settingsChangeHandler = function() {
 				dawEngine.pitchSettings = {
-					bend: synthUtils.getNormalPitch( self.bend )
+					bend: settingsConvertor.getNormalPitch( self.bend )
 				};
 			},
 			settings = dawEngine.pitchSettings,
 			$pitchBend = $( ".pitch-bend webaudio-slider" );
 
 		self.RANGE = 128;
-		self.bend = synthUtils.getSimplePitch( settings.bend );
+		self.bend = settingsConvertor.getSimplePitch( settings.bend );
 
 		[
 			"pitch.bend"
@@ -25,7 +26,7 @@ module.exports = function( mod ) {
 
 		dawEngine.addExternalMidiMessageHandler( function( type, parsed, rawEvent ) {
 			if ( type === "pitchBend" ) {
-				$pitchBend[ 0 ].setValue( synthUtils.getSimplePitch( parsed.pitchBend ) );
+				$pitchBend[ 0 ].setValue( settingsConvertor.getSimplePitch( parsed.pitchBend ) );
 			}
 		} );
 

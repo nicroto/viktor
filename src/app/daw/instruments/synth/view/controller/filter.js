@@ -4,9 +4,8 @@ var $ = require( "jquery" );
 
 module.exports = function( mod ) {
 
-	mod.controller( "FilterCtrl", [ "$scope", "dawEngine", function( $scope, dawEngine ) {
+	mod.controller( "FilterCtrl", [ "$scope", "synth", function( $scope, synth ) {
 		var self = this,
-			synth = dawEngine.synth,
 			settingsChangeHandler = function() {
 				synth.filterSettings = {
 					cutoff: self.cutoff,

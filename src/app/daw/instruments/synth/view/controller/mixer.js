@@ -4,9 +4,8 @@ var $ = require( "jquery" );
 
 module.exports = function( mod ) {
 
-	mod.controller( "MixerCtrl", [ "$scope", "dawEngine", function( $scope, dawEngine ) {
+	mod.controller( "MixerCtrl", [ "$scope", "synth", function( $scope, synth ) {
 		var self = this,
-			synth = dawEngine.synth,
 			settingsChangeHandler = function() {
 				synth.mixerSettings = {
 					volume1: self.volume1,

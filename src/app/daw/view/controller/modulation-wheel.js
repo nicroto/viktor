@@ -1,15 +1,16 @@
 'use strict';
 
-var $ = require( "jquery" );
+var $ = require( "jquery" ),
+	settingsConvertor = require( "settings-convertor" );
 
 module.exports = function( mod ) {
 
-	mod.controller( "ModulationWheelCtrl", [ "$scope", "$timeout", "dawEngine", "synthUtils", function( $scope, $timeout, dawEngine, synthUtils ) {
+	mod.controller( "ModulationWheelCtrl", [ "$scope", "$timeout", "dawEngine", function( $scope, $timeout, dawEngine ) {
 		var self = this,
 			settingsChangeHandler = function() {
 				var modulationSettings = dawEngine.modulationSettings;
 
-				modulationSettings.rate = synthUtils.getRateFromSimpleModulation( self.modulation );
+				modulationSettings.rate = settingsConvertor.getRateFromSimpleModulation( self.modulation );
 
 				dawEngine.modulationSettings = modulationSettings;
 			},
@@ -17,7 +18,7 @@ module.exports = function( mod ) {
 			$modulationWheel = $( ".modulation-wheel webaudio-slider" );
 
 		self.RANGE = 127;
-		self.modulation = synthUtils.getSimpleModulationFromRate( settings.rate );
+		self.modulation = settingsConvertor.getSimpleModulationFromRate( settings.rate );
 
 		[
 			"modulationWheel.modulation"
@@ -28,8 +29,8 @@ module.exports = function( mod ) {
 		dawEngine.addExternalMidiMessageHandler( function( type, parsed, rawEvent ) {
 			if ( type === "modulationWheel" ) {
 				$modulationWheel[ 0 ].setValue(
-					synthUtils.getSimpleModulationFromRate(
-						synthUtils.getRateFromModulation( parsed.modulation )
+					settingsConvertor.getSimpleModulationFromRate(
+						settingsConvertor.getRateFromModulation( parsed.modulation )
 					)
 				);
 			}

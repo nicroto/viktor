@@ -2,7 +2,8 @@
 
 'use strict';
 
-var CONST = require( "./engine/const" ),
+var settingsConvertor = require( "settings-convertor" ),
+	CONST = require( "./engine/const" ),
 	utils = require( "./engine/utils" ),
 	Envelope = require( "./engine/envelope" ),
 	Filter = require( "./engine/filter" ),
@@ -182,7 +183,7 @@ Instrument.prototype = {
 	onModulationWheelTurn: function( modulation ) {
 		var self = this,
 			oldSettings = self.modulationSettings,
-			newRate = utils.getRateFromModulation( modulation );
+			newRate = settingsConvertor.getRateFromModulation( modulation );
 
 		if ( oldSettings.rate !== newRate ) {
 			self.modulationSettings = {

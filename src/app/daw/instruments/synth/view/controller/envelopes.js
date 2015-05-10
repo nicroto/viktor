@@ -4,9 +4,8 @@ var $ = require( "jquery" );
 
 module.exports = function( mod ) {
 
-	mod.controller( "EnvelopesCtrl", [ "$scope", "dawEngine", function( $scope, dawEngine ) {
+	mod.controller( "EnvelopesCtrl", [ "$scope", "synth", function( $scope, synth ) {
 		var self = this,
-			synth = dawEngine.synth,
 			settingsChangeHandler = function() {
 				synth.envelopesSettings = {
 					primary: self.primary,
