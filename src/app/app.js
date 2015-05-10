@@ -3,11 +3,13 @@
 var angular = require( "angular" ),
 	app = angular.module( "app", [
 		require( "angular-bind-polymer" ).name,
-		require( "./daw/module" ).name
+		require( "./ui/module" ).name
 	] ),
 	DAW = require( "./daw/daw" ),
 	AudioContext = global.AudioContext || global.webkitAudioContext,
-	dawEngine = new DAW( AudioContext );
+	dawEngine = new DAW( AudioContext, [
+		require( "./instruments/synth/instrument" )
+	] );
 
 // !!! DEFFERS THE BOOTSTRAP !!!
 global.name = "NG_DEFER_BOOTSTRAP!";

@@ -5,7 +5,7 @@ var CONST = require( "./engine/const" ),
 	MIDIController = require( "./engine/midi" ),
 	Tuna = require( "tuna" );
 
-function DAW( AudioContext ) {
+function DAW( AudioContext, instrumentTypes ) {
 	var self = this,
 		audioContext = new AudioContext(),
 		tuna = new Tuna( audioContext ),
@@ -20,11 +20,13 @@ function DAW( AudioContext ) {
 	masterVolume.connect( audioContext.destination );
 
 	self.audioContext = audioContext;
+	self.instrumentTypes = instrumentTypes;
 	self.midiController = new MIDIController();
 	self.delay = delay;
 	self.reverb = reverb;
 	self.masterVolume = masterVolume;
-	self.synth = null;
+	self.instruments = [];
+	self.selectedInstrument = null;
 	self.externalMidiMessageHandlers = [];
 	self.settings = {
 		pitch: null,
@@ -48,16 +50,19 @@ DAW.prototype = {
 	init: function( callback ) {
 		var self = this,
 			audioContext = self.audioContext,
-			midiController = self.midiController;
+			midiController = self.midiController,
+			instruments = self.instruments;
 
 		midiController.init( function() {
 			midiController.setMessageHandler(
 				self.propagateMidiMessage.bind( self )
 			);
 
-			self.synth = self.createInstrument(
-				require( "./instruments/synth/instrument" )
-			);
+			self.instrumentTypes.forEach( function( Instrument ) {
+				instruments.push( self.createInstrument( Instrument ) );
+			} );
+
+			self.selectInstrument( 0 );
 
 			self.pitchSettings = CONST.DEFAULT_PITCH_SETTINGS;
 			self.modulationSettings = CONST.DEFAULT_MODULATION_SETTINGS;
@@ -70,10 +75,16 @@ DAW.prototype = {
 		self.audioContext = audioContext;
 	},
 
+	selectInstrument: function( index ) {
+		var self = this;
+
+		self.selectedInstrument = self.instruments[ index ];
+	},
+
 	createInstrument: function( Instrument, settings ) {
 		var self = this,
 			audioContext = self.audioContext,
-			newInstrument = new Instrument( audioContext, settings );
+			newInstrument = new Instrument( audioContext );
 
 		newInstrument.outputNode.connect( self.delay.input );
 
@@ -82,10 +93,10 @@ DAW.prototype = {
 
 	propagateMidiMessage: function( eventType, parsed, rawEvent ) {
 		var self = this,
-			synth = self.synth,
+			selectedInstrument = self.selectedInstrument,
 			externalHandlers = self.externalMidiMessageHandlers;
 
-		synth.onMidiMessage( eventType, parsed, rawEvent );
+		selectedInstrument.onMidiMessage( eventType, parsed, rawEvent );
 
 		externalHandlers.forEach( function( handler ) {
 			handler( eventType, parsed, rawEvent );
@@ -120,7 +131,9 @@ DAW.prototype = {
 					oldSettings = self.settings.pitch || {};
 
 				if ( oldSettings.bend !== settings.bend ) {
-					self.synth.pitchSettings = settings;
+					self.instruments.forEach( function( instrument ) {
+						instrument.pitchSettings = settings;
+					} );
 				}
 
 				self.settings.pitch = JSON.parse( JSON.stringify( settings ) );
@@ -135,15 +148,16 @@ DAW.prototype = {
 			},
 			set: function( settings ) {
 				var self = this,
-					synth = self.synth,
 					oldSettings = self.settings.modulation || {};
 
 				if ( oldSettings.rate !== settings.rate ) {
-					var alteredSettings = synth.modulationSettings;
+					self.instruments.forEach( function( instrument ) {
+						var alteredSettings = instrument.modulationSettings;
 
-					alteredSettings.rate = settings.rate;
+						alteredSettings.rate = settings.rate;
 
-					synth.modulationSettings = alteredSettings;
+						instrument.modulationSettings = alteredSettings;
+					} );
 				}
 
 				self.settings.modulation = JSON.parse( JSON.stringify( settings ) );
