@@ -37376,11 +37376,13 @@ module.exports = {
 var angular = require( "angular" ),
 	app = angular.module( "app", [
 		require( "angular-bind-polymer" ).name,
-		require( "./daw/module" ).name
+		require( "./ui/module" ).name
 	] ),
 	DAW = require( "./daw/daw" ),
 	AudioContext = global.AudioContext || global.webkitAudioContext,
-	dawEngine = new DAW( AudioContext );
+	dawEngine = new DAW( AudioContext, [
+		require( "./instruments/synth/instrument" )
+	] );
 
 // !!! DEFFERS THE BOOTSTRAP !!!
 global.name = "NG_DEFER_BOOTSTRAP!";
@@ -37402,7 +37404,7 @@ angular.element( document ).ready( function() {
 
 module.exports = app;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./daw/daw":8,"./daw/module":33,"angular":2,"angular-bind-polymer":4}],8:[function(require,module,exports){
+},{"./daw/daw":8,"./instruments/synth/instrument":18,"./ui/module":40,"angular":2,"angular-bind-polymer":4}],8:[function(require,module,exports){
 'use strict';
 
 var CONST = require( "./engine/const" ),
@@ -37410,7 +37412,7 @@ var CONST = require( "./engine/const" ),
 	MIDIController = require( "./engine/midi" ),
 	Tuna = require( "tuna" );
 
-function DAW( AudioContext ) {
+function DAW( AudioContext, instrumentTypes ) {
 	var self = this,
 		audioContext = new AudioContext(),
 		tuna = new Tuna( audioContext ),
@@ -37425,11 +37427,13 @@ function DAW( AudioContext ) {
 	masterVolume.connect( audioContext.destination );
 
 	self.audioContext = audioContext;
+	self.instrumentTypes = instrumentTypes;
 	self.midiController = new MIDIController();
 	self.delay = delay;
 	self.reverb = reverb;
 	self.masterVolume = masterVolume;
-	self.synth = null;
+	self.instruments = [];
+	self.selectedInstrument = null;
 	self.externalMidiMessageHandlers = [];
 	self.settings = {
 		pitch: null,
@@ -37453,16 +37457,19 @@ DAW.prototype = {
 	init: function( callback ) {
 		var self = this,
 			audioContext = self.audioContext,
-			midiController = self.midiController;
+			midiController = self.midiController,
+			instruments = self.instruments;
 
 		midiController.init( function() {
 			midiController.setMessageHandler(
 				self.propagateMidiMessage.bind( self )
 			);
 
-			self.synth = self.createInstrument(
-				require( "./instruments/synth/instrument" )
-			);
+			self.instrumentTypes.forEach( function( Instrument ) {
+				instruments.push( self.createInstrument( Instrument ) );
+			} );
+
+			self.selectInstrument( 0 );
 
 			self.pitchSettings = CONST.DEFAULT_PITCH_SETTINGS;
 			self.modulationSettings = CONST.DEFAULT_MODULATION_SETTINGS;
@@ -37475,10 +37482,16 @@ DAW.prototype = {
 		self.audioContext = audioContext;
 	},
 
+	selectInstrument: function( index ) {
+		var self = this;
+
+		self.selectedInstrument = self.instruments[ index ];
+	},
+
 	createInstrument: function( Instrument, settings ) {
 		var self = this,
 			audioContext = self.audioContext,
-			newInstrument = new Instrument( audioContext, settings );
+			newInstrument = new Instrument( audioContext );
 
 		newInstrument.outputNode.connect( self.delay.input );
 
@@ -37487,10 +37500,10 @@ DAW.prototype = {
 
 	propagateMidiMessage: function( eventType, parsed, rawEvent ) {
 		var self = this,
-			synth = self.synth,
+			selectedInstrument = self.selectedInstrument,
 			externalHandlers = self.externalMidiMessageHandlers;
 
-		synth.onMidiMessage( eventType, parsed, rawEvent );
+		selectedInstrument.onMidiMessage( eventType, parsed, rawEvent );
 
 		externalHandlers.forEach( function( handler ) {
 			handler( eventType, parsed, rawEvent );
@@ -37525,7 +37538,9 @@ DAW.prototype = {
 					oldSettings = self.settings.pitch || {};
 
 				if ( oldSettings.bend !== settings.bend ) {
-					self.synth.pitchSettings = settings;
+					self.instruments.forEach( function( instrument ) {
+						instrument.pitchSettings = settings;
+					} );
 				}
 
 				self.settings.pitch = JSON.parse( JSON.stringify( settings ) );
@@ -37540,15 +37555,16 @@ DAW.prototype = {
 			},
 			set: function( settings ) {
 				var self = this,
-					synth = self.synth,
 					oldSettings = self.settings.modulation || {};
 
 				if ( oldSettings.rate !== settings.rate ) {
-					var alteredSettings = synth.modulationSettings;
+					self.instruments.forEach( function( instrument ) {
+						var alteredSettings = instrument.modulationSettings;
 
-					alteredSettings.rate = settings.rate;
+						alteredSettings.rate = settings.rate;
 
-					synth.modulationSettings = alteredSettings;
+						instrument.modulationSettings = alteredSettings;
+					} );
 				}
 
 				self.settings.modulation = JSON.parse( JSON.stringify( settings ) );
@@ -37629,7 +37645,7 @@ DAW.prototype = {
 };
 
 module.exports = DAW;
-},{"./engine/const":9,"./engine/midi":10,"./engine/utils":11,"./instruments/synth/instrument":18,"tuna":5}],9:[function(require,module,exports){
+},{"./engine/const":9,"./engine/midi":10,"./engine/utils":11,"tuna":5}],9:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -38886,681 +38902,6 @@ module.exports = Instrument;
 },{"./engine/const":12,"./engine/envelope":13,"./engine/filter":14,"./engine/lfo":15,"./engine/mix":16,"./engine/utils":17,"settings-convertor":6}],19:[function(require,module,exports){
 'use strict';
 
-var angular = require( "angular" ),
-	template = require( "./view/template/synth.html" ),
-	mod = angular.module( "synth", [
-		template.name,
-		require( "./view/template/modulation.html" ).name,
-		require( "./view/template/oscillator-bank.html" ).name,
-		require( "./view/template/mixer.html" ).name,
-		require( "./view/template/envelopes.html" ).name,
-		require( "./view/template/filter.html" ).name,
-		require( "./view/template/lfo.html" ).name
-	] );
-
-mod.directive( "synth", [ "$templateCache", function( $templateCache ) {
-	return {
-		restrict: "E",
-		replace: true,
-		template: $templateCache.get( template.name )
-	};
-} ] );
-
-// Controllers
-require( "./view/controller/modulation" )( mod );
-require( "./view/controller/oscillator-bank" )( mod );
-require( "./view/controller/mixer" )( mod );
-require( "./view/controller/envelopes" )( mod );
-require( "./view/controller/filter" )( mod );
-require( "./view/controller/lfo" )( mod );
-
-module.exports = mod;
-},{"./view/controller/envelopes":20,"./view/controller/filter":21,"./view/controller/lfo":22,"./view/controller/mixer":23,"./view/controller/modulation":24,"./view/controller/oscillator-bank":25,"./view/template/envelopes.html":26,"./view/template/filter.html":27,"./view/template/lfo.html":28,"./view/template/mixer.html":29,"./view/template/modulation.html":30,"./view/template/oscillator-bank.html":31,"./view/template/synth.html":32,"angular":2}],20:[function(require,module,exports){
-'use strict';
-
-var $ = require( "jquery" );
-
-module.exports = function( mod ) {
-
-	mod.controller( "EnvelopesCtrl", [ "$scope", "synth", function( $scope, synth ) {
-		var self = this,
-			settingsChangeHandler = function() {
-				synth.envelopesSettings = {
-					primary: self.primary,
-					filter: self.filter
-				};
-			},
-			settings = synth.envelopesSettings;
-
-		self.primary = settings.primary;
-		self.filter = settings.filter;
-
-		[
-			"envs.primary.attack",
-			"envs.primary.decay",
-			"envs.primary.sustain",
-			"envs.primary.release",
-			"envs.filter.attack",
-			"envs.filter.decay",
-			"envs.filter.sustain",
-			"envs.filter.release"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
-		} );
-
-		// fix the lack of attr 'value' update
-		$( ".envelopes webaudio-knob" ).on( "change", function( e ) {
-			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
-				$( e.target ).attr( "value", e.target.value );
-			}
-		} );
-
-	} ] );
-
-	mod.directive( "envelopes", [ "$templateCache", function( $templateCache ) {
-		return {
-			restrict: "E",
-			replace: true,
-			template: $templateCache.get( "envelopes.html" )
-		};
-	} ] );
-
-};
-},{"jquery":3}],21:[function(require,module,exports){
-'use strict';
-
-var $ = require( "jquery" );
-
-module.exports = function( mod ) {
-
-	mod.controller( "FilterCtrl", [ "$scope", "synth", function( $scope, synth ) {
-		var self = this,
-			settingsChangeHandler = function() {
-				synth.filterSettings = {
-					cutoff: self.cutoff,
-					emphasis: self.emphasis,
-					envAmount: self.envAmount
-				};
-			},
-			settings = synth.filterSettings;
-
-		self.cutoff = settings.cutoff;
-		self.emphasis = settings.emphasis;
-		self.envAmount = settings.envAmount;
-
-		[
-			"filter.cutoff",
-			"filter.emphasis",
-			"filter.envAmount"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
-		} );
-
-		// fix the lack of attr 'value' update
-		$( ".filter webaudio-knob" ).on( "change", function( e ) {
-			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
-				$( e.target ).attr( "value", e.target.value );
-			}
-		} );
-
-	} ] );
-
-	mod.directive( "filter", [ "$templateCache", function( $templateCache ) {
-		return {
-			restrict: "E",
-			replace: true,
-			template: $templateCache.get( "filter.html" )
-		};
-	} ] );
-
-};
-},{"jquery":3}],22:[function(require,module,exports){
-'use strict';
-
-var $ = require( "jquery" );
-
-module.exports = function( mod ) {
-
-	mod.controller( "LFOCtrl", [ "$scope", "synth", function( $scope, synth ) {
-		var self = this,
-			settingsChangeHandler = function() {
-				synth.lfoSettings = {
-					waveform: self.waveform,
-					rate: self.rate,
-					amount: self.amount
-				};
-			},
-			settings = synth.lfoSettings;
-
-		self.waveform = settings.waveform;
-		self.rate = settings.rate;
-		self.amount = settings.amount;
-
-		[
-			"lfo.waveform",
-			"lfo.rate",
-			"lfo.amount"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
-		} );
-
-		// fix the lack of attr 'value' update
-		$( ".lfo webaudio-knob" ).on( "change", function( e ) {
-			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
-				$( e.target ).attr( "value", e.target.value );
-			}
-		} );
-
-	} ] );
-
-	mod.directive( "lfo", [ "$templateCache", function( $templateCache ) {
-		return {
-			restrict: "E",
-			replace: true,
-			template: $templateCache.get( "lfo.html" )
-		};
-	} ] );
-
-};
-},{"jquery":3}],23:[function(require,module,exports){
-'use strict';
-
-var $ = require( "jquery" );
-
-module.exports = function( mod ) {
-
-	mod.controller( "MixerCtrl", [ "$scope", "synth", function( $scope, synth ) {
-		var self = this,
-			settingsChangeHandler = function() {
-				synth.mixerSettings = {
-					volume1: self.volume1,
-					volume2: self.volume2,
-					volume3: self.volume3,
-					noise: self.noise
-				};
-			},
-			settings = synth.mixerSettings;
-
-		self.volume1 = settings.volume1;
-		self.volume2 = settings.volume2;
-		self.volume3 = settings.volume3;
-		self.noise = settings.noise;
-
-		[
-			"mixer.volume1.isEnabled",
-			"mixer.volume1.value",
-			"mixer.volume2.isEnabled",
-			"mixer.volume2.value",
-			"mixer.volume3.isEnabled",
-			"mixer.volume3.value",
-			"mixer.noise.isEnabled",
-			"mixer.noise.type",
-			"mixer.noise.volume"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
-		} );
-
-		// fix problem with bad init state
-		$( ".mixer .oscillator-switch webaudio-switch" )[ 0 ].setValue( self.volume1.isEnabled );
-
-		// fix the lack of attr 'value' update
-		$( ".mixer webaudio-switch" )
-			.add( ".mixer webaudio-knob" )
-			.add( ".mixer webaudio-slider" )
-		.on( "change", function( e ) {
-			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
-				$( e.target ).attr( "value", e.target.value );
-			}
-		} );
-
-	} ] );
-
-	mod.directive( "mixer", [ "$templateCache", function( $templateCache ) {
-		return {
-			restrict: "E",
-			replace: true,
-			template: $templateCache.get( "mixer.html" )
-		};
-	} ] );
-
-};
-},{"jquery":3}],24:[function(require,module,exports){
-'use strict';
-
-var $ = require( "jquery" );
-
-module.exports = function( mod ) {
-
-	mod.controller( "ModulationCtrl", [ "$scope", "synth", function( $scope, synth ) {
-		var self = this,
-			settingsChangeHandler = function() {
-				synth.modulationSettings = {
-					waveform: self.waveform,
-					portamento: self.portamento,
-					rate: synth.modulationSettings.rate
-				};
-			},
-			settings = synth.modulationSettings;
-
-		self.waveform = settings.waveform;
-		self.portamento = settings.portamento;
-
-		[
-			"modulation.waveform",
-			"modulation.portamento"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
-		} );
-
-		// fix the lack of attr 'value' update
-		$( ".modulation webaudio-knob" ).on( "change", function( e ) {
-			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
-				$( e.target ).attr( "value", e.target.value );
-			}
-		} );
-
-	} ] );
-
-	mod.directive( "modulation", [ "$templateCache", function( $templateCache ) {
-		return {
-			restrict: "E",
-			replace: true,
-			template: $templateCache.get( "modulation.html" )
-		};
-	} ] );
-
-};
-},{"jquery":3}],25:[function(require,module,exports){
-'use strict';
-
-var $ = require( "jquery" );
-
-module.exports = function( mod ) {
-
-	mod.controller( "OscillatorBankCtrl", [ "$scope", "synth", function( $scope, synth ) {
-		var self = this,
-			settingsChangeHandler = function() {
-				synth.oscillatorSettings = {
-					osc1: self.osc1,
-					osc2: self.osc2,
-					osc3: self.osc3
-				};
-			},
-			settings = synth.oscillatorSettings;
-
-		self.osc1 = settings.osc1;
-		self.osc2 = settings.osc2;
-		self.osc3 = settings.osc3;
-
-		[
-			"oscillators.osc1.range",
-			"oscillators.osc1.waveform",
-			"oscillators.osc2.range",
-			"oscillators.osc2.fineDetune",
-			"oscillators.osc2.waveform",
-			"oscillators.osc3.range",
-			"oscillators.osc3.fineDetune",
-			"oscillators.osc3.waveform"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
-		} );
-
-		$( ".oscillator webaudio-knob" ).on( "change", function( e ) {
-			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
-				$( e.target ).attr( "value", e.target.value );
-			}
-		} );
-
-	} ] );
-
-	mod.directive( "oscillatorBank", [ "$templateCache", function( $templateCache ) {
-		return {
-			restrict: "E",
-			replace: true,
-			template: $templateCache.get( "oscillator-bank.html" )
-		};
-	} ] );
-
-};
-},{"jquery":3}],26:[function(require,module,exports){
-var ngModule = angular.module('envelopes.html', []);
-ngModule.run(['$templateCache', function($templateCache) {
-  $templateCache.put('envelopes.html',
-    '<div class="col-lg-3 envelopes control-bank text-center" ng-controller="EnvelopesCtrl as envs">\n' +
-    '	<div class="envelope row">\n' +
-    '		<h5>Primary</h5>\n' +
-    '		<div class="col-lg-3">\n' +
-    '			<webaudio-knob src="images/frequency-knob.png"\n' +
-    '				bind-polymer\n' +
-    '				value="{{envs.primary.attack}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Primary attack"></webaudio-knob>\n' +
-    '		</div>\n' +
-    '		<div class="col-lg-3">\n' +
-    '			<webaudio-knob src="images/frequency-knob.png"\n' +
-    '				bind-polymer\n' +
-    '				value="{{envs.primary.decay}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Primary decay"></webaudio-knob>\n' +
-    '		</div>\n' +
-    '		<div class="col-lg-3">\n' +
-    '			<webaudio-knob src="images/frequency-knob.png"\n' +
-    '				bind-polymer\n' +
-    '				value="{{envs.primary.sustain}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Primary sustain"></webaudio-knob>\n' +
-    '		</div>\n' +
-    '		<div class="col-lg-3">\n' +
-    '			<webaudio-knob src="images/frequency-knob.png"\n' +
-    '				bind-polymer\n' +
-    '				value="{{envs.primary.release}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Primary release"></webaudio-knob>\n' +
-    '		</div>\n' +
-    '	</div>\n' +
-    '	<div class="envelope row">\n' +
-    '		<h5>Filter</h5>\n' +
-    '		<div class="col-lg-3">\n' +
-    '			<webaudio-knob src="images/frequency-knob.png"\n' +
-    '				bind-polymer\n' +
-    '				value="{{envs.filter.attack}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Filter attack"></webaudio-knob>\n' +
-    '		</div>\n' +
-    '		<div class="col-lg-3">\n' +
-    '			<webaudio-knob src="images/frequency-knob.png"\n' +
-    '				bind-polymer\n' +
-    '				value="{{envs.filter.decay}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Filter decay"></webaudio-knob>\n' +
-    '		</div>\n' +
-    '		<div class="col-lg-3">\n' +
-    '			<webaudio-knob src="images/frequency-knob.png"\n' +
-    '				bind-polymer\n' +
-    '				value="{{envs.filter.sustain}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Filter sustain"></webaudio-knob>\n' +
-    '		</div>\n' +
-    '		<div class="col-lg-3">\n' +
-    '			<webaudio-knob src="images/frequency-knob.png"\n' +
-    '				bind-polymer\n' +
-    '				value="{{envs.filter.release}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Filter release"></webaudio-knob>\n' +
-    '		</div>\n' +
-    '	</div>\n' +
-    '	<div class="row">\n' +
-    '		<div class="col-lg-3">Attack</div>\n' +
-    '		<div class="col-lg-3">Decay</div>\n' +
-    '		<div class="col-lg-3">Sustain</div>\n' +
-    '		<div class="col-lg-3">Release</div>\n' +
-    '	</div>\n' +
-    '	<h4>Envelopes</h4>\n' +
-    '</div>');
-}]);
-
-module.exports = ngModule;
-},{}],27:[function(require,module,exports){
-var ngModule = angular.module('filter.html', []);
-ngModule.run(['$templateCache', function($templateCache) {
-  $templateCache.put('filter.html',
-    '<div class="col-lg-1 filter control-bank tri-row single-column text-center" ng-controller="FilterCtrl as filter">\n' +
-    '	<div class="row">\n' +
-    '		<h5>Cutoff</h5>\n' +
-    '		<webaudio-knob src="images/frequency-knob.png"\n' +
-    '			bind-polymer\n' +
-    '			value="{{filter.cutoff}}" min="1" max="500" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Frequency cutoff"></webaudio-knob>\n' +
-    '	</div>\n' +
-    '	<div class="row">\n' +
-    '		<h5>Emphasis</h5>\n' +
-    '		<webaudio-knob src="images/frequency-knob.png"\n' +
-    '			bind-polymer\n' +
-    '			value="{{filter.emphasis}}" min="1" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Emphasis (Q)"></webaudio-knob>\n' +
-    '	</div>\n' +
-    '	<div class="row">\n' +
-    '		<h5>Simple/Env</h5>\n' +
-    '		<webaudio-knob src="images/frequency-knob.png"\n' +
-    '			bind-polymer\n' +
-    '			value="{{filter.envAmount}}" min="1" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Simple/Envelope Mix"></webaudio-knob>\n' +
-    '	</div>\n' +
-    '	<h4>LP Filter</h4>\n' +
-    '</div>');
-}]);
-
-module.exports = ngModule;
-},{}],28:[function(require,module,exports){
-var ngModule = angular.module('lfo.html', []);
-ngModule.run(['$templateCache', function($templateCache) {
-  $templateCache.put('lfo.html',
-    '<div class="col-lg-1 lfo control-bank tri-row single-column text-center" ng-controller="LFOCtrl as lfo">\n' +
-    '	<div class="row">\n' +
-    '		<h5>Form</h5>\n' +
-    '		<webaudio-knob src="images/range-knob.png"\n' +
-    '			bind-polymer\n' +
-    '			value="{{lfo.waveform}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator waveform"></webaudio-knob>\n' +
-    '	</div>\n' +
-    '	<div class="row">\n' +
-    '		<h5>Rate</h5>\n' +
-    '		<webaudio-knob src="images/frequency-knob.png"\n' +
-    '			bind-polymer\n' +
-    '			value="{{lfo.rate}}" min="1" max="25" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Rate in HZ"></webaudio-knob>\n' +
-    '	</div>\n' +
-    '	<div class="row">\n' +
-    '		<h5>Clean/LFO</h5>\n' +
-    '		<webaudio-knob src="images/frequency-knob.png"\n' +
-    '			bind-polymer\n' +
-    '			value="{{lfo.amount}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Clean/LFO Mix"></webaudio-knob>\n' +
-    '	</div>\n' +
-    '	<h4>LFO</h4>\n' +
-    '</div>');
-}]);
-
-module.exports = ngModule;
-},{}],29:[function(require,module,exports){
-var ngModule = angular.module('mixer.html', []);
-ngModule.run(['$templateCache', function($templateCache) {
-  $templateCache.put('mixer.html',
-    '<div class="col-lg-2 mixer control-bank text-center" ng-controller="MixerCtrl as mixer">\n' +
-    '	<div class="row">\n' +
-    '		<div class="oscillator-switch col-lg-4">\n' +
-    '			<div class="row">\n' +
-    '				<webaudio-switch bind-polymer value="{{mixer.volume1.isEnabled}}"></webaudio-switch>\n' +
-    '			</div>\n' +
-    '			<div class="row">\n' +
-    '				<webaudio-switch bind-polymer value="{{mixer.volume2.isEnabled}}"></webaudio-switch>\n' +
-    '			</div>\n' +
-    '			<div class="row">\n' +
-    '				<webaudio-switch bind-polymer value="{{mixer.volume3.isEnabled}}"></webaudio-switch>\n' +
-    '			</div>\n' +
-    '		</div>\n' +
-    '		<div class="oscillator-volume col-lg-4">\n' +
-    '			<div class="row">\n' +
-    '				<webaudio-knob src="images/frequency-knob.png"\n' +
-    '					bind-polymer\n' +
-    '					value="{{mixer.volume1.value}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 1 volume"></webaudio-knob>\n' +
-    '			</div>\n' +
-    '			<div class="row">\n' +
-    '				<webaudio-knob src="images/frequency-knob.png"\n' +
-    '					bind-polymer\n' +
-    '					value="{{mixer.volume2.value}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 1 volume"></webaudio-knob>\n' +
-    '			</div>\n' +
-    '			<div class="row">\n' +
-    '				<webaudio-knob src="images/frequency-knob.png"\n' +
-    '					bind-polymer\n' +
-    '					value="{{mixer.volume3.value}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 1 volume"></webaudio-knob>\n' +
-    '			</div>\n' +
-    '		</div>\n' +
-    '		<div class="noise col-lg-4">\n' +
-    '			<div class="row">\n' +
-    '				<webaudio-switch bind-polymer value="{{mixer.noise.isEnabled}}"></webaudio-switch>\n' +
-    '			</div>\n' +
-    '			<div class="row">\n' +
-    '				<webaudio-knob src="images/frequency-knob.png"\n' +
-    '					bind-polymer\n' +
-    '					value="{{mixer.noise.volume}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Noise volume"></webaudio-knob>\n' +
-    '			</div>\n' +
-    '			<div class="row">\n' +
-    '				<webaudio-slider direction="horz" max="2" step="1"\n' +
-    '					bind-polymer\n' +
-    '					width="66" height="16" value="{{mixer.noise.type}}"></webaudio-slider>\n' +
-    '			</div>\n' +
-    '		</div>\n' +
-    '	</div>\n' +
-    '	<div class="row">\n' +
-    '		<div class="col-lg-4">On/Off</div>\n' +
-    '		<div class="col-lg-4">Volume</div>\n' +
-    '		<div class="col-lg-4">Noise</div>\n' +
-    '	</div>\n' +
-    '	<h4>Mixer</h4>\n' +
-    '</div>');
-}]);
-
-module.exports = ngModule;
-},{}],30:[function(require,module,exports){
-var ngModule = angular.module('modulation.html', []);
-ngModule.run(['$templateCache', function($templateCache) {
-  $templateCache.put('modulation.html',
-    '<div class="col-lg-1 col-lg-offset-1 modulation control-bank two-row single-column text-center" ng-controller="ModulationCtrl as modulation">\n' +
-    '	<div class="row">\n' +
-    '		<h5>Form</h5>\n' +
-    '		<webaudio-knob src="images/range-knob.png"\n' +
-    '			bind-polymer\n' +
-    '			value="{{modulation.waveform}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Modulation Oscillator waveform"></webaudio-knob>\n' +
-    '	</div>\n' +
-    '	<div class="row">\n' +
-    '		<h5>Glide</h5>\n' +
-    '		<webaudio-knob src="images/frequency-knob.png"\n' +
-    '			bind-polymer\n' +
-    '			value="{{modulation.portamento}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Glide/Portamento"></webaudio-knob>\n' +
-    '	</div>\n' +
-    '	<h4>Modulation</h4>\n' +
-    '</div>');
-}]);
-
-module.exports = ngModule;
-},{}],31:[function(require,module,exports){
-var ngModule = angular.module('oscillator-bank.html', []);
-ngModule.run(['$templateCache', function($templateCache) {
-  $templateCache.put('oscillator-bank.html',
-    '<div class="col-lg-2 control-bank text-center" ng-controller="OscillatorBankCtrl as oscillators">\n' +
-    '	<div class="oscillator row">\n' +
-    '		<h5>Oscilator 1</h5>\n' +
-    '		<div class="col-lg-4">\n' +
-    '			<webaudio-knob src="images/range-knob.png"\n' +
-    '				bind-polymer\n' +
-    '				value="{{oscillators.osc1.range}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 1 range"></webaudio-knob>\n' +
-    '		</div>\n' +
-    '		<div class="col-lg-4">\n' +
-    '		</div>\n' +
-    '		<div class="col-lg-4">\n' +
-    '			<webaudio-knob src="images/range-knob.png"\n' +
-    '				bind-polymer\n' +
-    '				value="{{oscillators.osc1.waveform}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 1 waveform"></webaudio-knob>\n' +
-    '		</div>\n' +
-    '	</div>\n' +
-    '	<div class="oscillator row">\n' +
-    '		<h5>Oscilator 2</h5>\n' +
-    '		<div class="col-lg-4">\n' +
-    '			<webaudio-knob src="images/range-knob.png"\n' +
-    '				bind-polymer\n' +
-    '				value="{{oscillators.osc2.range}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 2 range"></webaudio-knob>\n' +
-    '		</div>\n' +
-    '		<div class="col-lg-4">\n' +
-    '			<webaudio-knob src="images/frequency-knob.png"\n' +
-    '				bind-polymer\n' +
-    '				value="{{oscillators.osc2.fineDetune}}" max="16" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 2 frequency"></webaudio-knob>\n' +
-    '		</div>\n' +
-    '		<div class="col-lg-4">\n' +
-    '			<webaudio-knob src="images/range-knob.png"\n' +
-    '				bind-polymer\n' +
-    '				value="{{oscillators.osc2.waveform}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 2 waveform"></webaudio-knob>\n' +
-    '		</div>\n' +
-    '	</div>\n' +
-    '	<div class="oscillator row">\n' +
-    '		<h5>Oscilator 3</h5>\n' +
-    '		<div class="col-lg-4">\n' +
-    '			<webaudio-knob src="images/lfo-knob.png"\n' +
-    '				bind-polymer\n' +
-    '				value="{{oscillators.osc3.range}}" max="6" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 3 range"></webaudio-knob>\n' +
-    '		</div>\n' +
-    '		<div class="col-lg-4">\n' +
-    '			<webaudio-knob src="images/frequency-knob.png"\n' +
-    '				bind-polymer\n' +
-    '				value="{{oscillators.osc3.fineDetune}}" max="16" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 3 frequency"></webaudio-knob>\n' +
-    '		</div>\n' +
-    '		<div class="col-lg-4">\n' +
-    '			<webaudio-knob src="images/range-knob.png"\n' +
-    '				bind-polymer\n' +
-    '				value="{{oscillators.osc3.waveform}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 3 waveform"></webaudio-knob>\n' +
-    '		</div>\n' +
-    '	</div>\n' +
-    '	<div class="row">\n' +
-    '		<div class="col-lg-4">Range</div>\n' +
-    '		<div class="col-lg-4">Detune</div>\n' +
-    '		<div class="col-lg-4">Form</div>\n' +
-    '	</div>\n' +
-    '	<h4>Oscillator Bank</h4>\n' +
-    '</div>');
-}]);
-
-module.exports = ngModule;
-},{}],32:[function(require,module,exports){
-var ngModule = angular.module('synth.html', []);
-ngModule.run(['$templateCache', function($templateCache) {
-  $templateCache.put('synth.html',
-    '<div id="synthContainer" class="container">\n' +
-    '	<div class="row">\n' +
-    '		<modulation></modulation>\n' +
-    '		<oscillator-bank></oscillator-bank>\n' +
-    '		<mixer></mixer>\n' +
-    '		<envelopes></envelopes>\n' +
-    '		<filter></filter>\n' +
-    '		<lfo></lfo>\n' +
-    '	</div>\n' +
-    '</div>');
-}]);
-
-module.exports = ngModule;
-},{}],33:[function(require,module,exports){
-'use strict';
-
-var angular = require( "angular" ),
-	template = require( "./view/template/daw.html" ),
-	mod = angular.module( "dawModule", [
-		template.name,
-		require( "./instruments/synth/module" ).name,
-		require( "./view/template/master-controls.html" ).name,
-		require( "./view/template/delay.html" ).name,
-		require( "./view/template/reverb.html" ).name,
-		require( "./view/template/master-volume.html" ).name,
-		require( "./view/template/pitch-bend.html" ).name,
-		require( "./view/template/modulation-wheel.html" ).name,
-		require( "./view/template/keyboard.html" ).name
-	] );
-
-mod.provider( "dawEngine", function dawEngineProvider() {
-
-	var self = this;
-
-	self.dawEngine = null;
-
-	self.$get = function dawEngineFactory() {
-		return self.dawEngine;
-	};
-
-} );
-
-mod.factory( "synth",[ "dawEngine", function( dawEngine ) {
-	return dawEngine.synth;
-} ] );
-
-mod.directive( "dawContainer", [ "$templateCache", function($templateCache) {
-	return {
-		restrict: "E",
-		replace: true,
-		template: $templateCache.get( template.name )
-	};
-} ] );
-
-// Directives (without a controller)
-require( "./view/controller/master-controls" )( mod );
-
-// Controllers
-require( "./view/controller/delay" )( mod );
-require( "./view/controller/reverb" )( mod );
-require( "./view/controller/master-volume" )( mod );
-require( "./view/controller/pitch-bend" )( mod );
-require( "./view/controller/modulation-wheel" )( mod );
-require( "./view/controller/keyboard" )( mod );
-
-module.exports = mod;
-},{"./instruments/synth/module":19,"./view/controller/delay":34,"./view/controller/keyboard":35,"./view/controller/master-controls":36,"./view/controller/master-volume":37,"./view/controller/modulation-wheel":38,"./view/controller/pitch-bend":39,"./view/controller/reverb":40,"./view/template/daw.html":41,"./view/template/delay.html":42,"./view/template/keyboard.html":43,"./view/template/master-controls.html":44,"./view/template/master-volume.html":45,"./view/template/modulation-wheel.html":46,"./view/template/pitch-bend.html":47,"./view/template/reverb.html":48,"angular":2}],34:[function(require,module,exports){
-'use strict';
-
 var $ = require( "jquery" );
 
 module.exports = function( mod ) {
@@ -39609,7 +38950,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],35:[function(require,module,exports){
+},{"jquery":3}],20:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -39649,7 +38990,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],36:[function(require,module,exports){
+},{"jquery":3}],21:[function(require,module,exports){
 'use strict';
 
 module.exports = function( mod ) {
@@ -39663,7 +39004,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{}],37:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -39705,7 +39046,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],38:[function(require,module,exports){
+},{"jquery":3}],23:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" ),
@@ -39767,7 +39108,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3,"settings-convertor":6}],39:[function(require,module,exports){
+},{"jquery":3,"settings-convertor":6}],24:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" ),
@@ -39837,7 +39178,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3,"settings-convertor":6}],40:[function(require,module,exports){
+},{"jquery":3,"settings-convertor":6}],25:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -39879,7 +39220,693 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],41:[function(require,module,exports){
+},{"jquery":3}],26:[function(require,module,exports){
+'use strict';
+
+var $ = require( "jquery" );
+
+module.exports = function( mod ) {
+
+	mod.controller( "EnvelopesCtrl", [ "$scope", "synth", function( $scope, synth ) {
+		var self = this,
+			settingsChangeHandler = function() {
+				synth.envelopesSettings = {
+					primary: self.primary,
+					filter: self.filter
+				};
+			},
+			settings = synth.envelopesSettings;
+
+		self.primary = settings.primary;
+		self.filter = settings.filter;
+
+		[
+			"envs.primary.attack",
+			"envs.primary.decay",
+			"envs.primary.sustain",
+			"envs.primary.release",
+			"envs.filter.attack",
+			"envs.filter.decay",
+			"envs.filter.sustain",
+			"envs.filter.release"
+		].forEach( function( path ) {
+			$scope.$watch( path, settingsChangeHandler );
+		} );
+
+		// fix the lack of attr 'value' update
+		$( ".envelopes webaudio-knob" ).on( "change", function( e ) {
+			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
+				$( e.target ).attr( "value", e.target.value );
+			}
+		} );
+
+	} ] );
+
+	mod.directive( "envelopes", [ "$templateCache", function( $templateCache ) {
+		return {
+			restrict: "E",
+			replace: true,
+			template: $templateCache.get( "envelopes.html" )
+		};
+	} ] );
+
+};
+},{"jquery":3}],27:[function(require,module,exports){
+'use strict';
+
+var $ = require( "jquery" );
+
+module.exports = function( mod ) {
+
+	mod.controller( "FilterCtrl", [ "$scope", "synth", function( $scope, synth ) {
+		var self = this,
+			settingsChangeHandler = function() {
+				synth.filterSettings = {
+					cutoff: self.cutoff,
+					emphasis: self.emphasis,
+					envAmount: self.envAmount
+				};
+			},
+			settings = synth.filterSettings;
+
+		self.cutoff = settings.cutoff;
+		self.emphasis = settings.emphasis;
+		self.envAmount = settings.envAmount;
+
+		[
+			"filter.cutoff",
+			"filter.emphasis",
+			"filter.envAmount"
+		].forEach( function( path ) {
+			$scope.$watch( path, settingsChangeHandler );
+		} );
+
+		// fix the lack of attr 'value' update
+		$( ".filter webaudio-knob" ).on( "change", function( e ) {
+			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
+				$( e.target ).attr( "value", e.target.value );
+			}
+		} );
+
+	} ] );
+
+	mod.directive( "filter", [ "$templateCache", function( $templateCache ) {
+		return {
+			restrict: "E",
+			replace: true,
+			template: $templateCache.get( "filter.html" )
+		};
+	} ] );
+
+};
+},{"jquery":3}],28:[function(require,module,exports){
+'use strict';
+
+var $ = require( "jquery" );
+
+module.exports = function( mod ) {
+
+	mod.controller( "LFOCtrl", [ "$scope", "synth", function( $scope, synth ) {
+		var self = this,
+			settingsChangeHandler = function() {
+				synth.lfoSettings = {
+					waveform: self.waveform,
+					rate: self.rate,
+					amount: self.amount
+				};
+			},
+			settings = synth.lfoSettings;
+
+		self.waveform = settings.waveform;
+		self.rate = settings.rate;
+		self.amount = settings.amount;
+
+		[
+			"lfo.waveform",
+			"lfo.rate",
+			"lfo.amount"
+		].forEach( function( path ) {
+			$scope.$watch( path, settingsChangeHandler );
+		} );
+
+		// fix the lack of attr 'value' update
+		$( ".lfo webaudio-knob" ).on( "change", function( e ) {
+			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
+				$( e.target ).attr( "value", e.target.value );
+			}
+		} );
+
+	} ] );
+
+	mod.directive( "lfo", [ "$templateCache", function( $templateCache ) {
+		return {
+			restrict: "E",
+			replace: true,
+			template: $templateCache.get( "lfo.html" )
+		};
+	} ] );
+
+};
+},{"jquery":3}],29:[function(require,module,exports){
+'use strict';
+
+var $ = require( "jquery" );
+
+module.exports = function( mod ) {
+
+	mod.controller( "MixerCtrl", [ "$scope", "synth", function( $scope, synth ) {
+		var self = this,
+			settingsChangeHandler = function() {
+				synth.mixerSettings = {
+					volume1: self.volume1,
+					volume2: self.volume2,
+					volume3: self.volume3,
+					noise: self.noise
+				};
+			},
+			settings = synth.mixerSettings;
+
+		self.volume1 = settings.volume1;
+		self.volume2 = settings.volume2;
+		self.volume3 = settings.volume3;
+		self.noise = settings.noise;
+
+		[
+			"mixer.volume1.isEnabled",
+			"mixer.volume1.value",
+			"mixer.volume2.isEnabled",
+			"mixer.volume2.value",
+			"mixer.volume3.isEnabled",
+			"mixer.volume3.value",
+			"mixer.noise.isEnabled",
+			"mixer.noise.type",
+			"mixer.noise.volume"
+		].forEach( function( path ) {
+			$scope.$watch( path, settingsChangeHandler );
+		} );
+
+		// fix problem with bad init state
+		$( ".mixer .oscillator-switch webaudio-switch" )[ 0 ].setValue( self.volume1.isEnabled );
+
+		// fix the lack of attr 'value' update
+		$( ".mixer webaudio-switch" )
+			.add( ".mixer webaudio-knob" )
+			.add( ".mixer webaudio-slider" )
+		.on( "change", function( e ) {
+			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
+				$( e.target ).attr( "value", e.target.value );
+			}
+		} );
+
+	} ] );
+
+	mod.directive( "mixer", [ "$templateCache", function( $templateCache ) {
+		return {
+			restrict: "E",
+			replace: true,
+			template: $templateCache.get( "mixer.html" )
+		};
+	} ] );
+
+};
+},{"jquery":3}],30:[function(require,module,exports){
+'use strict';
+
+var $ = require( "jquery" );
+
+module.exports = function( mod ) {
+
+	mod.controller( "ModulationCtrl", [ "$scope", "synth", function( $scope, synth ) {
+		var self = this,
+			settingsChangeHandler = function() {
+				synth.modulationSettings = {
+					waveform: self.waveform,
+					portamento: self.portamento,
+					rate: synth.modulationSettings.rate
+				};
+			},
+			settings = synth.modulationSettings;
+
+		self.waveform = settings.waveform;
+		self.portamento = settings.portamento;
+
+		[
+			"modulation.waveform",
+			"modulation.portamento"
+		].forEach( function( path ) {
+			$scope.$watch( path, settingsChangeHandler );
+		} );
+
+		// fix the lack of attr 'value' update
+		$( ".modulation webaudio-knob" ).on( "change", function( e ) {
+			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
+				$( e.target ).attr( "value", e.target.value );
+			}
+		} );
+
+	} ] );
+
+	mod.directive( "modulation", [ "$templateCache", function( $templateCache ) {
+		return {
+			restrict: "E",
+			replace: true,
+			template: $templateCache.get( "modulation.html" )
+		};
+	} ] );
+
+};
+},{"jquery":3}],31:[function(require,module,exports){
+'use strict';
+
+var $ = require( "jquery" );
+
+module.exports = function( mod ) {
+
+	mod.controller( "OscillatorBankCtrl", [ "$scope", "synth", function( $scope, synth ) {
+		var self = this,
+			settingsChangeHandler = function() {
+				synth.oscillatorSettings = {
+					osc1: self.osc1,
+					osc2: self.osc2,
+					osc3: self.osc3
+				};
+			},
+			settings = synth.oscillatorSettings;
+
+		self.osc1 = settings.osc1;
+		self.osc2 = settings.osc2;
+		self.osc3 = settings.osc3;
+
+		[
+			"oscillators.osc1.range",
+			"oscillators.osc1.waveform",
+			"oscillators.osc2.range",
+			"oscillators.osc2.fineDetune",
+			"oscillators.osc2.waveform",
+			"oscillators.osc3.range",
+			"oscillators.osc3.fineDetune",
+			"oscillators.osc3.waveform"
+		].forEach( function( path ) {
+			$scope.$watch( path, settingsChangeHandler );
+		} );
+
+		$( ".oscillator webaudio-knob" ).on( "change", function( e ) {
+			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
+				$( e.target ).attr( "value", e.target.value );
+			}
+		} );
+
+	} ] );
+
+	mod.directive( "oscillatorBank", [ "$templateCache", function( $templateCache ) {
+		return {
+			restrict: "E",
+			replace: true,
+			template: $templateCache.get( "oscillator-bank.html" )
+		};
+	} ] );
+
+};
+},{"jquery":3}],32:[function(require,module,exports){
+'use strict';
+
+var angular = require( "angular" ),
+	template = require( "./template/synth.html" ),
+	mod = angular.module( "synth", [
+		template.name,
+		require( "./template/modulation.html" ).name,
+		require( "./template/oscillator-bank.html" ).name,
+		require( "./template/mixer.html" ).name,
+		require( "./template/envelopes.html" ).name,
+		require( "./template/filter.html" ).name,
+		require( "./template/lfo.html" ).name
+	] );
+
+mod.directive( "synth", [ "$templateCache", function( $templateCache ) {
+	return {
+		restrict: "E",
+		replace: true,
+		template: $templateCache.get( template.name )
+	};
+} ] );
+
+// Controllers
+require( "./controller/modulation" )( mod );
+require( "./controller/oscillator-bank" )( mod );
+require( "./controller/mixer" )( mod );
+require( "./controller/envelopes" )( mod );
+require( "./controller/filter" )( mod );
+require( "./controller/lfo" )( mod );
+
+module.exports = mod;
+},{"./controller/envelopes":26,"./controller/filter":27,"./controller/lfo":28,"./controller/mixer":29,"./controller/modulation":30,"./controller/oscillator-bank":31,"./template/envelopes.html":33,"./template/filter.html":34,"./template/lfo.html":35,"./template/mixer.html":36,"./template/modulation.html":37,"./template/oscillator-bank.html":38,"./template/synth.html":39,"angular":2}],33:[function(require,module,exports){
+var ngModule = angular.module('envelopes.html', []);
+ngModule.run(['$templateCache', function($templateCache) {
+  $templateCache.put('envelopes.html',
+    '<div class="col-lg-3 envelopes control-bank text-center" ng-controller="EnvelopesCtrl as envs">\n' +
+    '	<div class="envelope row">\n' +
+    '		<h5>Primary</h5>\n' +
+    '		<div class="col-lg-3">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{envs.primary.attack}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Primary attack"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '		<div class="col-lg-3">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{envs.primary.decay}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Primary decay"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '		<div class="col-lg-3">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{envs.primary.sustain}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Primary sustain"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '		<div class="col-lg-3">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{envs.primary.release}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Primary release"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '	</div>\n' +
+    '	<div class="envelope row">\n' +
+    '		<h5>Filter</h5>\n' +
+    '		<div class="col-lg-3">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{envs.filter.attack}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Filter attack"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '		<div class="col-lg-3">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{envs.filter.decay}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Filter decay"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '		<div class="col-lg-3">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{envs.filter.sustain}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Filter sustain"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '		<div class="col-lg-3">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{envs.filter.release}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Filter release"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '	</div>\n' +
+    '	<div class="row">\n' +
+    '		<div class="col-lg-3">Attack</div>\n' +
+    '		<div class="col-lg-3">Decay</div>\n' +
+    '		<div class="col-lg-3">Sustain</div>\n' +
+    '		<div class="col-lg-3">Release</div>\n' +
+    '	</div>\n' +
+    '	<h4>Envelopes</h4>\n' +
+    '</div>');
+}]);
+
+module.exports = ngModule;
+},{}],34:[function(require,module,exports){
+var ngModule = angular.module('filter.html', []);
+ngModule.run(['$templateCache', function($templateCache) {
+  $templateCache.put('filter.html',
+    '<div class="col-lg-1 filter control-bank tri-row single-column text-center" ng-controller="FilterCtrl as filter">\n' +
+    '	<div class="row">\n' +
+    '		<h5>Cutoff</h5>\n' +
+    '		<webaudio-knob src="images/frequency-knob.png"\n' +
+    '			bind-polymer\n' +
+    '			value="{{filter.cutoff}}" min="1" max="500" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Frequency cutoff"></webaudio-knob>\n' +
+    '	</div>\n' +
+    '	<div class="row">\n' +
+    '		<h5>Emphasis</h5>\n' +
+    '		<webaudio-knob src="images/frequency-knob.png"\n' +
+    '			bind-polymer\n' +
+    '			value="{{filter.emphasis}}" min="1" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Emphasis (Q)"></webaudio-knob>\n' +
+    '	</div>\n' +
+    '	<div class="row">\n' +
+    '		<h5>Simple/Env</h5>\n' +
+    '		<webaudio-knob src="images/frequency-knob.png"\n' +
+    '			bind-polymer\n' +
+    '			value="{{filter.envAmount}}" min="1" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Simple/Envelope Mix"></webaudio-knob>\n' +
+    '	</div>\n' +
+    '	<h4>LP Filter</h4>\n' +
+    '</div>');
+}]);
+
+module.exports = ngModule;
+},{}],35:[function(require,module,exports){
+var ngModule = angular.module('lfo.html', []);
+ngModule.run(['$templateCache', function($templateCache) {
+  $templateCache.put('lfo.html',
+    '<div class="col-lg-1 lfo control-bank tri-row single-column text-center" ng-controller="LFOCtrl as lfo">\n' +
+    '	<div class="row">\n' +
+    '		<h5>Form</h5>\n' +
+    '		<webaudio-knob src="images/range-knob.png"\n' +
+    '			bind-polymer\n' +
+    '			value="{{lfo.waveform}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator waveform"></webaudio-knob>\n' +
+    '	</div>\n' +
+    '	<div class="row">\n' +
+    '		<h5>Rate</h5>\n' +
+    '		<webaudio-knob src="images/frequency-knob.png"\n' +
+    '			bind-polymer\n' +
+    '			value="{{lfo.rate}}" min="1" max="25" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Rate in HZ"></webaudio-knob>\n' +
+    '	</div>\n' +
+    '	<div class="row">\n' +
+    '		<h5>Clean/LFO</h5>\n' +
+    '		<webaudio-knob src="images/frequency-knob.png"\n' +
+    '			bind-polymer\n' +
+    '			value="{{lfo.amount}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Clean/LFO Mix"></webaudio-knob>\n' +
+    '	</div>\n' +
+    '	<h4>LFO</h4>\n' +
+    '</div>');
+}]);
+
+module.exports = ngModule;
+},{}],36:[function(require,module,exports){
+var ngModule = angular.module('mixer.html', []);
+ngModule.run(['$templateCache', function($templateCache) {
+  $templateCache.put('mixer.html',
+    '<div class="col-lg-2 mixer control-bank text-center" ng-controller="MixerCtrl as mixer">\n' +
+    '	<div class="row">\n' +
+    '		<div class="oscillator-switch col-lg-4">\n' +
+    '			<div class="row">\n' +
+    '				<webaudio-switch bind-polymer value="{{mixer.volume1.isEnabled}}"></webaudio-switch>\n' +
+    '			</div>\n' +
+    '			<div class="row">\n' +
+    '				<webaudio-switch bind-polymer value="{{mixer.volume2.isEnabled}}"></webaudio-switch>\n' +
+    '			</div>\n' +
+    '			<div class="row">\n' +
+    '				<webaudio-switch bind-polymer value="{{mixer.volume3.isEnabled}}"></webaudio-switch>\n' +
+    '			</div>\n' +
+    '		</div>\n' +
+    '		<div class="oscillator-volume col-lg-4">\n' +
+    '			<div class="row">\n' +
+    '				<webaudio-knob src="images/frequency-knob.png"\n' +
+    '					bind-polymer\n' +
+    '					value="{{mixer.volume1.value}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 1 volume"></webaudio-knob>\n' +
+    '			</div>\n' +
+    '			<div class="row">\n' +
+    '				<webaudio-knob src="images/frequency-knob.png"\n' +
+    '					bind-polymer\n' +
+    '					value="{{mixer.volume2.value}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 1 volume"></webaudio-knob>\n' +
+    '			</div>\n' +
+    '			<div class="row">\n' +
+    '				<webaudio-knob src="images/frequency-knob.png"\n' +
+    '					bind-polymer\n' +
+    '					value="{{mixer.volume3.value}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 1 volume"></webaudio-knob>\n' +
+    '			</div>\n' +
+    '		</div>\n' +
+    '		<div class="noise col-lg-4">\n' +
+    '			<div class="row">\n' +
+    '				<webaudio-switch bind-polymer value="{{mixer.noise.isEnabled}}"></webaudio-switch>\n' +
+    '			</div>\n' +
+    '			<div class="row">\n' +
+    '				<webaudio-knob src="images/frequency-knob.png"\n' +
+    '					bind-polymer\n' +
+    '					value="{{mixer.noise.volume}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Noise volume"></webaudio-knob>\n' +
+    '			</div>\n' +
+    '			<div class="row">\n' +
+    '				<webaudio-slider direction="horz" max="2" step="1"\n' +
+    '					bind-polymer\n' +
+    '					width="66" height="16" value="{{mixer.noise.type}}"></webaudio-slider>\n' +
+    '			</div>\n' +
+    '		</div>\n' +
+    '	</div>\n' +
+    '	<div class="row">\n' +
+    '		<div class="col-lg-4">On/Off</div>\n' +
+    '		<div class="col-lg-4">Volume</div>\n' +
+    '		<div class="col-lg-4">Noise</div>\n' +
+    '	</div>\n' +
+    '	<h4>Mixer</h4>\n' +
+    '</div>');
+}]);
+
+module.exports = ngModule;
+},{}],37:[function(require,module,exports){
+var ngModule = angular.module('modulation.html', []);
+ngModule.run(['$templateCache', function($templateCache) {
+  $templateCache.put('modulation.html',
+    '<div class="col-lg-1 col-lg-offset-1 modulation control-bank two-row single-column text-center" ng-controller="ModulationCtrl as modulation">\n' +
+    '	<div class="row">\n' +
+    '		<h5>Form</h5>\n' +
+    '		<webaudio-knob src="images/range-knob.png"\n' +
+    '			bind-polymer\n' +
+    '			value="{{modulation.waveform}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Modulation Oscillator waveform"></webaudio-knob>\n' +
+    '	</div>\n' +
+    '	<div class="row">\n' +
+    '		<h5>Glide</h5>\n' +
+    '		<webaudio-knob src="images/frequency-knob.png"\n' +
+    '			bind-polymer\n' +
+    '			value="{{modulation.portamento}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Glide/Portamento"></webaudio-knob>\n' +
+    '	</div>\n' +
+    '	<h4>Modulation</h4>\n' +
+    '</div>');
+}]);
+
+module.exports = ngModule;
+},{}],38:[function(require,module,exports){
+var ngModule = angular.module('oscillator-bank.html', []);
+ngModule.run(['$templateCache', function($templateCache) {
+  $templateCache.put('oscillator-bank.html',
+    '<div class="col-lg-2 control-bank text-center" ng-controller="OscillatorBankCtrl as oscillators">\n' +
+    '	<div class="oscillator row">\n' +
+    '		<h5>Oscilator 1</h5>\n' +
+    '		<div class="col-lg-4">\n' +
+    '			<webaudio-knob src="images/range-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{oscillators.osc1.range}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 1 range"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '		<div class="col-lg-4">\n' +
+    '		</div>\n' +
+    '		<div class="col-lg-4">\n' +
+    '			<webaudio-knob src="images/range-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{oscillators.osc1.waveform}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 1 waveform"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '	</div>\n' +
+    '	<div class="oscillator row">\n' +
+    '		<h5>Oscilator 2</h5>\n' +
+    '		<div class="col-lg-4">\n' +
+    '			<webaudio-knob src="images/range-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{oscillators.osc2.range}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 2 range"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '		<div class="col-lg-4">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{oscillators.osc2.fineDetune}}" max="16" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 2 frequency"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '		<div class="col-lg-4">\n' +
+    '			<webaudio-knob src="images/range-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{oscillators.osc2.waveform}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 2 waveform"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '	</div>\n' +
+    '	<div class="oscillator row">\n' +
+    '		<h5>Oscilator 3</h5>\n' +
+    '		<div class="col-lg-4">\n' +
+    '			<webaudio-knob src="images/lfo-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{oscillators.osc3.range}}" max="6" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 3 range"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '		<div class="col-lg-4">\n' +
+    '			<webaudio-knob src="images/frequency-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{oscillators.osc3.fineDetune}}" max="16" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 3 frequency"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '		<div class="col-lg-4">\n' +
+    '			<webaudio-knob src="images/range-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				value="{{oscillators.osc3.waveform}}" max="5" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator 3 waveform"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '	</div>\n' +
+    '	<div class="row">\n' +
+    '		<div class="col-lg-4">Range</div>\n' +
+    '		<div class="col-lg-4">Detune</div>\n' +
+    '		<div class="col-lg-4">Form</div>\n' +
+    '	</div>\n' +
+    '	<h4>Oscillator Bank</h4>\n' +
+    '</div>');
+}]);
+
+module.exports = ngModule;
+},{}],39:[function(require,module,exports){
+var ngModule = angular.module('synth.html', []);
+ngModule.run(['$templateCache', function($templateCache) {
+  $templateCache.put('synth.html',
+    '<div id="synthContainer" class="container">\n' +
+    '	<div class="row">\n' +
+    '		<modulation></modulation>\n' +
+    '		<oscillator-bank></oscillator-bank>\n' +
+    '		<mixer></mixer>\n' +
+    '		<envelopes></envelopes>\n' +
+    '		<filter></filter>\n' +
+    '		<lfo></lfo>\n' +
+    '	</div>\n' +
+    '</div>');
+}]);
+
+module.exports = ngModule;
+},{}],40:[function(require,module,exports){
+'use strict';
+
+var angular = require( "angular" ),
+	template = require( "./template/daw.html" ),
+	mod = angular.module( "dawModule", [
+		template.name,
+		require( "./instruments/synth/module" ).name,
+		require( "./template/master-controls.html" ).name,
+		require( "./template/delay.html" ).name,
+		require( "./template/reverb.html" ).name,
+		require( "./template/master-volume.html" ).name,
+		require( "./template/pitch-bend.html" ).name,
+		require( "./template/modulation-wheel.html" ).name,
+		require( "./template/keyboard.html" ).name
+	] ),
+	Synth = require( "../instruments/synth/instrument" ),
+	synth;
+
+mod.provider( "dawEngine", function dawEngineProvider() {
+
+	var self = this;
+
+	self.dawEngine = null;
+
+	self.$get = function dawEngineFactory() {
+		return self.dawEngine;
+	};
+
+} );
+
+mod.factory( "synth",[ "dawEngine", function( dawEngine ) {
+	if ( !synth ) {
+		dawEngine.instruments.forEach( function( instrument ) {
+			if ( instrument instanceof Synth ) {
+				// cache the instance
+				synth = instrument;
+			}
+		} );
+	}
+
+	return synth;
+} ] );
+
+mod.directive( "dawContainer", [ "$templateCache", function($templateCache) {
+	return {
+		restrict: "E",
+		replace: true,
+		template: $templateCache.get( template.name )
+	};
+} ] );
+
+// Directives (without a controller)
+require( "./controller/master-controls" )( mod );
+
+// Controllers
+require( "./controller/delay" )( mod );
+require( "./controller/reverb" )( mod );
+require( "./controller/master-volume" )( mod );
+require( "./controller/pitch-bend" )( mod );
+require( "./controller/modulation-wheel" )( mod );
+require( "./controller/keyboard" )( mod );
+
+module.exports = mod;
+},{"../instruments/synth/instrument":18,"./controller/delay":19,"./controller/keyboard":20,"./controller/master-controls":21,"./controller/master-volume":22,"./controller/modulation-wheel":23,"./controller/pitch-bend":24,"./controller/reverb":25,"./instruments/synth/module":32,"./template/daw.html":41,"./template/delay.html":42,"./template/keyboard.html":43,"./template/master-controls.html":44,"./template/master-volume.html":45,"./template/modulation-wheel.html":46,"./template/pitch-bend.html":47,"./template/reverb.html":48,"angular":2}],41:[function(require,module,exports){
 var ngModule = angular.module('daw.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('daw.html',
