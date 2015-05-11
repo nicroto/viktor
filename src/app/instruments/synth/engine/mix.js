@@ -29,8 +29,6 @@ function Mix( audioContext, firstMixNode, secondMixNode ) {
 			var self = this;
 			self.secondGain.gain.value = value;
 			self.firstGain.gain.value = 1 - value;
-console.log( "firstGain: " + self.firstGain.gain.value );
-console.log( "secondGain: " + self.secondGain.gain.value );
 		}
 	} );
 

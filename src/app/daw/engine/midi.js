@@ -32,6 +32,8 @@ MIDIController.prototype = {
 			midiMessageHandler = self.onMidiMessage.bind( self ),
 			noDevicesMessage = "No MIDI devices are connected.";
 
+		self.midiAccess = midiAccess;
+
 		if ( "function" === typeof inputs ) {
 			// first case is a deprecated old way
 			inputs = inputs();
