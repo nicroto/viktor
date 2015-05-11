@@ -81,7 +81,7 @@ DAW.prototype = {
 		self.selectedInstrument = self.instruments[ index ];
 	},
 
-	createInstrument: function( Instrument, settings ) {
+	createInstrument: function( Instrument ) {
 		var self = this,
 			audioContext = self.audioContext,
 			newInstrument = new Instrument( audioContext );

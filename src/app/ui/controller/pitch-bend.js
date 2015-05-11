@@ -9,14 +9,14 @@ module.exports = function( mod ) {
 		var self = this,
 			settingsChangeHandler = function() {
 				dawEngine.pitchSettings = {
-					bend: settingsConvertor.getNormalPitch( self.bend )
+					bend: settingsConvertor.transposeValue( self.bend, [ 0, 128 ], [ -1, 1 ] )
 				};
 			},
 			settings = dawEngine.pitchSettings,
 			$pitchBend = $( ".pitch-bend webaudio-slider" );
 
 		self.RANGE = 128;
-		self.bend = settingsConvertor.getSimplePitch( settings.bend );
+		self.bend = settingsConvertor.transposeValue( settings.bend, [ -1, 1 ], [ 0, 128 ] );
 
 		[
 			"pitch.bend"
@@ -24,9 +24,9 @@ module.exports = function( mod ) {
 			$scope.$watch( path, settingsChangeHandler );
 		} );
 
-		dawEngine.addExternalMidiMessageHandler( function( type, parsed, rawEvent ) {
+		dawEngine.addExternalMidiMessageHandler( function( type, parsed ) {
 			if ( type === "pitchBend" ) {
-				$pitchBend[ 0 ].setValue( settingsConvertor.getSimplePitch( parsed.pitchBend ) );
+				$pitchBend[ 0 ].setValue( settingsConvertor.transposeValue( parsed.pitchBend, [ -1, 1 ], [ 0, 128 ] ) );
 			}
 		} );
 

@@ -1,29 +1,13 @@
 'use strict';
 
-var SIMPLE_PITCH_HALF_RANGE = 64;
-
 module.exports = {
 
-	getSimplePitch: function( value ) {
-		return Math.floor( value * SIMPLE_PITCH_HALF_RANGE + SIMPLE_PITCH_HALF_RANGE );
-	},
+	transposeValue: function( value, originalRange, newRange ) {
+		var originalRangeLenght = originalRange[ 1 ] - originalRange[ 0 ],
+			ratioToRange = ( value - originalRange[ 0 ] ) / originalRangeLenght,
+			newRangeLength = newRange[ 1 ] - newRange[ 0 ];
 
-	getNormalPitch: function( value ) {
-		return ( value - SIMPLE_PITCH_HALF_RANGE ) / SIMPLE_PITCH_HALF_RANGE;
-	},
-
-	getRateFromModulation: function( modulation ) {
-		return 15 * modulation;
-	},
-
-	getSimpleModulationFromRate: function( value ) {
-		return Math.round( ( value / 15 ) * 127 );
-	},
-
-	getRateFromSimpleModulation: function( value ) {
-		var self = this;
-
-		return self.getRateFromModulation( value / 127 );
+		return newRange[ 0 ] + ratioToRange * newRangeLength;
 	}
 
 };

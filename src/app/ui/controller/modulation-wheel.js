@@ -10,15 +10,15 @@ module.exports = function( mod ) {
 			settingsChangeHandler = function() {
 				var modulationSettings = dawEngine.modulationSettings;
 
-				modulationSettings.rate = settingsConvertor.getRateFromSimpleModulation( self.modulation );
+				modulationSettings.rate = settingsConvertor.transposeValue( self.modulation, [ 0, 128 ], [ 0, 15 ] );
 
 				dawEngine.modulationSettings = modulationSettings;
 			},
 			settings = dawEngine.modulationSettings,
 			$modulationWheel = $( ".modulation-wheel webaudio-slider" );
 
-		self.RANGE = 127;
-		self.modulation = settingsConvertor.getSimpleModulationFromRate( settings.rate );
+		self.RANGE = 128;
+		self.modulation = settingsConvertor.transposeValue( settings.rate, [ 0, 15 ], [ 0, 128 ] );
 
 		[
 			"modulationWheel.modulation"
@@ -26,12 +26,10 @@ module.exports = function( mod ) {
 			$scope.$watch( path, settingsChangeHandler );
 		} );
 
-		dawEngine.addExternalMidiMessageHandler( function( type, parsed, rawEvent ) {
+		dawEngine.addExternalMidiMessageHandler( function( type, parsed ) {
 			if ( type === "modulationWheel" ) {
 				$modulationWheel[ 0 ].setValue(
-					settingsConvertor.getSimpleModulationFromRate(
-						settingsConvertor.getRateFromModulation( parsed.modulation )
-					)
+					settingsConvertor.transposeValue( parsed.modulation, [ 0, 1 ], [ 0, 128 ] )
 				);
 			}
 		} );

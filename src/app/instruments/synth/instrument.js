@@ -183,14 +183,14 @@ Instrument.prototype = {
 	onModulationWheelTurn: function( modulation ) {
 		var self = this,
 			oldSettings = self.modulationSettings,
-			newRate = settingsConvertor.getRateFromModulation( modulation );
+			newRate = settingsConvertor.transposeValue( modulation, [ 0, 1 ], [ 0, 15 ] );
 
 		if ( oldSettings.rate !== newRate ) {
 			self.modulationSettings = {
 				waveform: oldSettings.waveform,
 				portamento: oldSettings.portamento,
 				rate: newRate
-			}
+			};
 		}
 	},
 
@@ -498,7 +498,7 @@ Instrument.prototype = {
 		return {
 			defaultForm: defaultForm,
 			customFormFFT: customFormFFT
-		}
+		};
 	},
 
 	_detuneOscillators: function( oscillators, activeNotes, oscillatorSettings, pitchSettings ) {

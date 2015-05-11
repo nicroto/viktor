@@ -7,10 +7,6 @@ var SEMITONE_CENTS = 100,
 
 var utils = {
 
-	customOrDefault: function( customValue, defaultValue ) {
-		return customValue !== undefined ? customValue : defaultValue;
-	},
-
 	getDetune: function( range, fineDetune, rangeBase ) {
 		rangeBase = rangeBase === undefined ? RANGE_DEFAULT_BASE : rangeBase;
 		var base = ( range - rangeBase ) * OCTAVE_CENTS;
@@ -27,8 +23,8 @@ var utils = {
 	getNoiseGenerator: function( type, bufferSize ) {
 		// code copied from here:
 		//		http://noisehack.com/generate-noise-web-audio-api/
-		var self = this,
-			generator;
+		var generator;
+
 		switch ( type ) {
 			case "white":
 				generator = function( e ) {
@@ -102,8 +98,6 @@ var utils = {
 	},
 
 	getSustain: function( value ) {
-		var self = this;
-
 		// the volume level in +%
 		return Math.max( value / 100, 0 );
 	},
