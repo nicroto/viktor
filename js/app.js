@@ -37723,6 +37723,8 @@ MIDIController.prototype = {
 			midiMessageHandler = self.onMidiMessage.bind( self ),
 			noDevicesMessage = "No MIDI devices are connected.";
 
+		self.midiAccess = midiAccess;
+
 		if ( "function" === typeof inputs ) {
 			// first case is a deprecated old way
 			inputs = inputs();
@@ -38183,8 +38185,6 @@ function Mix( audioContext, firstMixNode, secondMixNode ) {
 			var self = this;
 			self.secondGain.gain.value = value;
 			self.firstGain.gain.value = 1 - value;
-console.log( "firstGain: " + self.firstGain.gain.value );
-console.log( "secondGain: " + self.secondGain.gain.value );
 		}
 	} );
 
@@ -38196,8 +38196,6 @@ console.log( "secondGain: " + self.secondGain.gain.value );
 module.exports = Mix;
 },{"./const":12}],17:[function(require,module,exports){
 'use strict';
-
-var CONST = require( "./const" );
 
 var SEMITONE_CENTS = 100,
 	OCTAVE_CENTS = 12 * SEMITONE_CENTS,
@@ -38223,11 +38221,10 @@ var utils = {
 		return value / 100;
 	},
 
-	getNoiseGenerator: function( type ) {
+	getNoiseGenerator: function( type, bufferSize ) {
 		// code copied from here:
 		//		http://noisehack.com/generate-noise-web-audio-api/
 		var self = this,
-			bufferSize = CONST.NOISE_BUFFER_SIZE,
 			generator;
 		switch ( type ) {
 			case "white":
@@ -38322,8 +38319,8 @@ var utils = {
 			0;
 	},
 
-	getCutoff: function( value ) {
-		return CONST.FILTER_FREQUENCY_UPPER_BOUND * value / 500;
+	getCutoff: function( upperBound, value ) {
+		return upperBound * value / 500;
 	},
 
 	getEmphasis: function( value ) {
@@ -38334,36 +38331,21 @@ var utils = {
 		return value / 100;
 	},
 
-	getWaveform: function( index ) {
-		var defaultForm = CONST.OSC_WAVEFORM[ index ],
-			customFormFFT = null;
+	getCustomWaveForm: function( waveformFFT ) {
+		var fft = waveformFFT.fft,
+			size = fft.real.length,
+			real = new Float32Array( size ),
+			imag = new Float32Array( size );
 
-		if ( !defaultForm ) {
-			var waveformFFT = CONST.OSC_WAVEFORM_FFT[ index - CONST.OSC_WAVEFORM.length ];
-
-			if ( waveformFFT ) {
-				var audioContext = self.audioContext,
-					fft = waveformFFT.fft,
-					size = fft.real.length,
-					real = new Float32Array( size ),
-					imag = new Float32Array( size );
-
-				for ( var i = 0; i < size; i++ ) {
-					real[ i ] = fft.real[ i ];
-					imag[ i ] = fft.imag[ i ];
-				}
-
-				customFormFFT = {
-					real: real,
-					imag: imag
-				};
-			}
+		for ( var i = 0; i < size; i++ ) {
+			real[ i ] = fft.real[ i ];
+			imag[ i ] = fft.imag[ i ];
 		}
 
 		return {
-			defaultForm: defaultForm,
-			customFormFFT: customFormFFT
-		}
+			real: real,
+			imag: imag
+		};
 	},
 
 	getPitchBendDetune: function( value ) {
@@ -38373,7 +38355,7 @@ var utils = {
 };
 
 module.exports = utils;
-},{"./const":12}],18:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 /* jshint -W098 */
 
 'use strict';
@@ -38610,7 +38592,7 @@ Instrument.prototype = {
 				}
 
 				if ( !oldSettings || ( oldSettings.waveform !== settings.waveform ) ) {
-					modulationLfo.waveform = utils.getWaveform( settings.waveform );
+					modulationLfo.waveform = self._getWaveForm( settings.waveform );
 				}
 
 				self.settings.modulation = JSON.parse( JSON.stringify( settings ) );
@@ -38810,7 +38792,7 @@ Instrument.prototype = {
 					mix = self.envelopeFilterMix;
 
 				if ( oldSettings.cutoff !== settings.cutoff ) {
-					var cutoff = utils.getCutoff( settings.cutoff );
+					var cutoff = utils.getCutoff( CONST.FILTER_FREQUENCY_UPPER_BOUND, settings.cutoff );
 					envelopeControlledFilter.node.frequency.value = cutoff;
 					uiControlledFilter.node.frequency.value = cutoff;
 				}
@@ -38849,7 +38831,7 @@ Instrument.prototype = {
 					filterLfo.rate = settings.rate;
 				}
 				if ( oldSettings.waveform !== settings.waveform ) {
-					filterLfo.waveform = utils.getWaveform( settings.waveform );
+					filterLfo.waveform = self._getWaveForm( settings.waveform );
 				}
 				if ( oldSettings.amount !== settings.amount ) {
 					mix.amount = utils.getGain( settings.amount );
@@ -38859,6 +38841,22 @@ Instrument.prototype = {
 			}
 
 		} );
+	},
+
+	_getWaveForm: function( index ) {
+		var defaultForm = CONST.OSC_WAVEFORM[ index ],
+			customFormFFT = null;
+
+		if ( !defaultForm ) {
+			customFormFFT = utils.getCustomWaveForm(
+				CONST.OSC_WAVEFORM_FFT[ index - CONST.OSC_WAVEFORM.length ]
+			);
+		}
+
+		return {
+			defaultForm: defaultForm,
+			customFormFFT: customFormFFT
+		}
 	},
 
 	_detuneOscillators: function( oscillators, activeNotes, oscillatorSettings, pitchSettings ) {
@@ -38893,7 +38891,7 @@ Instrument.prototype = {
 	},
 
 	_changeNoise: function( noiseNode, type ) {
-		noiseNode.onaudioprocess = utils.getNoiseGenerator( type );
+		noiseNode.onaudioprocess = utils.getNoiseGenerator( type, CONST.NOISE_BUFFER_SIZE );
 	}
 
 };
