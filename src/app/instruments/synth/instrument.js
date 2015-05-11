@@ -234,7 +234,7 @@ Instrument.prototype = {
 				}
 
 				if ( !oldSettings || ( oldSettings.waveform !== settings.waveform ) ) {
-					modulationLfo.waveform = utils.getWaveform( settings.waveform );
+					modulationLfo.waveform = self._getWaveForm( settings.waveform );
 				}
 
 				self.settings.modulation = JSON.parse( JSON.stringify( settings ) );
@@ -434,7 +434,7 @@ Instrument.prototype = {
 					mix = self.envelopeFilterMix;
 
 				if ( oldSettings.cutoff !== settings.cutoff ) {
-					var cutoff = utils.getCutoff( settings.cutoff );
+					var cutoff = utils.getCutoff( CONST.FILTER_FREQUENCY_UPPER_BOUND, settings.cutoff );
 					envelopeControlledFilter.node.frequency.value = cutoff;
 					uiControlledFilter.node.frequency.value = cutoff;
 				}
@@ -473,7 +473,7 @@ Instrument.prototype = {
 					filterLfo.rate = settings.rate;
 				}
 				if ( oldSettings.waveform !== settings.waveform ) {
-					filterLfo.waveform = utils.getWaveform( settings.waveform );
+					filterLfo.waveform = self._getWaveForm( settings.waveform );
 				}
 				if ( oldSettings.amount !== settings.amount ) {
 					mix.amount = utils.getGain( settings.amount );
@@ -483,6 +483,22 @@ Instrument.prototype = {
 			}
 
 		} );
+	},
+
+	_getWaveForm: function( index ) {
+		var defaultForm = CONST.OSC_WAVEFORM[ index ],
+			customFormFFT = null;
+
+		if ( !defaultForm ) {
+			customFormFFT = utils.getCustomWaveForm(
+				CONST.OSC_WAVEFORM_FFT[ index - CONST.OSC_WAVEFORM.length ]
+			);
+		}
+
+		return {
+			defaultForm: defaultForm,
+			customFormFFT: customFormFFT
+		}
 	},
 
 	_detuneOscillators: function( oscillators, activeNotes, oscillatorSettings, pitchSettings ) {
@@ -517,7 +533,7 @@ Instrument.prototype = {
 	},
 
 	_changeNoise: function( noiseNode, type ) {
-		noiseNode.onaudioprocess = utils.getNoiseGenerator( type );
+		noiseNode.onaudioprocess = utils.getNoiseGenerator( type, CONST.NOISE_BUFFER_SIZE );
 	}
 
 };

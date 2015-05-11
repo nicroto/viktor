@@ -1,7 +1,5 @@
 'use strict';
 
-var CONST = require( "./const" );
-
 var SEMITONE_CENTS = 100,
 	OCTAVE_CENTS = 12 * SEMITONE_CENTS,
 	FINE_DETUNE_HALF_SPECTRE = 8,
@@ -26,11 +24,10 @@ var utils = {
 		return value / 100;
 	},
 
-	getNoiseGenerator: function( type ) {
+	getNoiseGenerator: function( type, bufferSize ) {
 		// code copied from here:
 		//		http://noisehack.com/generate-noise-web-audio-api/
 		var self = this,
-			bufferSize = CONST.NOISE_BUFFER_SIZE,
 			generator;
 		switch ( type ) {
 			case "white":
@@ -125,8 +122,8 @@ var utils = {
 			0;
 	},
 
-	getCutoff: function( value ) {
-		return CONST.FILTER_FREQUENCY_UPPER_BOUND * value / 500;
+	getCutoff: function( upperBound, value ) {
+		return upperBound * value / 500;
 	},
 
 	getEmphasis: function( value ) {
@@ -137,36 +134,21 @@ var utils = {
 		return value / 100;
 	},
 
-	getWaveform: function( index ) {
-		var defaultForm = CONST.OSC_WAVEFORM[ index ],
-			customFormFFT = null;
+	getCustomWaveForm: function( waveformFFT ) {
+		var fft = waveformFFT.fft,
+			size = fft.real.length,
+			real = new Float32Array( size ),
+			imag = new Float32Array( size );
 
-		if ( !defaultForm ) {
-			var waveformFFT = CONST.OSC_WAVEFORM_FFT[ index - CONST.OSC_WAVEFORM.length ];
-
-			if ( waveformFFT ) {
-				var audioContext = self.audioContext,
-					fft = waveformFFT.fft,
-					size = fft.real.length,
-					real = new Float32Array( size ),
-					imag = new Float32Array( size );
-
-				for ( var i = 0; i < size; i++ ) {
-					real[ i ] = fft.real[ i ];
-					imag[ i ] = fft.imag[ i ];
-				}
-
-				customFormFFT = {
-					real: real,
-					imag: imag
-				};
-			}
+		for ( var i = 0; i < size; i++ ) {
+			real[ i ] = fft.real[ i ];
+			imag[ i ] = fft.imag[ i ];
 		}
 
 		return {
-			defaultForm: defaultForm,
-			customFormFFT: customFormFFT
-		}
+			real: real,
+			imag: imag
+		};
 	},
 
 	getPitchBendDetune: function( value ) {
