@@ -1,7 +1,7 @@
 'use strict';
 
 var CONST = require( "./engine/const" ),
-	utils = require( "./engine/utils" ),
+	settingsConvertor = require( "settings-convertor" ),
 	MIDIController = require( "./engine/midi" ),
 	Tuna = require( "tuna" );
 
@@ -176,16 +176,16 @@ DAW.prototype = {
 					delay = self.delay;
 
 				if ( oldSettings.time !== settings.time ) {
-					delay.delayTime = utils.getTime( settings.time );
+					delay.delayTime = settingsConvertor.transposeValue( settings.time, [ 0, 100 ], [ 0, 1000 ] );
 				}
 				if ( oldSettings.feedback !== settings.feedback ) {
-					delay.feedback = utils.getFeedback( settings.feedback );
+					delay.feedback = settingsConvertor.transposeValue( settings.feedback, [ 0, 100 ], [ 0, 0.9 ] );
 				}
 				if ( oldSettings.dry !== settings.dry ) {
-					delay.dryLevel = utils.getDryLevel( settings.dry );
+					delay.dryLevel = settingsConvertor.transposeValue( settings.dry, [ 0, 100 ], [ 0, 1 ] );
 				}
 				if ( oldSettings.wet !== settings.wet ) {
-					delay.wetLevel = utils.getWetLevel( settings.wet );
+					delay.wetLevel = settingsConvertor.transposeValue( settings.wet, [ 0, 100 ], [ 0, 1 ] );
 				}
 
 				self.settings.delay = JSON.parse( JSON.stringify( settings ) );
@@ -204,10 +204,10 @@ DAW.prototype = {
 					reverb = self.reverb;
 
 				if ( oldSettings.level !== settings.level ) {
-					var newGain = utils.getGain( settings.level );
+					var newGain = settingsConvertor.transposeValue( settings.level, [ 0, 100 ], [ 0, 1 ] );
 
 					reverb.wetLevel = newGain;
-					reverb.dryLevel = utils.getReverbDryLevel( newGain );
+					reverb.dryLevel = 1 - ( newGain / 2 );
 				}
 
 				self.settings.reverb = JSON.parse( JSON.stringify( settings ) );
@@ -226,7 +226,7 @@ DAW.prototype = {
 					masterVolume = self.masterVolume;
 
 				if ( oldSettings.level !== settings.level ) {
-					masterVolume.gain.value = utils.getGain( settings.level );
+					masterVolume.gain.value = settingsConvertor.transposeValue( settings.level, [ 0, 100 ], [ 0, 1 ] );
 				}
 
 				self.settings.masterVolume = JSON.parse( JSON.stringify( settings ) );

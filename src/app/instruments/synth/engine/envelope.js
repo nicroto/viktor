@@ -1,6 +1,7 @@
 'use strict';
 
-var utils = require( "utils" ),
+var settingsConvertor = require( "settings-convertor" ),
+	utils = require( "utils" ),
 	CONST = require( "./const" );
 
 function Envelope( audioContext, propName, upperBound ) {
@@ -10,14 +11,65 @@ function Envelope( audioContext, propName, upperBound ) {
 	self.propName = propName;
 	self.upperBound = upperBound;
 
-	self.node =
-	self.attack =
-	self.decay =
-	self.sustain =
-	self.release = null;
+	self.node = null;
+
+	self._defineProps();
 }
 
 Envelope.prototype = {
+
+	_defineProps: function() {
+
+		var self = this,
+			attack,
+			decay,
+			sustain,
+			release,
+			doubleTransposeValue = function( value ) {
+				return 2 * settingsConvertor.transposeValue( value, [ 0, 100 ], [ 0, 1 ] );
+			};
+
+		Object.defineProperty( self, "attack", {
+			get: function() {
+				return attack;
+			},
+
+			set: function( value ) {
+				attack = doubleTransposeValue( value );
+			}
+		} );
+
+		Object.defineProperty( self, "decay", {
+			get: function() {
+				return decay;
+			},
+
+			set: function( value ) {
+				decay = doubleTransposeValue( value );
+			}
+		} );
+
+		Object.defineProperty( self, "sustain", {
+			get: function() {
+				return sustain;
+			},
+
+			set: function( value ) {
+				sustain = settingsConvertor.transposeValue( value, [ 0, 100 ], [ 0, 1 ] );
+			}
+		} );
+
+		Object.defineProperty( self, "release", {
+			get: function() {
+				return release;
+			},
+
+			set: function( value ) {
+				release = doubleTransposeValue( value );
+			}
+		} );
+
+	},
 
 	start: function( time ) {
 		var self = this,

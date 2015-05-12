@@ -4,7 +4,6 @@
 
 var settingsConvertor = require( "settings-convertor" ),
 	CONST = require( "./engine/const" ),
-	utils = require( "./engine/utils" ),
 	Envelope = require( "./engine/envelope" ),
 	Filter = require( "./engine/filter" ),
 	LFO = require( "./engine/lfo" ),
@@ -263,10 +262,10 @@ Instrument.prototype = {
 					var oldOscSettings1 = oldSettings.osc1,
 						oldOscSettings2 = oldSettings.osc2,
 						oldOscSettings3 = oldSettings.osc3,
-						pitchDetune = utils.getPitchBendDetune( self.pitchSettings.bend ),
+						pitchDetune = settingsConvertor.transposeValue( self.pitchSettings.bend, [ -1, 1 ], [ -200, 200 ] ),
 						resolveRange = function( oldSettings, settings, pitchDetune, osc ) {
 							if ( oldSettings.range !== settings.range ) {
-								osc.detune.value = utils.getDetune(
+								osc.detune.value = self._getDetune(
 									settings.range,
 									8
 								) + pitchDetune;
@@ -304,7 +303,7 @@ Instrument.prototype = {
 							if ( oldSettings.range !== settings.range ||
 								oldSettings.fineDetune !== settings.fineDetune )
 							{
-								osc.detune.value = utils.getDetune(
+								osc.detune.value = self._getDetune(
 									settings.range,
 									settings.fineDetune,
 									base
@@ -349,7 +348,7 @@ Instrument.prototype = {
 					resolveVolume = function( settings, volume ) {
 						var value = settings.isEnabled ? settings.value : 0;
 
-						volume.gain.value = utils.getVolume( value );
+						volume.gain.value = settingsConvertor.transposeValue( value, [ 0, 100 ], [ 0, 1 ] );
 					};
 
 				resolveVolume( volumeSettings1, volume1 );
@@ -369,7 +368,7 @@ Instrument.prototype = {
 						noiseNode.connect( noiseVolume );
 					}
 
-					noiseVolume.gain.value = utils.getVolume( noiseSettings.volume );
+					noiseVolume.gain.value = settingsConvertor.transposeValue( noiseSettings.volume, [ 0, 100 ], [ 0, 1 ] );
 				}
 
 				self.settings.mixer = JSON.parse( JSON.stringify( settings ) );
@@ -399,16 +398,12 @@ Instrument.prototype = {
 							var newVal = settings[ name ];
 
 							if ( oldSettings[ name ] !== newVal ) {
-								var methodName = "get" + name[ 0 ].toUpperCase() + name.slice( 1 );
-								envelope[ name ] = utils[ methodName ]( newVal );
-								console.log( name + ": " + utils[ methodName ]( newVal ) );
+								envelope[ name ] = newVal;
 							}
 						} );
 					};
 
-				console.log( "gainEnvelope settings:" );
 				resolve( oldSettings.primary, settings.primary, self.gainEnvelope );
-				console.log( "filterEnvelope settings:" );
 				resolve( oldSettings.filter, settings.filter, self.filterEnvelope );
 
 				self.settings.envelopes = JSON.parse( JSON.stringify( settings ) );
@@ -434,18 +429,22 @@ Instrument.prototype = {
 					mix = self.envelopeFilterMix;
 
 				if ( oldSettings.cutoff !== settings.cutoff ) {
-					var cutoff = utils.getCutoff( CONST.FILTER_FREQUENCY_UPPER_BOUND, settings.cutoff );
+					var cutoff = CONST.FILTER_FREQUENCY_UPPER_BOUND * settingsConvertor.transposeValue(
+						settings.cutoff,
+						[ 0, 500 ],
+						[ 0, 1 ]
+					);
 					envelopeControlledFilter.node.frequency.value = cutoff;
 					uiControlledFilter.node.frequency.value = cutoff;
 				}
 				if ( oldSettings.emphasis !== settings.emphasis ) {
-					var emphasis = utils.getEmphasis( settings.emphasis );
+					var emphasis = 40 * settingsConvertor.transposeValue( settings.emphasis, [ 1, 100 ], [ 0, 1 ] );
 					envelopeControlledFilter.node.Q.value = emphasis;
 					uiControlledFilter.node.Q.value = emphasis;
 					lfoControlledFilter.node.Q.value = emphasis;
 				}
 				if ( oldSettings.envAmount !== settings.envAmount ) {
-					mix.amount = utils.getGain( settings.envAmount );
+					mix.amount = settingsConvertor.transposeValue( settings.envAmount, [ 0, 100 ], [ 0, 1 ] );
 				}
 
 				self.settings.filter = JSON.parse( JSON.stringify( settings ) );
@@ -476,7 +475,7 @@ Instrument.prototype = {
 					filterLfo.waveform = self._getWaveForm( settings.waveform );
 				}
 				if ( oldSettings.amount !== settings.amount ) {
-					mix.amount = utils.getGain( settings.amount );
+					mix.amount = settingsConvertor.transposeValue( settings.amount, [ 0, 100 ], [ 0, 1 ] );
 				}
 
 				self.settings.lfo = JSON.parse( JSON.stringify( settings ) );
@@ -486,11 +485,12 @@ Instrument.prototype = {
 	},
 
 	_getWaveForm: function( index ) {
-		var defaultForm = CONST.OSC_WAVEFORM[ index ],
+		var self = this,
+			defaultForm = CONST.OSC_WAVEFORM[ index ],
 			customFormFFT = null;
 
 		if ( !defaultForm ) {
-			customFormFFT = utils.getCustomWaveForm(
+			customFormFFT = self.getCustomWaveForm(
 				CONST.OSC_WAVEFORM_FFT[ index - CONST.OSC_WAVEFORM.length ]
 			);
 		}
@@ -501,26 +501,52 @@ Instrument.prototype = {
 		};
 	},
 
+	_getCustomWaveForm: function( waveformFFT ) {
+		var fft = waveformFFT.fft,
+			size = fft.real.length,
+			real = new Float32Array( size ),
+			imag = new Float32Array( size );
+
+		for ( var i = 0; i < size; i++ ) {
+			real[ i ] = fft.real[ i ];
+			imag[ i ] = fft.imag[ i ];
+		}
+
+		return {
+			real: real,
+			imag: imag
+		};
+	},
+
 	_detuneOscillators: function( oscillators, activeNotes, oscillatorSettings, pitchSettings ) {
 		var self = this,
-			pitchDetune = utils.getPitchBendDetune( pitchSettings.bend ),
+			pitchDetune = settingsConvertor.transposeValue( pitchSettings.bend, [ -1, 1 ], [ -200, 200 ] ),
 			osc1 = oscillators[ 0 ],
 			osc2 = oscillators[ 1 ],
 			osc3 = oscillators[ 2 ];
 
-		osc1.detune.setValueAtTime( ( utils.getDetune(
+		osc1.detune.setValueAtTime( ( self._getDetune(
 			oscillatorSettings.osc1.range,
 			8
 		) + pitchDetune ), 0 );
-		osc2.detune.setValueAtTime( ( utils.getDetune(
+		osc2.detune.setValueAtTime( ( self._getDetune(
 			oscillatorSettings.osc2.range,
 			oscillatorSettings.osc2.fineDetune
 		) + pitchDetune ), 0 );
-		osc3.detune.setValueAtTime( ( utils.getDetune(
+		osc3.detune.setValueAtTime( ( self._getDetune(
 			oscillatorSettings.osc3.range,
 			oscillatorSettings.osc3.fineDetune,
 			CONST.OSC3_RANGE_BASE
 		) + pitchDetune ), 0 );
+	},
+
+	_getDetune: function( range, fineDetune, rangeBase ) {
+		rangeBase = rangeBase === undefined ? CONST.RANGE_DEFAULT_BASE : rangeBase;
+		var base = ( range - rangeBase ) * CONST.OCTAVE_CENTS;
+		// if no fineDetune, then fineDetune === FINE_DETUNE_HALF_SPECTRE => fine === 0
+		var fine = ( fineDetune - CONST.FINE_DETUNE_HALF_SPECTRE ) * CONST.SEMITONE_CENTS;
+
+		return base + fine;
 	},
 
 	_setNoteToOscillator: function( noteFrequency, settings, oscillator ) {
@@ -528,12 +554,77 @@ Instrument.prototype = {
 		oscillator.frequency.setTargetAtTime(
 			noteFrequency,
 			0,
-			utils.getPortamento( settings.modulation.portamento )
+			settingsConvertor.transposeValue(
+				settings.modulation.portamento,
+				[ 0, 100 ],
+				[ 0, 1/6 ]
+			)
 		);
 	},
 
 	_changeNoise: function( noiseNode, type ) {
-		noiseNode.onaudioprocess = utils.getNoiseGenerator( type, CONST.NOISE_BUFFER_SIZE );
+		var self = this;
+
+		noiseNode.onaudioprocess = self._getNoiseGenerator( type, CONST.NOISE_BUFFER_SIZE );
+	},
+
+	_getNoiseGenerator: function( type, bufferSize ) {
+		// code copied from here:
+		//		http://noisehack.com/generate-noise-web-audio-api/
+		var generator;
+
+		switch ( type ) {
+			case "white":
+				generator = function( e ) {
+					var output = e.outputBuffer.getChannelData( 0 );
+					for ( var i = 0; i < bufferSize; i++ ) {
+						output[ i ] = Math.random() * 2 - 1;
+					}
+				};
+				break;
+			case "pink":
+				generator = ( function() {
+					var b0, b1, b2, b3, b4, b5, b6;
+					b0 = b1 = b2 = b3 = b4 = b5 = b6 = 0.0;
+					var result = function( e ) {
+						var output = e.outputBuffer.getChannelData( 0 );
+						for ( var i = 0; i < bufferSize; i++ ) {
+							var white = Math.random() * 2 - 1;
+
+							b0 = 0.99886 * b0 + white * 0.0555179;
+							b1 = 0.99332 * b1 + white * 0.0750759;
+							b2 = 0.96900 * b2 + white * 0.1538520;
+							b3 = 0.86650 * b3 + white * 0.3104856;
+							b4 = 0.55000 * b4 + white * 0.5329522;
+							b5 = -0.7616 * b5 - white * 0.0168980;
+
+							output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+							output[i] *= 0.11; // (roughly) compensate for gain
+
+							b6 = white * 0.115926;
+						}
+					};
+					return result;
+				} )();
+				break;
+			case "brown":
+				generator = ( function() {
+					var lastOut = 0.0;
+					var result = function( e ) {
+						var output = e.outputBuffer.getChannelData( 0 );
+						for ( var i = 0; i < bufferSize; i++ ) {
+							var white = Math.random() * 2 - 1;
+							output[ i ] = ( lastOut + ( 0.02 * white ) ) / 1.02;
+							lastOut = output[ i ];
+							output[ i ] *= 3.5; // (roughly) compensate for gain
+						}
+					};
+					return result;
+				} )();
+				break;
+		}
+
+		return generator;
 	}
 
 };

@@ -1,6 +1,13 @@
 'use strict';
 
+var SEMITONE_CENTS = 100;
+
 module.exports = {
+
+	SEMITONE_CENTS: SEMITONE_CENTS,
+	OCTAVE_CENTS: 12 * SEMITONE_CENTS,
+	FINE_DETUNE_HALF_SPECTRE: 8,
+	RANGE_DEFAULT_BASE: 3,
 
 	DEFAULT_PITCH_SETTINGS: {
 		bend: 0
@@ -61,7 +68,8 @@ module.exports = {
 	},
 	DEFAULT_FILTER_SETTINGS: {
 		cutoff: 250,
-		emphasis: 1
+		emphasis: 1,
+		envAmount: 0
 	},
 	DEFAULT_LFO_SETTINGS: {
 		waveform: 0,
