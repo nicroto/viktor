@@ -1,8 +1,13 @@
 'use strict';
 
-var settingsConvertor = require( "settings-convertor" ),
-	utils = require( "utils" ),
-	CONST = require( "./const" );
+var settingsConvertor = require( "settings-convertor" );
+
+var FAKE_ZERO = 0.00001;
+
+function customOrDefault( customValue, defaultValue ) {
+	return customValue !== undefined ? customValue : defaultValue;
+};
+
 
 function Envelope( audioContext, propName, upperBound ) {
 	var self = this;
@@ -81,10 +86,10 @@ Envelope.prototype = {
 			decay = self.decay,
 			sustain = self.sustain;
 
-		time = utils.customOrDefault( time, audioContext.currentTime );
+		time = customOrDefault( time, audioContext.currentTime );
 
 		node[ propName ].cancelScheduledValues( time );
-		node[ propName ].setTargetAtTime( CONST.FAKE_ZERO, time, 0.01 );
+		node[ propName ].setTargetAtTime( FAKE_ZERO, time, 0.01 );
 		node[ propName ].setTargetAtTime( upperBound, time + 0.01, attack / 2 );
 		node[ propName ].setTargetAtTime( sustain * upperBound, time + 0.01 + attack, decay / 2 );
 	},
@@ -96,10 +101,10 @@ Envelope.prototype = {
 			node = self.node,
 			release = self.release;
 
-		time = utils.customOrDefault( time, audioContext.currentTime );
+		time = customOrDefault( time, audioContext.currentTime );
 
 		node[ propName ].cancelScheduledValues( time );
-		node[ propName ].setTargetAtTime( CONST.FAKE_ZERO, time, release );
+		node[ propName ].setTargetAtTime( FAKE_ZERO, time, release );
 	}
 
 };

@@ -1,6 +1,6 @@
 'use strict';
 
-var CONST = require( "./const" );
+var DEFAULT_FREQUENCY_RANGE = 500;
 
 function LFO( audioContext, controlledNodes, propName, settings ) {
 	var self = this,
@@ -24,7 +24,7 @@ function LFO( audioContext, controlledNodes, propName, settings ) {
 	self.waveform = settings;
 
 	self._initCenterFrequency();
-	self._initGain();
+	self._initFrequencyRange();
 
 	oscillator.connect( gain );
 	controlledNodes.forEach( function( node ) {
@@ -47,7 +47,7 @@ LFO.prototype = {
 				if ( value === 0 ) {
 					gain.gain.value = 0;
 				} else if ( gain.gain.value === 0 ) {
-					self._initGain();
+					self._initFrequencyRange();
 				}
 
 				self.oscillator.frequency.value = value;
@@ -89,13 +89,13 @@ LFO.prototype = {
 		}
 	},
 
-	_initGain: function() {
+	_initFrequencyRange: function() {
 		var self = this,
 			gain = self.gain,
 			settings = self.settings;
 
 		gain.gain.value = settings.frequencyRange ?
-			settings.frequencyRange : CONST.LFO_DEFAULT_FREQUENCY_RANGE;
+			settings.frequencyRange : DEFAULT_FREQUENCY_RANGE;
 	}
 
 };

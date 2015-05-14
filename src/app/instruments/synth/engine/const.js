@@ -45,12 +45,12 @@ module.exports = {
 		volume3: {
 			isEnabled: 0,
 			value: 60
-		},
-		noise: {
-			type: 0,
-			volume: 0,
-			isEnabled: 0
 		}
+	},
+	DEFAULT_NOISE_SETTINGS: {
+		enabled: 0,
+		type: 0,
+		level: 0
 	},
 	DEFAULT_ENVELOPES_SETTINGS: {
 		primary: {
@@ -94,16 +94,6 @@ module.exports = {
 		}
 	],
 	OSC3_RANGE_BASE: 4,
-
-	NOISE_TYPE: [
-		"brown",
-		"pink",
-		"white"
-	],
-	DEFAULT_NOISE_TYPE: 0,
-	NOISE_BUFFER_SIZE: 4096,
-
-	FAKE_ZERO: 0.00001,
 
 	FILTER_FREQUENCY_UPPER_BOUND: 8000,
 

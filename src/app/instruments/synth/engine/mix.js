@@ -1,7 +1,5 @@
 'use strict';
 
-var CONST = require( "./const" );
-
 function Mix( audioContext, firstMixNode, secondMixNode ) {
 	var self = this,
 		firstGain = audioContext.createGain(),
@@ -9,7 +7,7 @@ function Mix( audioContext, firstMixNode, secondMixNode ) {
 		output = audioContext.createGain();
 
 	firstGain.gain.value = 1.0;
-	secondGain.gain.value = CONST.FAKE_ZERO;
+	secondGain.gain.value = 0;
 	output.gain.value = 1.0;
 
 	firstMixNode.connect( firstGain );

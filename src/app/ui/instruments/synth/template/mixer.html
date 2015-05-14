@@ -1,6 +1,6 @@
 <div class="col-lg-2 mixer control-bank text-center" ng-controller="MixerCtrl as mixer">
 	<div class="row">
-		<div class="oscillator-switch col-lg-4">
+		<div class="oscillator-switch col-lg-6">
 			<div class="row">
 				<webaudio-switch bind-polymer value="{{mixer.volume1.isEnabled}}"></webaudio-switch>
 			</div>
@@ -11,7 +11,7 @@
 				<webaudio-switch bind-polymer value="{{mixer.volume3.isEnabled}}"></webaudio-switch>
 			</div>
 		</div>
-		<div class="oscillator-volume col-lg-4">
+		<div class="oscillator-volume col-lg-6">
 			<div class="row">
 				<webaudio-knob src="images/frequency-knob.png"
 					bind-polymer
@@ -28,26 +28,10 @@
 					value="{{mixer.volume3.value}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 1 volume"></webaudio-knob>
 			</div>
 		</div>
-		<div class="noise col-lg-4">
-			<div class="row">
-				<webaudio-switch bind-polymer value="{{mixer.noise.isEnabled}}"></webaudio-switch>
-			</div>
-			<div class="row">
-				<webaudio-knob src="images/frequency-knob.png"
-					bind-polymer
-					value="{{mixer.noise.volume}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Noise volume"></webaudio-knob>
-			</div>
-			<div class="row">
-				<webaudio-slider direction="horz" max="2" step="1"
-					bind-polymer
-					width="66" height="16" value="{{mixer.noise.type}}"></webaudio-slider>
-			</div>
-		</div>
 	</div>
 	<div class="row">
-		<div class="col-lg-4">On/Off</div>
-		<div class="col-lg-4">Volume</div>
-		<div class="col-lg-4">Noise</div>
+		<div class="col-lg-6">On/Off</div>
+		<div class="col-lg-6">Volume</div>
 	</div>
 	<h4>Mixer</h4>
 </div>

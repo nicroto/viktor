@@ -4,6 +4,7 @@
 
 var settingsConvertor = require( "settings-convertor" ),
 	CONST = require( "./engine/const" ),
+	Noise = require( "./engine/noise" ),
 	Envelope = require( "./engine/envelope" ),
 	Filter = require( "./engine/filter" ),
 	LFO = require( "./engine/lfo" ),
@@ -13,8 +14,7 @@ function Instrument( audioContext ) {
 	var self = this,
 		volumes = [],
 		oscillators = [],
-		noiseVolume = audioContext.createGain(),
-		noiseNode = audioContext.createScriptProcessor( CONST.NOISE_BUFFER_SIZE, 1, 1 ),
+		noise = new Noise( audioContext ),
 		gainEnvelope = new Envelope( audioContext, "gain", 1 ),
 		gainEnvelopeNode = audioContext.createGain(),
 		envelopeControlledFilter = new Filter( audioContext ),
@@ -33,6 +33,8 @@ function Instrument( audioContext ) {
 
 	gainEnvelopeNode.gain.value = 0.0;
 	gainEnvelope.node = gainEnvelopeNode;
+
+	noise.output.connect( gainEnvelope.node );
 
 	filterEnvelope.node = envelopeControlledFilter.node;
 
@@ -59,10 +61,6 @@ function Instrument( audioContext ) {
 		frequencyRange: CONST.MODULATION_LFO_FREQUENCY_RANGE
 	} );
 
-	noiseVolume.gain.value = 0.0;
-
-	noiseVolume.connect( gainEnvelope.node );
-
 	gainEnvelope.node.connect( envelopeControlledFilter.node );
 	gainEnvelope.node.connect( uiControlledFilter.node );
 	envelopeFilterMix.output.connect( lfoControlledFilter.node );
@@ -72,8 +70,7 @@ function Instrument( audioContext ) {
 	self.volumes = volumes;
 	self.oscillators = oscillators;
 	self.modulationLfo = modulationLfo;
-	self.noiseVolume = noiseVolume;
-	self.noiseNode = noiseNode;
+	self.noise = noise;
 	self.gainEnvelope = gainEnvelope;
 	self.envelopeControlledFilter = envelopeControlledFilter;
 	self.uiControlledFilter = uiControlledFilter;
@@ -89,6 +86,7 @@ function Instrument( audioContext ) {
 		modulation: null,
 		oscillators: null,
 		mixer: null,
+		noise: null,
 		envelopes: null,
 		filter: null,
 		lfo: null,
@@ -101,12 +99,11 @@ function Instrument( audioContext ) {
 	self.modulationSettings = CONST.DEFAULT_MOD_SETTINGS;
 	self.oscillatorSettings = CONST.DEFAULT_OSC_SETTINGS;
 	self.mixerSettings = CONST.DEFAULT_MIX_SETTINGS;
+	self.noiseSettings = CONST.DEFAULT_NOISE_SETTINGS;
 	self.envelopesSettings = CONST.DEFAULT_ENVELOPES_SETTINGS;
 	self.filterSettings = CONST.DEFAULT_FILTER_SETTINGS;
 	self.lfoSettings = CONST.DEFAULT_LFO_SETTINGS;
 	self.pitchSettings = CONST.DEFAULT_PITCH_SETTINGS;
-
-	self._changeNoise( noiseNode, CONST.NOISE_TYPE[ CONST.DEFAULT_NOISE_TYPE ] );
 }
 
 Instrument.prototype = {
@@ -203,6 +200,7 @@ Instrument.prototype = {
 
 				return JSON.parse( JSON.stringify( self.settings.pitch ) );
 			},
+
 			set: function( settings ) {
 				var self = this,
 					oldSettings = self.settings.pitch || {},
@@ -339,12 +337,9 @@ Instrument.prototype = {
 					volume1 = volumes[ 0 ],
 					volume2 = volumes[ 1 ],
 					volume3 = volumes[ 2 ],
-					noiseVolume = self.noiseVolume,
-					noiseNode = self.noiseNode,
 					volumeSettings1 = settings.volume1,
 					volumeSettings2 = settings.volume2,
 					volumeSettings3 = settings.volume3,
-					noiseSettings = settings.noise,
 					resolveVolume = function( settings, volume ) {
 						var value = settings.isEnabled ? settings.value : 0;
 
@@ -355,23 +350,33 @@ Instrument.prototype = {
 				resolveVolume( volumeSettings2, volume2 );
 				resolveVolume( volumeSettings3, volume3 );
 
-				if ( oldSettings ) {
-					var oldNoiseSettings = oldSettings.noise;
+				self.settings.mixer = JSON.parse( JSON.stringify( settings ) );
+			}
 
-					if ( noiseSettings.type !== oldNoiseSettings.type ) {
-						self._changeNoise( noiseNode, CONST.NOISE_TYPE[ noiseSettings.type ] );
-					}
+		} );
 
-					if ( oldNoiseSettings.isEnabled && !noiseSettings.isEnabled ) {
-						noiseNode.disconnect();
-					} else if ( !oldNoiseSettings.isEnabled && noiseSettings.isEnabled ) {
-						noiseNode.connect( noiseVolume );
-					}
+		Object.defineProperty( self, "noiseSettings", {
 
-					noiseVolume.gain.value = settingsConvertor.transposeValue( noiseSettings.volume, [ 0, 100 ], [ 0, 1 ] );
+			get: function() {
+				// if slow - use npm clone
+				return JSON.parse( JSON.stringify( self.settings.noise ) );
+			},
+
+			set: function( settings ) {
+				var oldSettings = self.settings.noise || {},
+					noise = self.noise;
+
+				if ( oldSettings.enabled !== settings.enabled ) {
+					noise.enabled = settings.enabled;
+				}
+				if ( oldSettings.level !== settings.level ) {
+					noise.level = settingsConvertor.transposeValue( settings.level, [ 0, 100 ], [ 0, 1 ] );
+				}
+				if ( oldSettings.type !== settings.type ) {
+					noise.type = settings.type;
 				}
 
-				self.settings.mixer = JSON.parse( JSON.stringify( settings ) );
+				self.settings.noise = JSON.parse( JSON.stringify( settings ) );
 			}
 
 		} );
@@ -560,71 +565,6 @@ Instrument.prototype = {
 				[ 0, 1/6 ]
 			)
 		);
-	},
-
-	_changeNoise: function( noiseNode, type ) {
-		var self = this;
-
-		noiseNode.onaudioprocess = self._getNoiseGenerator( type, CONST.NOISE_BUFFER_SIZE );
-	},
-
-	_getNoiseGenerator: function( type, bufferSize ) {
-		// code copied from here:
-		//		http://noisehack.com/generate-noise-web-audio-api/
-		var generator;
-
-		switch ( type ) {
-			case "white":
-				generator = function( e ) {
-					var output = e.outputBuffer.getChannelData( 0 );
-					for ( var i = 0; i < bufferSize; i++ ) {
-						output[ i ] = Math.random() * 2 - 1;
-					}
-				};
-				break;
-			case "pink":
-				generator = ( function() {
-					var b0, b1, b2, b3, b4, b5, b6;
-					b0 = b1 = b2 = b3 = b4 = b5 = b6 = 0.0;
-					var result = function( e ) {
-						var output = e.outputBuffer.getChannelData( 0 );
-						for ( var i = 0; i < bufferSize; i++ ) {
-							var white = Math.random() * 2 - 1;
-
-							b0 = 0.99886 * b0 + white * 0.0555179;
-							b1 = 0.99332 * b1 + white * 0.0750759;
-							b2 = 0.96900 * b2 + white * 0.1538520;
-							b3 = 0.86650 * b3 + white * 0.3104856;
-							b4 = 0.55000 * b4 + white * 0.5329522;
-							b5 = -0.7616 * b5 - white * 0.0168980;
-
-							output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
-							output[i] *= 0.11; // (roughly) compensate for gain
-
-							b6 = white * 0.115926;
-						}
-					};
-					return result;
-				} )();
-				break;
-			case "brown":
-				generator = ( function() {
-					var lastOut = 0.0;
-					var result = function( e ) {
-						var output = e.outputBuffer.getChannelData( 0 );
-						for ( var i = 0; i < bufferSize; i++ ) {
-							var white = Math.random() * 2 - 1;
-							output[ i ] = ( lastOut + ( 0.02 * white ) ) / 1.02;
-							lastOut = output[ i ];
-							output[ i ] *= 3.5; // (roughly) compensate for gain
-						}
-					};
-					return result;
-				} )();
-				break;
-		}
-
-		return generator;
 	}
 
 };

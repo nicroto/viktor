@@ -7,6 +7,7 @@ var angular = require( "angular" ),
 		require( "./template/modulation.html" ).name,
 		require( "./template/oscillator-bank.html" ).name,
 		require( "./template/mixer.html" ).name,
+		require( "./template/noise.html" ).name,
 		require( "./template/envelopes.html" ).name,
 		require( "./template/filter.html" ).name,
 		require( "./template/lfo.html" ).name
@@ -24,6 +25,7 @@ mod.directive( "synth", [ "$templateCache", function( $templateCache ) {
 require( "./controller/modulation" )( mod );
 require( "./controller/oscillator-bank" )( mod );
 require( "./controller/mixer" )( mod );
+require( "./controller/noise" )( mod );
 require( "./controller/envelopes" )( mod );
 require( "./controller/filter" )( mod );
 require( "./controller/lfo" )( mod );
