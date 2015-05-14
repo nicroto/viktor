@@ -37342,30 +37342,14 @@ module.exports = Tuna;
 },{}],6:[function(require,module,exports){
 'use strict';
 
-var SIMPLE_PITCH_HALF_RANGE = 64;
-
 module.exports = {
 
-	getSimplePitch: function( value ) {
-		return Math.floor( value * SIMPLE_PITCH_HALF_RANGE + SIMPLE_PITCH_HALF_RANGE );
-	},
+	transposeValue: function( value, originalRange, newRange ) {
+		var originalRangeLenght = originalRange[ 1 ] - originalRange[ 0 ],
+			ratioToRange = ( value - originalRange[ 0 ] ) / originalRangeLenght,
+			newRangeLength = newRange[ 1 ] - newRange[ 0 ];
 
-	getNormalPitch: function( value ) {
-		return ( value - SIMPLE_PITCH_HALF_RANGE ) / SIMPLE_PITCH_HALF_RANGE;
-	},
-
-	getRateFromModulation: function( modulation ) {
-		return 15 * modulation;
-	},
-
-	getSimpleModulationFromRate: function( value ) {
-		return Math.round( ( value / 15 ) * 127 );
-	},
-
-	getRateFromSimpleModulation: function( value ) {
-		var self = this;
-
-		return self.getRateFromModulation( value / 127 );
+		return newRange[ 0 ] + ratioToRange * newRangeLength;
 	}
 
 };
@@ -37404,11 +37388,11 @@ angular.element( document ).ready( function() {
 
 module.exports = app;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./daw/daw":8,"./instruments/synth/instrument":18,"./ui/module":40,"angular":2,"angular-bind-polymer":4}],8:[function(require,module,exports){
+},{"./daw/daw":8,"./instruments/synth/instrument":17,"./ui/module":41,"angular":2,"angular-bind-polymer":4}],8:[function(require,module,exports){
 'use strict';
 
 var CONST = require( "./engine/const" ),
-	utils = require( "./engine/utils" ),
+	settingsConvertor = require( "settings-convertor" ),
 	MIDIController = require( "./engine/midi" ),
 	Tuna = require( "tuna" );
 
@@ -37488,7 +37472,7 @@ DAW.prototype = {
 		self.selectedInstrument = self.instruments[ index ];
 	},
 
-	createInstrument: function( Instrument, settings ) {
+	createInstrument: function( Instrument ) {
 		var self = this,
 			audioContext = self.audioContext,
 			newInstrument = new Instrument( audioContext );
@@ -37583,16 +37567,16 @@ DAW.prototype = {
 					delay = self.delay;
 
 				if ( oldSettings.time !== settings.time ) {
-					delay.delayTime = utils.getTime( settings.time );
+					delay.delayTime = settingsConvertor.transposeValue( settings.time, [ 0, 100 ], [ 0, 1000 ] );
 				}
 				if ( oldSettings.feedback !== settings.feedback ) {
-					delay.feedback = utils.getFeedback( settings.feedback );
+					delay.feedback = settingsConvertor.transposeValue( settings.feedback, [ 0, 100 ], [ 0, 0.9 ] );
 				}
 				if ( oldSettings.dry !== settings.dry ) {
-					delay.dryLevel = utils.getDryLevel( settings.dry );
+					delay.dryLevel = settingsConvertor.transposeValue( settings.dry, [ 0, 100 ], [ 0, 1 ] );
 				}
 				if ( oldSettings.wet !== settings.wet ) {
-					delay.wetLevel = utils.getWetLevel( settings.wet );
+					delay.wetLevel = settingsConvertor.transposeValue( settings.wet, [ 0, 100 ], [ 0, 1 ] );
 				}
 
 				self.settings.delay = JSON.parse( JSON.stringify( settings ) );
@@ -37611,10 +37595,10 @@ DAW.prototype = {
 					reverb = self.reverb;
 
 				if ( oldSettings.level !== settings.level ) {
-					var newGain = utils.getGain( settings.level );
+					var newGain = settingsConvertor.transposeValue( settings.level, [ 0, 100 ], [ 0, 1 ] );
 
 					reverb.wetLevel = newGain;
-					reverb.dryLevel = utils.getReverbDryLevel( newGain );
+					reverb.dryLevel = 1 - ( newGain / 2 );
 				}
 
 				self.settings.reverb = JSON.parse( JSON.stringify( settings ) );
@@ -37633,7 +37617,7 @@ DAW.prototype = {
 					masterVolume = self.masterVolume;
 
 				if ( oldSettings.level !== settings.level ) {
-					masterVolume.gain.value = utils.getGain( settings.level );
+					masterVolume.gain.value = settingsConvertor.transposeValue( settings.level, [ 0, 100 ], [ 0, 1 ] );
 				}
 
 				self.settings.masterVolume = JSON.parse( JSON.stringify( settings ) );
@@ -37645,7 +37629,7 @@ DAW.prototype = {
 };
 
 module.exports = DAW;
-},{"./engine/const":9,"./engine/midi":10,"./engine/utils":11,"tuna":5}],9:[function(require,module,exports){
+},{"./engine/const":9,"./engine/midi":10,"settings-convertor":6,"tuna":5}],9:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -37835,44 +37819,14 @@ module.exports = MIDIController;
 },{}],11:[function(require,module,exports){
 'use strict';
 
-module.exports = {
-
-	getGain: function( value ) {
-		return value / 100;
-	},
-
-	getReverbDryLevel: function( value ) {
-		return 1 - ( value / 2 );
-	},
-
-	getTime: function( value ) {
-		return value * 10;
-	},
-
-	_getValueBetweenZeroAndOne: function( value ) {
-		return value / 100;
-	},
-
-	getFeedback: function( value ) {
-		var self = this;
-		return self._getValueBetweenZeroAndOne( value );
-	},
-
-	getDryLevel: function( value ) {
-		var self = this;
-		return self._getValueBetweenZeroAndOne( value );
-	},
-
-	getWetLevel: function( value ) {
-		var self = this;
-		return self._getValueBetweenZeroAndOne( value );
-	}
-
-};
-},{}],12:[function(require,module,exports){
-'use strict';
+var SEMITONE_CENTS = 100;
 
 module.exports = {
+
+	SEMITONE_CENTS: SEMITONE_CENTS,
+	OCTAVE_CENTS: 12 * SEMITONE_CENTS,
+	FINE_DETUNE_HALF_SPECTRE: 8,
+	RANGE_DEFAULT_BASE: 3,
 
 	DEFAULT_PITCH_SETTINGS: {
 		bend: 0
@@ -37910,12 +37864,12 @@ module.exports = {
 		volume3: {
 			isEnabled: 0,
 			value: 60
-		},
-		noise: {
-			type: 0,
-			volume: 0,
-			isEnabled: 0
 		}
+	},
+	DEFAULT_NOISE_SETTINGS: {
+		enabled: 0,
+		type: 0,
+		level: 0
 	},
 	DEFAULT_ENVELOPES_SETTINGS: {
 		primary: {
@@ -37933,7 +37887,8 @@ module.exports = {
 	},
 	DEFAULT_FILTER_SETTINGS: {
 		cutoff: 250,
-		emphasis: 1
+		emphasis: 1,
+		envAmount: 0
 	},
 	DEFAULT_LFO_SETTINGS: {
 		waveform: 0,
@@ -37959,16 +37914,6 @@ module.exports = {
 	],
 	OSC3_RANGE_BASE: 4,
 
-	NOISE_TYPE: [
-		"brown",
-		"pink",
-		"white"
-	],
-	DEFAULT_NOISE_TYPE: 0,
-	NOISE_BUFFER_SIZE: 4096,
-
-	FAKE_ZERO: 0.00001,
-
 	FILTER_FREQUENCY_UPPER_BOUND: 8000,
 
 	LFO_DEFAULT_RATE: 3,
@@ -37978,11 +37923,17 @@ module.exports = {
 	MODULATION_LFO_FREQUENCY_RANGE: 10
 
 };
-},{}],13:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 'use strict';
 
-var utils = require( "./utils" ),
-	CONST = require( "./const" );
+var settingsConvertor = require( "settings-convertor" );
+
+var FAKE_ZERO = 0.00001;
+
+function customOrDefault( customValue, defaultValue ) {
+	return customValue !== undefined ? customValue : defaultValue;
+};
+
 
 function Envelope( audioContext, propName, upperBound ) {
 	var self = this;
@@ -37991,14 +37942,65 @@ function Envelope( audioContext, propName, upperBound ) {
 	self.propName = propName;
 	self.upperBound = upperBound;
 
-	self.node =
-	self.attack =
-	self.decay =
-	self.sustain =
-	self.release = null;
+	self.node = null;
+
+	self._defineProps();
 }
 
 Envelope.prototype = {
+
+	_defineProps: function() {
+
+		var self = this,
+			attack,
+			decay,
+			sustain,
+			release,
+			doubleTransposeValue = function( value ) {
+				return 2 * settingsConvertor.transposeValue( value, [ 0, 100 ], [ 0, 1 ] );
+			};
+
+		Object.defineProperty( self, "attack", {
+			get: function() {
+				return attack;
+			},
+
+			set: function( value ) {
+				attack = doubleTransposeValue( value );
+			}
+		} );
+
+		Object.defineProperty( self, "decay", {
+			get: function() {
+				return decay;
+			},
+
+			set: function( value ) {
+				decay = doubleTransposeValue( value );
+			}
+		} );
+
+		Object.defineProperty( self, "sustain", {
+			get: function() {
+				return sustain;
+			},
+
+			set: function( value ) {
+				sustain = settingsConvertor.transposeValue( value, [ 0, 100 ], [ 0, 1 ] );
+			}
+		} );
+
+		Object.defineProperty( self, "release", {
+			get: function() {
+				return release;
+			},
+
+			set: function( value ) {
+				release = doubleTransposeValue( value );
+			}
+		} );
+
+	},
 
 	start: function( time ) {
 		var self = this,
@@ -38010,10 +38012,10 @@ Envelope.prototype = {
 			decay = self.decay,
 			sustain = self.sustain;
 
-		time = utils.customOrDefault( time, audioContext.currentTime );
+		time = customOrDefault( time, audioContext.currentTime );
 
 		node[ propName ].cancelScheduledValues( time );
-		node[ propName ].setTargetAtTime( CONST.FAKE_ZERO, time, 0.01 );
+		node[ propName ].setTargetAtTime( FAKE_ZERO, time, 0.01 );
 		node[ propName ].setTargetAtTime( upperBound, time + 0.01, attack / 2 );
 		node[ propName ].setTargetAtTime( sustain * upperBound, time + 0.01 + attack, decay / 2 );
 	},
@@ -38025,19 +38027,17 @@ Envelope.prototype = {
 			node = self.node,
 			release = self.release;
 
-		time = utils.customOrDefault( time, audioContext.currentTime );
+		time = customOrDefault( time, audioContext.currentTime );
 
 		node[ propName ].cancelScheduledValues( time );
-		node[ propName ].setTargetAtTime( CONST.FAKE_ZERO, time, release );
+		node[ propName ].setTargetAtTime( FAKE_ZERO, time, release );
 	}
 
 };
 
 module.exports = Envelope;
-},{"./const":12,"./utils":17}],14:[function(require,module,exports){
+},{"settings-convertor":6}],13:[function(require,module,exports){
 'use strict';
-
-var CONST = require( "./const" );
 
 function Filter( audioContext ) {
 	var self = this,
@@ -38049,10 +38049,10 @@ function Filter( audioContext ) {
 }
 
 module.exports = Filter;
-},{"./const":12}],15:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 'use strict';
 
-var CONST = require( "./const" );
+var DEFAULT_FREQUENCY_RANGE = 500;
 
 function LFO( audioContext, controlledNodes, propName, settings ) {
 	var self = this,
@@ -38076,7 +38076,7 @@ function LFO( audioContext, controlledNodes, propName, settings ) {
 	self.waveform = settings;
 
 	self._initCenterFrequency();
-	self._initGain();
+	self._initFrequencyRange();
 
 	oscillator.connect( gain );
 	controlledNodes.forEach( function( node ) {
@@ -38099,7 +38099,7 @@ LFO.prototype = {
 				if ( value === 0 ) {
 					gain.gain.value = 0;
 				} else if ( gain.gain.value === 0 ) {
-					self._initGain();
+					self._initFrequencyRange();
 				}
 
 				self.oscillator.frequency.value = value;
@@ -38141,22 +38141,20 @@ LFO.prototype = {
 		}
 	},
 
-	_initGain: function() {
+	_initFrequencyRange: function() {
 		var self = this,
 			gain = self.gain,
 			settings = self.settings;
 
 		gain.gain.value = settings.frequencyRange ?
-			settings.frequencyRange : CONST.LFO_DEFAULT_FREQUENCY_RANGE;
+			settings.frequencyRange : DEFAULT_FREQUENCY_RANGE;
 	}
 
 };
 
 module.exports = LFO;
-},{"./const":12}],16:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 'use strict';
-
-var CONST = require( "./const" );
 
 function Mix( audioContext, firstMixNode, secondMixNode ) {
 	var self = this,
@@ -38165,7 +38163,7 @@ function Mix( audioContext, firstMixNode, secondMixNode ) {
 		output = audioContext.createGain();
 
 	firstGain.gain.value = 1.0;
-	secondGain.gain.value = CONST.FAKE_ZERO;
+	secondGain.gain.value = 0;
 	output.gain.value = 1.0;
 
 	firstMixNode.connect( firstGain );
@@ -38194,38 +38192,97 @@ function Mix( audioContext, firstMixNode, secondMixNode ) {
 }
 
 module.exports = Mix;
-},{"./const":12}],17:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 'use strict';
 
-var SEMITONE_CENTS = 100,
-	OCTAVE_CENTS = 12 * SEMITONE_CENTS,
-	FINE_DETUNE_HALF_SPECTRE = 8,
-	RANGE_DEFAULT_BASE = 3;
+var NOISE_TYPE = [
+		"brown",
+		"pink",
+		"white"
+	],
+	NOISE_BUFFER_SIZE = 4096;
 
-var utils = {
+function Noise( audioContext ) {
+	var self = this,
+		noiseVolume = audioContext.createGain(),
+		sourceNode = audioContext.createScriptProcessor( NOISE_BUFFER_SIZE, 1, 1 );
 
-	customOrDefault: function( customValue, defaultValue ) {
-		return customValue !== undefined ? customValue : defaultValue;
+	noiseVolume.gain.value = 0.0;
+	sourceNode.connect( noiseVolume );
+
+	self.volume = self.output = noiseVolume;
+	self.sourceNode = sourceNode;
+	self._defineProps();
+}
+
+Noise.prototype = {
+
+	_defineProps: function() {
+
+		var self = this,
+			sourceNode = self.sourceNode,
+			volumeNode = self.volume,
+			enabled = false,
+			level = 0,
+			type = "brown";
+
+		Object.defineProperty( self, "enabled", {
+
+			get: function() {
+				return enabled;
+			},
+
+			set: function( value ) {
+				enabled = value;
+
+				if ( !enabled ) {
+					sourceNode.disconnect();
+				} else {
+					sourceNode.connect( volumeNode );
+				}
+			}
+
+		} );
+
+		Object.defineProperty( self, "level", {
+
+			get: function() {
+				return level;
+			},
+
+			set: function( value ) {
+				level = value;
+				volumeNode.gain.value = level;
+			}
+
+		} );
+
+		Object.defineProperty( self, "type", {
+
+			get: function() {
+				return type;
+			},
+
+			set: function( value ) {
+				type = value;
+				self._changeNoise( sourceNode, NOISE_TYPE[ type ] );
+			}
+
+		} );
+
 	},
 
-	getDetune: function( range, fineDetune, rangeBase ) {
-		rangeBase = rangeBase === undefined ? RANGE_DEFAULT_BASE : rangeBase;
-		var base = ( range - rangeBase ) * OCTAVE_CENTS;
-		// if no fineDetune, then fineDetune === FINE_DETUNE_HALF_SPECTRE => fine === 0
-		var fine = ( fineDetune - FINE_DETUNE_HALF_SPECTRE ) * SEMITONE_CENTS;
+	_changeNoise: function( sourceNode, type ) {
+		var self = this;
 
-		return base + fine;
+		sourceNode.onaudioprocess = self._getNoiseGenerator( type, NOISE_BUFFER_SIZE );
 	},
 
-	getVolume: function( value ) {
-		return value / 100;
-	},
-
-	getNoiseGenerator: function( type, bufferSize ) {
+	_getNoiseGenerator: function( type, bufferSize ) {
 		// code copied from here:
 		//		http://noisehack.com/generate-noise-web-audio-api/
-		var self = this,
-			generator;
+		var generator;
+
 		switch ( type ) {
 			case "white":
 				generator = function( e ) {
@@ -38278,91 +38335,19 @@ var utils = {
 		}
 
 		return generator;
-	},
-
-	getPortamento: function( value ) {
-		var self = this;
-
-		return self.getVolume( value ) / 6;
-	},
-
-	getAttack: function( value ) {
-		var self = this;
-
-		return self._getTwoSecTiming( value );
-	},
-
-	getDecay: function( value ) {
-		var self = this;
-
-		return self._getTwoSecTiming( value );
-	},
-
-	getSustain: function( value ) {
-		var self = this;
-
-		// the volume level in +%
-		return Math.max( value / 100, 0 );
-	},
-
-	getRelease: function( value ) {
-		var self = this;
-
-		return self._getTwoSecTiming( value );
-	},
-
-	_getTwoSecTiming: function( value ) {
-		// assumes 0 <= value <= 100
-		return ( value > 0 ) ?
-			2 * value / 100
-		:
-			0;
-	},
-
-	getCutoff: function( upperBound, value ) {
-		return upperBound * value / 500;
-	},
-
-	getEmphasis: function( value ) {
-		return 40 * value / 100;
-	},
-
-	getGain: function( value ) {
-		return value / 100;
-	},
-
-	getCustomWaveForm: function( waveformFFT ) {
-		var fft = waveformFFT.fft,
-			size = fft.real.length,
-			real = new Float32Array( size ),
-			imag = new Float32Array( size );
-
-		for ( var i = 0; i < size; i++ ) {
-			real[ i ] = fft.real[ i ];
-			imag[ i ] = fft.imag[ i ];
-		}
-
-		return {
-			real: real,
-			imag: imag
-		};
-	},
-
-	getPitchBendDetune: function( value ) {
-		return value * 200;
 	}
 
 };
 
-module.exports = utils;
-},{}],18:[function(require,module,exports){
+module.exports = Noise;
+},{}],17:[function(require,module,exports){
 /* jshint -W098 */
 
 'use strict';
 
 var settingsConvertor = require( "settings-convertor" ),
 	CONST = require( "./engine/const" ),
-	utils = require( "./engine/utils" ),
+	Noise = require( "./engine/noise" ),
 	Envelope = require( "./engine/envelope" ),
 	Filter = require( "./engine/filter" ),
 	LFO = require( "./engine/lfo" ),
@@ -38372,8 +38357,7 @@ function Instrument( audioContext ) {
 	var self = this,
 		volumes = [],
 		oscillators = [],
-		noiseVolume = audioContext.createGain(),
-		noiseNode = audioContext.createScriptProcessor( CONST.NOISE_BUFFER_SIZE, 1, 1 ),
+		noise = new Noise( audioContext ),
 		gainEnvelope = new Envelope( audioContext, "gain", 1 ),
 		gainEnvelopeNode = audioContext.createGain(),
 		envelopeControlledFilter = new Filter( audioContext ),
@@ -38392,6 +38376,8 @@ function Instrument( audioContext ) {
 
 	gainEnvelopeNode.gain.value = 0.0;
 	gainEnvelope.node = gainEnvelopeNode;
+
+	noise.output.connect( gainEnvelope.node );
 
 	filterEnvelope.node = envelopeControlledFilter.node;
 
@@ -38418,10 +38404,6 @@ function Instrument( audioContext ) {
 		frequencyRange: CONST.MODULATION_LFO_FREQUENCY_RANGE
 	} );
 
-	noiseVolume.gain.value = 0.0;
-
-	noiseVolume.connect( gainEnvelope.node );
-
 	gainEnvelope.node.connect( envelopeControlledFilter.node );
 	gainEnvelope.node.connect( uiControlledFilter.node );
 	envelopeFilterMix.output.connect( lfoControlledFilter.node );
@@ -38431,8 +38413,7 @@ function Instrument( audioContext ) {
 	self.volumes = volumes;
 	self.oscillators = oscillators;
 	self.modulationLfo = modulationLfo;
-	self.noiseVolume = noiseVolume;
-	self.noiseNode = noiseNode;
+	self.noise = noise;
 	self.gainEnvelope = gainEnvelope;
 	self.envelopeControlledFilter = envelopeControlledFilter;
 	self.uiControlledFilter = uiControlledFilter;
@@ -38448,6 +38429,7 @@ function Instrument( audioContext ) {
 		modulation: null,
 		oscillators: null,
 		mixer: null,
+		noise: null,
 		envelopes: null,
 		filter: null,
 		lfo: null,
@@ -38460,12 +38442,11 @@ function Instrument( audioContext ) {
 	self.modulationSettings = CONST.DEFAULT_MOD_SETTINGS;
 	self.oscillatorSettings = CONST.DEFAULT_OSC_SETTINGS;
 	self.mixerSettings = CONST.DEFAULT_MIX_SETTINGS;
+	self.noiseSettings = CONST.DEFAULT_NOISE_SETTINGS;
 	self.envelopesSettings = CONST.DEFAULT_ENVELOPES_SETTINGS;
 	self.filterSettings = CONST.DEFAULT_FILTER_SETTINGS;
 	self.lfoSettings = CONST.DEFAULT_LFO_SETTINGS;
 	self.pitchSettings = CONST.DEFAULT_PITCH_SETTINGS;
-
-	self._changeNoise( noiseNode, CONST.NOISE_TYPE[ CONST.DEFAULT_NOISE_TYPE ] );
 }
 
 Instrument.prototype = {
@@ -38541,14 +38522,14 @@ Instrument.prototype = {
 	onModulationWheelTurn: function( modulation ) {
 		var self = this,
 			oldSettings = self.modulationSettings,
-			newRate = settingsConvertor.getRateFromModulation( modulation );
+			newRate = settingsConvertor.transposeValue( modulation, [ 0, 1 ], [ 0, 15 ] );
 
 		if ( oldSettings.rate !== newRate ) {
 			self.modulationSettings = {
 				waveform: oldSettings.waveform,
 				portamento: oldSettings.portamento,
 				rate: newRate
-			}
+			};
 		}
 	},
 
@@ -38562,6 +38543,7 @@ Instrument.prototype = {
 
 				return JSON.parse( JSON.stringify( self.settings.pitch ) );
 			},
+
 			set: function( settings ) {
 				var self = this,
 					oldSettings = self.settings.pitch || {},
@@ -38621,10 +38603,10 @@ Instrument.prototype = {
 					var oldOscSettings1 = oldSettings.osc1,
 						oldOscSettings2 = oldSettings.osc2,
 						oldOscSettings3 = oldSettings.osc3,
-						pitchDetune = utils.getPitchBendDetune( self.pitchSettings.bend ),
+						pitchDetune = settingsConvertor.transposeValue( self.pitchSettings.bend, [ -1, 1 ], [ -200, 200 ] ),
 						resolveRange = function( oldSettings, settings, pitchDetune, osc ) {
 							if ( oldSettings.range !== settings.range ) {
-								osc.detune.value = utils.getDetune(
+								osc.detune.value = self._getDetune(
 									settings.range,
 									8
 								) + pitchDetune;
@@ -38662,7 +38644,7 @@ Instrument.prototype = {
 							if ( oldSettings.range !== settings.range ||
 								oldSettings.fineDetune !== settings.fineDetune )
 							{
-								osc.detune.value = utils.getDetune(
+								osc.detune.value = self._getDetune(
 									settings.range,
 									settings.fineDetune,
 									base
@@ -38698,39 +38680,46 @@ Instrument.prototype = {
 					volume1 = volumes[ 0 ],
 					volume2 = volumes[ 1 ],
 					volume3 = volumes[ 2 ],
-					noiseVolume = self.noiseVolume,
-					noiseNode = self.noiseNode,
 					volumeSettings1 = settings.volume1,
 					volumeSettings2 = settings.volume2,
 					volumeSettings3 = settings.volume3,
-					noiseSettings = settings.noise,
 					resolveVolume = function( settings, volume ) {
 						var value = settings.isEnabled ? settings.value : 0;
 
-						volume.gain.value = utils.getVolume( value );
+						volume.gain.value = settingsConvertor.transposeValue( value, [ 0, 100 ], [ 0, 1 ] );
 					};
 
 				resolveVolume( volumeSettings1, volume1 );
 				resolveVolume( volumeSettings2, volume2 );
 				resolveVolume( volumeSettings3, volume3 );
 
-				if ( oldSettings ) {
-					var oldNoiseSettings = oldSettings.noise;
+				self.settings.mixer = JSON.parse( JSON.stringify( settings ) );
+			}
 
-					if ( noiseSettings.type !== oldNoiseSettings.type ) {
-						self._changeNoise( noiseNode, CONST.NOISE_TYPE[ noiseSettings.type ] );
-					}
+		} );
 
-					if ( oldNoiseSettings.isEnabled && !noiseSettings.isEnabled ) {
-						noiseNode.disconnect();
-					} else if ( !oldNoiseSettings.isEnabled && noiseSettings.isEnabled ) {
-						noiseNode.connect( noiseVolume );
-					}
+		Object.defineProperty( self, "noiseSettings", {
 
-					noiseVolume.gain.value = utils.getVolume( noiseSettings.volume );
+			get: function() {
+				// if slow - use npm clone
+				return JSON.parse( JSON.stringify( self.settings.noise ) );
+			},
+
+			set: function( settings ) {
+				var oldSettings = self.settings.noise || {},
+					noise = self.noise;
+
+				if ( oldSettings.enabled !== settings.enabled ) {
+					noise.enabled = settings.enabled;
+				}
+				if ( oldSettings.level !== settings.level ) {
+					noise.level = settingsConvertor.transposeValue( settings.level, [ 0, 100 ], [ 0, 1 ] );
+				}
+				if ( oldSettings.type !== settings.type ) {
+					noise.type = settings.type;
 				}
 
-				self.settings.mixer = JSON.parse( JSON.stringify( settings ) );
+				self.settings.noise = JSON.parse( JSON.stringify( settings ) );
 			}
 
 		} );
@@ -38757,16 +38746,12 @@ Instrument.prototype = {
 							var newVal = settings[ name ];
 
 							if ( oldSettings[ name ] !== newVal ) {
-								var methodName = "get" + name[ 0 ].toUpperCase() + name.slice( 1 );
-								envelope[ name ] = utils[ methodName ]( newVal );
-								console.log( name + ": " + utils[ methodName ]( newVal ) );
+								envelope[ name ] = newVal;
 							}
 						} );
 					};
 
-				console.log( "gainEnvelope settings:" );
 				resolve( oldSettings.primary, settings.primary, self.gainEnvelope );
-				console.log( "filterEnvelope settings:" );
 				resolve( oldSettings.filter, settings.filter, self.filterEnvelope );
 
 				self.settings.envelopes = JSON.parse( JSON.stringify( settings ) );
@@ -38792,18 +38777,22 @@ Instrument.prototype = {
 					mix = self.envelopeFilterMix;
 
 				if ( oldSettings.cutoff !== settings.cutoff ) {
-					var cutoff = utils.getCutoff( CONST.FILTER_FREQUENCY_UPPER_BOUND, settings.cutoff );
+					var cutoff = CONST.FILTER_FREQUENCY_UPPER_BOUND * settingsConvertor.transposeValue(
+						settings.cutoff,
+						[ 0, 500 ],
+						[ 0, 1 ]
+					);
 					envelopeControlledFilter.node.frequency.value = cutoff;
 					uiControlledFilter.node.frequency.value = cutoff;
 				}
 				if ( oldSettings.emphasis !== settings.emphasis ) {
-					var emphasis = utils.getEmphasis( settings.emphasis );
+					var emphasis = 40 * settingsConvertor.transposeValue( settings.emphasis, [ 1, 100 ], [ 0, 1 ] );
 					envelopeControlledFilter.node.Q.value = emphasis;
 					uiControlledFilter.node.Q.value = emphasis;
 					lfoControlledFilter.node.Q.value = emphasis;
 				}
 				if ( oldSettings.envAmount !== settings.envAmount ) {
-					mix.amount = utils.getGain( settings.envAmount );
+					mix.amount = settingsConvertor.transposeValue( settings.envAmount, [ 0, 100 ], [ 0, 1 ] );
 				}
 
 				self.settings.filter = JSON.parse( JSON.stringify( settings ) );
@@ -38834,7 +38823,7 @@ Instrument.prototype = {
 					filterLfo.waveform = self._getWaveForm( settings.waveform );
 				}
 				if ( oldSettings.amount !== settings.amount ) {
-					mix.amount = utils.getGain( settings.amount );
+					mix.amount = settingsConvertor.transposeValue( settings.amount, [ 0, 100 ], [ 0, 1 ] );
 				}
 
 				self.settings.lfo = JSON.parse( JSON.stringify( settings ) );
@@ -38844,11 +38833,12 @@ Instrument.prototype = {
 	},
 
 	_getWaveForm: function( index ) {
-		var defaultForm = CONST.OSC_WAVEFORM[ index ],
+		var self = this,
+			defaultForm = CONST.OSC_WAVEFORM[ index ],
 			customFormFFT = null;
 
 		if ( !defaultForm ) {
-			customFormFFT = utils.getCustomWaveForm(
+			customFormFFT = self.getCustomWaveForm(
 				CONST.OSC_WAVEFORM_FFT[ index - CONST.OSC_WAVEFORM.length ]
 			);
 		}
@@ -38856,29 +38846,55 @@ Instrument.prototype = {
 		return {
 			defaultForm: defaultForm,
 			customFormFFT: customFormFFT
+		};
+	},
+
+	_getCustomWaveForm: function( waveformFFT ) {
+		var fft = waveformFFT.fft,
+			size = fft.real.length,
+			real = new Float32Array( size ),
+			imag = new Float32Array( size );
+
+		for ( var i = 0; i < size; i++ ) {
+			real[ i ] = fft.real[ i ];
+			imag[ i ] = fft.imag[ i ];
 		}
+
+		return {
+			real: real,
+			imag: imag
+		};
 	},
 
 	_detuneOscillators: function( oscillators, activeNotes, oscillatorSettings, pitchSettings ) {
 		var self = this,
-			pitchDetune = utils.getPitchBendDetune( pitchSettings.bend ),
+			pitchDetune = settingsConvertor.transposeValue( pitchSettings.bend, [ -1, 1 ], [ -200, 200 ] ),
 			osc1 = oscillators[ 0 ],
 			osc2 = oscillators[ 1 ],
 			osc3 = oscillators[ 2 ];
 
-		osc1.detune.setValueAtTime( ( utils.getDetune(
+		osc1.detune.setValueAtTime( ( self._getDetune(
 			oscillatorSettings.osc1.range,
 			8
 		) + pitchDetune ), 0 );
-		osc2.detune.setValueAtTime( ( utils.getDetune(
+		osc2.detune.setValueAtTime( ( self._getDetune(
 			oscillatorSettings.osc2.range,
 			oscillatorSettings.osc2.fineDetune
 		) + pitchDetune ), 0 );
-		osc3.detune.setValueAtTime( ( utils.getDetune(
+		osc3.detune.setValueAtTime( ( self._getDetune(
 			oscillatorSettings.osc3.range,
 			oscillatorSettings.osc3.fineDetune,
 			CONST.OSC3_RANGE_BASE
 		) + pitchDetune ), 0 );
+	},
+
+	_getDetune: function( range, fineDetune, rangeBase ) {
+		rangeBase = rangeBase === undefined ? CONST.RANGE_DEFAULT_BASE : rangeBase;
+		var base = ( range - rangeBase ) * CONST.OCTAVE_CENTS;
+		// if no fineDetune, then fineDetune === FINE_DETUNE_HALF_SPECTRE => fine === 0
+		var fine = ( fineDetune - CONST.FINE_DETUNE_HALF_SPECTRE ) * CONST.SEMITONE_CENTS;
+
+		return base + fine;
 	},
 
 	_setNoteToOscillator: function( noteFrequency, settings, oscillator ) {
@@ -38886,18 +38902,18 @@ Instrument.prototype = {
 		oscillator.frequency.setTargetAtTime(
 			noteFrequency,
 			0,
-			utils.getPortamento( settings.modulation.portamento )
+			settingsConvertor.transposeValue(
+				settings.modulation.portamento,
+				[ 0, 100 ],
+				[ 0, 1/6 ]
+			)
 		);
-	},
-
-	_changeNoise: function( noiseNode, type ) {
-		noiseNode.onaudioprocess = utils.getNoiseGenerator( type, CONST.NOISE_BUFFER_SIZE );
 	}
 
 };
 
 module.exports = Instrument;
-},{"./engine/const":12,"./engine/envelope":13,"./engine/filter":14,"./engine/lfo":15,"./engine/mix":16,"./engine/utils":17,"settings-convertor":6}],19:[function(require,module,exports){
+},{"./engine/const":11,"./engine/envelope":12,"./engine/filter":13,"./engine/lfo":14,"./engine/mix":15,"./engine/noise":16,"settings-convertor":6}],18:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -38948,7 +38964,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],20:[function(require,module,exports){
+},{"jquery":3}],19:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -38988,7 +39004,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],21:[function(require,module,exports){
+},{"jquery":3}],20:[function(require,module,exports){
 'use strict';
 
 module.exports = function( mod ) {
@@ -39002,7 +39018,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{}],22:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -39044,7 +39060,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],23:[function(require,module,exports){
+},{"jquery":3}],22:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" ),
@@ -39057,15 +39073,15 @@ module.exports = function( mod ) {
 			settingsChangeHandler = function() {
 				var modulationSettings = dawEngine.modulationSettings;
 
-				modulationSettings.rate = settingsConvertor.getRateFromSimpleModulation( self.modulation );
+				modulationSettings.rate = settingsConvertor.transposeValue( self.modulation, [ 0, 128 ], [ 0, 15 ] );
 
 				dawEngine.modulationSettings = modulationSettings;
 			},
 			settings = dawEngine.modulationSettings,
 			$modulationWheel = $( ".modulation-wheel webaudio-slider" );
 
-		self.RANGE = 127;
-		self.modulation = settingsConvertor.getSimpleModulationFromRate( settings.rate );
+		self.RANGE = 128;
+		self.modulation = settingsConvertor.transposeValue( settings.rate, [ 0, 15 ], [ 0, 128 ] );
 
 		[
 			"modulationWheel.modulation"
@@ -39073,12 +39089,10 @@ module.exports = function( mod ) {
 			$scope.$watch( path, settingsChangeHandler );
 		} );
 
-		dawEngine.addExternalMidiMessageHandler( function( type, parsed, rawEvent ) {
+		dawEngine.addExternalMidiMessageHandler( function( type, parsed ) {
 			if ( type === "modulationWheel" ) {
 				$modulationWheel[ 0 ].setValue(
-					settingsConvertor.getSimpleModulationFromRate(
-						settingsConvertor.getRateFromModulation( parsed.modulation )
-					)
+					settingsConvertor.transposeValue( parsed.modulation, [ 0, 1 ], [ 0, 128 ] )
 				);
 			}
 		} );
@@ -39106,7 +39120,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3,"settings-convertor":6}],24:[function(require,module,exports){
+},{"jquery":3,"settings-convertor":6}],23:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" ),
@@ -39118,14 +39132,14 @@ module.exports = function( mod ) {
 		var self = this,
 			settingsChangeHandler = function() {
 				dawEngine.pitchSettings = {
-					bend: settingsConvertor.getNormalPitch( self.bend )
+					bend: settingsConvertor.transposeValue( self.bend, [ 0, 128 ], [ -1, 1 ] )
 				};
 			},
 			settings = dawEngine.pitchSettings,
 			$pitchBend = $( ".pitch-bend webaudio-slider" );
 
 		self.RANGE = 128;
-		self.bend = settingsConvertor.getSimplePitch( settings.bend );
+		self.bend = settingsConvertor.transposeValue( settings.bend, [ -1, 1 ], [ 0, 128 ] );
 
 		[
 			"pitch.bend"
@@ -39133,9 +39147,9 @@ module.exports = function( mod ) {
 			$scope.$watch( path, settingsChangeHandler );
 		} );
 
-		dawEngine.addExternalMidiMessageHandler( function( type, parsed, rawEvent ) {
+		dawEngine.addExternalMidiMessageHandler( function( type, parsed ) {
 			if ( type === "pitchBend" ) {
-				$pitchBend[ 0 ].setValue( settingsConvertor.getSimplePitch( parsed.pitchBend ) );
+				$pitchBend[ 0 ].setValue( settingsConvertor.transposeValue( parsed.pitchBend, [ -1, 1 ], [ 0, 128 ] ) );
 			}
 		} );
 
@@ -39176,7 +39190,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3,"settings-convertor":6}],25:[function(require,module,exports){
+},{"jquery":3,"settings-convertor":6}],24:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -39218,7 +39232,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],26:[function(require,module,exports){
+},{"jquery":3}],25:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -39269,7 +39283,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],27:[function(require,module,exports){
+},{"jquery":3}],26:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -39317,7 +39331,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],28:[function(require,module,exports){
+},{"jquery":3}],27:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -39365,7 +39379,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],29:[function(require,module,exports){
+},{"jquery":3}],28:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -39427,7 +39441,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"jquery":3}],30:[function(require,module,exports){
+},{"jquery":3}],29:[function(require,module,exports){
 'use strict';
 
 var $ = require( "jquery" );
@@ -39469,6 +39483,60 @@ module.exports = function( mod ) {
 			restrict: "E",
 			replace: true,
 			template: $templateCache.get( "modulation.html" )
+		};
+	} ] );
+
+};
+},{"jquery":3}],30:[function(require,module,exports){
+'use strict';
+
+var $ = require( "jquery" );
+
+module.exports = function( mod ) {
+
+	mod.controller( "NoiseCtrl", [ "$scope", "synth", function( $scope, synth ) {
+		var self = this,
+			settingsChangeHandler = function() {
+				synth.noiseSettings = {
+					enabled: self.enabled,
+					level: self.level,
+					type: self.type
+				};
+			},
+			settings = synth.noiseSettings;
+
+		self.enabled = settings.enabled;
+		self.level = settings.level;
+		self.type = settings.type;
+
+		[
+			"noise.enabled",
+			"noise.level",
+			"noise.type"
+		].forEach( function( path ) {
+			$scope.$watch( path, settingsChangeHandler );
+		} );
+
+		// fix problem with bad init state
+		$( ".noise webaudio-switch" )[ 0 ].setValue( self.enabled );
+
+		// fix the lack of attr 'value' update
+		$( ".noise webaudio-switch" )
+			.add( ".noise webaudio-knob" )
+			.add( ".noise webaudio-slider" )
+		.on( "change", function( e ) {
+			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
+				$( e.target ).attr( "value", e.target.value );
+			}
+		} );
+
+	} ] );
+
+	mod.directive( "noise", [ "$templateCache", function( $templateCache ) {
+		return {
+			restrict: "E",
+			replace: true,
+			template: $templateCache.get( "noise.html" )
 		};
 	} ] );
 
@@ -39535,6 +39603,7 @@ var angular = require( "angular" ),
 		require( "./template/modulation.html" ).name,
 		require( "./template/oscillator-bank.html" ).name,
 		require( "./template/mixer.html" ).name,
+		require( "./template/noise.html" ).name,
 		require( "./template/envelopes.html" ).name,
 		require( "./template/filter.html" ).name,
 		require( "./template/lfo.html" ).name
@@ -39552,12 +39621,13 @@ mod.directive( "synth", [ "$templateCache", function( $templateCache ) {
 require( "./controller/modulation" )( mod );
 require( "./controller/oscillator-bank" )( mod );
 require( "./controller/mixer" )( mod );
+require( "./controller/noise" )( mod );
 require( "./controller/envelopes" )( mod );
 require( "./controller/filter" )( mod );
 require( "./controller/lfo" )( mod );
 
 module.exports = mod;
-},{"./controller/envelopes":26,"./controller/filter":27,"./controller/lfo":28,"./controller/mixer":29,"./controller/modulation":30,"./controller/oscillator-bank":31,"./template/envelopes.html":33,"./template/filter.html":34,"./template/lfo.html":35,"./template/mixer.html":36,"./template/modulation.html":37,"./template/oscillator-bank.html":38,"./template/synth.html":39,"angular":2}],33:[function(require,module,exports){
+},{"./controller/envelopes":25,"./controller/filter":26,"./controller/lfo":27,"./controller/mixer":28,"./controller/modulation":29,"./controller/noise":30,"./controller/oscillator-bank":31,"./template/envelopes.html":33,"./template/filter.html":34,"./template/lfo.html":35,"./template/mixer.html":36,"./template/modulation.html":37,"./template/noise.html":38,"./template/oscillator-bank.html":39,"./template/synth.html":40,"angular":2}],33:[function(require,module,exports){
 var ngModule = angular.module('envelopes.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('envelopes.html',
@@ -39640,7 +39710,7 @@ ngModule.run(['$templateCache', function($templateCache) {
     '		<h5>Simple/Env</h5>\n' +
     '		<webaudio-knob src="images/frequency-knob.png"\n' +
     '			bind-polymer\n' +
-    '			value="{{filter.envAmount}}" min="1" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Simple/Envelope Mix"></webaudio-knob>\n' +
+    '			value="{{filter.envAmount}}" min="0" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Simple/Envelope Mix"></webaudio-knob>\n' +
     '	</div>\n' +
     '	<h4>LP Filter</h4>\n' +
     '</div>');
@@ -39681,7 +39751,7 @@ ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('mixer.html',
     '<div class="col-lg-2 mixer control-bank text-center" ng-controller="MixerCtrl as mixer">\n' +
     '	<div class="row">\n' +
-    '		<div class="oscillator-switch col-lg-4">\n' +
+    '		<div class="oscillator-switch col-lg-6">\n' +
     '			<div class="row">\n' +
     '				<webaudio-switch bind-polymer value="{{mixer.volume1.isEnabled}}"></webaudio-switch>\n' +
     '			</div>\n' +
@@ -39692,7 +39762,7 @@ ngModule.run(['$templateCache', function($templateCache) {
     '				<webaudio-switch bind-polymer value="{{mixer.volume3.isEnabled}}"></webaudio-switch>\n' +
     '			</div>\n' +
     '		</div>\n' +
-    '		<div class="oscillator-volume col-lg-4">\n' +
+    '		<div class="oscillator-volume col-lg-6">\n' +
     '			<div class="row">\n' +
     '				<webaudio-knob src="images/frequency-knob.png"\n' +
     '					bind-polymer\n' +
@@ -39709,26 +39779,10 @@ ngModule.run(['$templateCache', function($templateCache) {
     '					value="{{mixer.volume3.value}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Oscillator 1 volume"></webaudio-knob>\n' +
     '			</div>\n' +
     '		</div>\n' +
-    '		<div class="noise col-lg-4">\n' +
-    '			<div class="row">\n' +
-    '				<webaudio-switch bind-polymer value="{{mixer.noise.isEnabled}}"></webaudio-switch>\n' +
-    '			</div>\n' +
-    '			<div class="row">\n' +
-    '				<webaudio-knob src="images/frequency-knob.png"\n' +
-    '					bind-polymer\n' +
-    '					value="{{mixer.noise.volume}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Noise volume"></webaudio-knob>\n' +
-    '			</div>\n' +
-    '			<div class="row">\n' +
-    '				<webaudio-slider direction="horz" max="2" step="1"\n' +
-    '					bind-polymer\n' +
-    '					width="66" height="16" value="{{mixer.noise.type}}"></webaudio-slider>\n' +
-    '			</div>\n' +
-    '		</div>\n' +
     '	</div>\n' +
     '	<div class="row">\n' +
-    '		<div class="col-lg-4">On/Off</div>\n' +
-    '		<div class="col-lg-4">Volume</div>\n' +
-    '		<div class="col-lg-4">Noise</div>\n' +
+    '		<div class="col-lg-6">On/Off</div>\n' +
+    '		<div class="col-lg-6">Volume</div>\n' +
     '	</div>\n' +
     '	<h4>Mixer</h4>\n' +
     '</div>');
@@ -39758,6 +39812,29 @@ ngModule.run(['$templateCache', function($templateCache) {
 
 module.exports = ngModule;
 },{}],38:[function(require,module,exports){
+var ngModule = angular.module('noise.html', []);
+ngModule.run(['$templateCache', function($templateCache) {
+  $templateCache.put('noise.html',
+    '<div class="col-lg-1 noise control-bank tri-row single-column text-center" ng-controller="NoiseCtrl as noise">\n' +
+    '	<div class="row">\n' +
+    '		<webaudio-switch bind-polymer value="{{noise.enabled}}"></webaudio-switch>\n' +
+    '	</div>\n' +
+    '	<div class="row">\n' +
+    '		<webaudio-knob src="images/frequency-knob.png"\n' +
+    '			bind-polymer\n' +
+    '			value="{{noise.level}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Noise volume"></webaudio-knob>\n' +
+    '	</div>\n' +
+    '	<div class="row">\n' +
+    '		<webaudio-slider direction="horz" max="2" step="1"\n' +
+    '			bind-polymer\n' +
+    '			width="66" height="16" value="{{noise.type}}"></webaudio-slider>\n' +
+    '	</div>\n' +
+    '	<h4>Noise</h4>\n' +
+    '</div>');
+}]);
+
+module.exports = ngModule;
+},{}],39:[function(require,module,exports){
 var ngModule = angular.module('oscillator-bank.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('oscillator-bank.html',
@@ -39823,7 +39900,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 var ngModule = angular.module('synth.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('synth.html',
@@ -39832,6 +39909,7 @@ ngModule.run(['$templateCache', function($templateCache) {
     '		<modulation></modulation>\n' +
     '		<oscillator-bank></oscillator-bank>\n' +
     '		<mixer></mixer>\n' +
+    '		<noise></noise>\n' +
     '		<envelopes></envelopes>\n' +
     '		<filter></filter>\n' +
     '		<lfo></lfo>\n' +
@@ -39840,7 +39918,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],40:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 'use strict';
 
 var angular = require( "angular" ),
@@ -39904,7 +39982,7 @@ require( "./controller/modulation-wheel" )( mod );
 require( "./controller/keyboard" )( mod );
 
 module.exports = mod;
-},{"../instruments/synth/instrument":18,"./controller/delay":19,"./controller/keyboard":20,"./controller/master-controls":21,"./controller/master-volume":22,"./controller/modulation-wheel":23,"./controller/pitch-bend":24,"./controller/reverb":25,"./instruments/synth/module":32,"./template/daw.html":41,"./template/delay.html":42,"./template/keyboard.html":43,"./template/master-controls.html":44,"./template/master-volume.html":45,"./template/modulation-wheel.html":46,"./template/pitch-bend.html":47,"./template/reverb.html":48,"angular":2}],41:[function(require,module,exports){
+},{"../instruments/synth/instrument":17,"./controller/delay":18,"./controller/keyboard":19,"./controller/master-controls":20,"./controller/master-volume":21,"./controller/modulation-wheel":22,"./controller/pitch-bend":23,"./controller/reverb":24,"./instruments/synth/module":32,"./template/daw.html":42,"./template/delay.html":43,"./template/keyboard.html":44,"./template/master-controls.html":45,"./template/master-volume.html":46,"./template/modulation-wheel.html":47,"./template/pitch-bend.html":48,"./template/reverb.html":49,"angular":2}],42:[function(require,module,exports){
 var ngModule = angular.module('daw.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('daw.html',
@@ -39924,7 +40002,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],42:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 var ngModule = angular.module('delay.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('delay.html',
@@ -39960,7 +40038,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],43:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 var ngModule = angular.module('keyboard.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('keyboard.html',
@@ -39970,7 +40048,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],44:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 var ngModule = angular.module('master-controls.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('master-controls.html',
@@ -39984,7 +40062,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],45:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 var ngModule = angular.module('master-volume.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('master-volume.html',
@@ -40000,7 +40078,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],46:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 var ngModule = angular.module('modulation-wheel.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('modulation-wheel.html',
@@ -40012,7 +40090,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],47:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 var ngModule = angular.module('pitch-bend.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('pitch-bend.html',
@@ -40024,7 +40102,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],48:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 var ngModule = angular.module('reverb.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('reverb.html',
