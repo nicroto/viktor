@@ -4,6 +4,8 @@
 
 var settingsConvertor = require( "settings-convertor" ),
 	CONST = require( "./engine/const" ),
+	OscillatorBank = require( "./engine/oscillator-bank" ),
+	WaveformSource = require( "./engine/waveform-source" ),
 	Noise = require( "./engine/noise" ),
 	Envelope = require( "./engine/envelope" ),
 	Filter = require( "./engine/filter" ),
@@ -12,8 +14,8 @@ var settingsConvertor = require( "settings-convertor" ),
 
 function Instrument( audioContext ) {
 	var self = this,
-		volumes = [],
-		oscillators = [],
+		oscillatorBank = new OscillatorBank( audioContext, 3 ),
+		waveformSource = new WaveformSource( audioContext, CONST.CUSTOM_WAVEFORMS ),
 		noise = new Noise( audioContext ),
 		gainEnvelope = new Envelope( audioContext, "gain", 1 ),
 		gainEnvelopeNode = audioContext.createGain(),
@@ -34,28 +36,14 @@ function Instrument( audioContext ) {
 	gainEnvelopeNode.gain.value = 0.0;
 	gainEnvelope.node = gainEnvelopeNode;
 
+	oscillatorBank.output.connect( gainEnvelope.node );
 	noise.output.connect( gainEnvelope.node );
 
 	filterEnvelope.node = envelopeControlledFilter.node;
 
 	masterVolume.gain.value = 1.0;
 
-	while ( oscillators.length < 3 ) {
-		var osc = audioContext.createOscillator(),
-			volume = audioContext.createGain();
-
-		volume.gain.value = 0.0;
-		volume.connect( gainEnvelope.node );
-
-		osc.frequency.setValueAtTime( 110, 0 );
-		osc.connect( volume );
-		osc.start( 0 );
-
-		volumes.push( volume );
-		oscillators.push( osc );
-	}
-
-	var modulationLfo = new LFO( audioContext, oscillators, "frequency", {
+	var modulationLfo = new LFO( audioContext, oscillatorBank.oscillators, "frequency", {
 		rate: 0,
 		defaultForm: CONST.LFO_DEFAULT_FORM,
 		frequencyRange: CONST.MODULATION_LFO_FREQUENCY_RANGE
@@ -67,9 +55,9 @@ function Instrument( audioContext ) {
 	lfoFilterMix.output.connect( masterVolume );
 
 	self.audioContext = audioContext;
-	self.volumes = volumes;
-	self.oscillators = oscillators;
 	self.modulationLfo = modulationLfo;
+	self.oscillatorBank = oscillatorBank;
+	self.waveformSource = waveformSource;
 	self.noise = noise;
 	self.gainEnvelope = gainEnvelope;
 	self.envelopeControlledFilter = envelopeControlledFilter;
@@ -124,21 +112,27 @@ Instrument.prototype = {
 
 	onNoteOn: function( noteFrequency, velocity ) {
 		var self = this,
+			oscillatorBank = self.oscillatorBank,
 			gainEnvelope = self.gainEnvelope,
 			filterEnvelope = self.filterEnvelope,
 			activeNotes = self.activeNotes,
-			settings = self.settings,
+			portamento = settingsConvertor.transposeValue(
+				self.settings.modulation.portamento,
+				[ 0, 100 ],
+				[ 0, 1/6 ]
+			),
 			hasANoteDown = activeNotes.length > 0;
 
 		if ( !hasANoteDown ) {
-			self._detuneOscillators( self.oscillators, activeNotes, self.oscillatorSettings, self.pitchSettings );
+			self._pitchDetuneOscillatorBank( oscillatorBank, self.pitchSettings.bend );
 		}
 
 		activeNotes.push( noteFrequency );
 
-		self.oscillators.forEach( function( osc ) {
-			self._setNoteToOscillator( noteFrequency, settings, osc );
-		} );
+		oscillatorBank.note = {
+			frequency: noteFrequency,
+			portamento: portamento
+		};
 
 		gainEnvelope.start();
 		filterEnvelope.start();
@@ -146,10 +140,15 @@ Instrument.prototype = {
 
 	onNoteOff: function( noteFrequency, velocity ) {
 		var self = this,
+			oscillatorBank = self.oscillatorBank,
 			gainEnvelope = self.gainEnvelope,
 			filterEnvelope = self.filterEnvelope,
 			activeNotes = self.activeNotes,
-			settings = self.settings,
+			portamento = settingsConvertor.transposeValue(
+				self.settings.modulation.portamento,
+				[ 0, 100 ],
+				[ 0, 1/6 ]
+			),
 			position = activeNotes.indexOf( noteFrequency );
 
 		if ( position !== -1 ) {
@@ -162,9 +161,10 @@ Instrument.prototype = {
 		} else {
 			noteFrequency = activeNotes[ activeNotes.length - 1 ];
 
-			self.oscillators.forEach( function( osc ) {
-				self._setNoteToOscillator( noteFrequency, settings, osc );
-			} );
+			oscillatorBank.note = {
+				frequency: noteFrequency,
+				portamento: portamento
+			};
 		}
 	},
 
@@ -203,11 +203,12 @@ Instrument.prototype = {
 
 			set: function( settings ) {
 				var self = this,
+					oscillatorBank = self.oscillatorBank,
 					oldSettings = self.settings.pitch || {},
 					hasANoteDown = self.activeNotes.length > 0;
 
 				if ( hasANoteDown && oldSettings.bend !== settings.bend ) {
-					self._detuneOscillators( self.oscillators, self.activeNotes, self.oscillatorSettings, settings );
+					self._pitchDetuneOscillatorBank( oscillatorBank, settings.bend );
 				}
 
 				self.settings.pitch = JSON.parse( JSON.stringify( settings ) );
@@ -223,7 +224,8 @@ Instrument.prototype = {
 			},
 
 			set: function( settings ) {
-				var oldSettings = self.settings.modulation,
+				var waveformSource = self.waveformSource,
+					oldSettings = self.settings.modulation,
 					modulationLfo = self.modulationLfo;
 
 				if ( !oldSettings || ( oldSettings.rate !== settings.rate ) ) {
@@ -231,7 +233,12 @@ Instrument.prototype = {
 				}
 
 				if ( !oldSettings || ( oldSettings.waveform !== settings.waveform ) ) {
-					modulationLfo.waveform = self._getWaveForm( settings.waveform );
+					var index = settings.waveform;
+
+					modulationLfo.waveform = {
+						defaultForm: waveformSource.defaultForms[ index ],
+						customFormFFT: waveformSource.customForms[ CONST.OSC_WAVEFORM[ index ] ]
+					};
 				}
 
 				self.settings.modulation = JSON.parse( JSON.stringify( settings ) );
@@ -247,77 +254,42 @@ Instrument.prototype = {
 			},
 
 			set: function( settings ) {
-				var oldSettings = self.settings.oscillators,
-					oscillators = self.oscillators,
-					osc1 = oscillators[ 0 ],
-					osc2 = oscillators[ 1 ],
-					osc3 = oscillators[ 2 ],
-					oscSettings1 = settings.osc1,
-					oscSettings2 = settings.osc2,
-					oscSettings3 = settings.osc3;
+				var oldSettings = self.settings.oscillators || { osc1: {}, osc2: {}, osc3: {} },
+					oscillatorBank = self.oscillatorBank,
+					waveformSource = self.waveformSource;
 
-				if ( oldSettings ) {
-					var oldOscSettings1 = oldSettings.osc1,
-						oldOscSettings2 = oldSettings.osc2,
-						oldOscSettings3 = oldSettings.osc3,
-						pitchDetune = settingsConvertor.transposeValue( self.pitchSettings.bend, [ -1, 1 ], [ -200, 200 ] ),
-						resolveRange = function( oldSettings, settings, pitchDetune, osc ) {
-							if ( oldSettings.range !== settings.range ) {
-								osc.detune.value = self._getDetune(
-									settings.range,
-									8
-								) + pitchDetune;
-							}
-						},
-						resolveWaveform = function( oldSettings, settings, osc ) {
-							if ( oldSettings.waveform !== settings.waveform ) {
-								var defaultForm = CONST.OSC_WAVEFORM[ settings.waveform ];
+				oscillatorBank.forEach( function( osc, index ) {
+					var propName = "osc" + ( index + 1 ),
+						oldOscSettings = oldSettings[ propName ],
+						newOscSettings = settings[ propName ];
 
-								if ( defaultForm ) {
-									osc.type = defaultForm;
-								} else {
-									var waveformFFT = CONST.OSC_WAVEFORM_FFT[ settings.waveform - CONST.OSC_WAVEFORM.length ];
+					if ( oldOscSettings.range !== newOscSettings.range ) {
+						osc.octave = settingsConvertor.transposeValue(
+							newOscSettings.range,
+							[ 0, 6 ],
+							[ -4, 2 ]
+						);
+					}
+					if ( oldOscSettings.fineDetune !== newOscSettings.fineDetune ) {
+						osc.semitone = settingsConvertor.transposeValue(
+							newOscSettings.fineDetune,
+							[ 0, 16 ],
+							[ -8, 8 ]
+						);
+					}
+					if ( oldOscSettings.waveform !== newOscSettings.waveform ) {
+						var waveform = newOscSettings.waveform,
+							defaultForm = waveformSource.defaultForms[ waveform ];
 
-									if ( waveformFFT ) {
-										var audioContext = self.audioContext,
-											fft = waveformFFT.fft,
-											size = fft.real.length,
-											real = new Float32Array( size ),
-											imag = new Float32Array( size );
+						if ( defaultForm ) {
+							osc.waveform = defaultForm;
+						} else {
+							osc.customWaveform = waveformSource.customForms[ CONST.OSC_WAVEFORM[ waveform ] ];
+						}
 
-										for ( var i = 0; i < size; i++ ) {
-											real[ i ] = fft.real[ i ];
-											imag[ i ] = fft.imag[ i ];
-										}
+					}
 
-										var waveTable = audioContext.createPeriodicWave( real, imag );
-
-										osc.setPeriodicWave( waveTable );
-									}
-								}
-							}
-						},
-						resolveFineDetune = function( oldSettings, settings, pitchDetune, osc, base ) {
-							if ( oldSettings.range !== settings.range ||
-								oldSettings.fineDetune !== settings.fineDetune )
-							{
-								osc.detune.value = self._getDetune(
-									settings.range,
-									settings.fineDetune,
-									base
-								) + pitchDetune;
-							}
-						};
-
-					resolveRange( oldOscSettings1, oscSettings1, pitchDetune, osc1 );
-					resolveWaveform( oldOscSettings1, oscSettings1, osc1 );
-
-					resolveFineDetune( oldOscSettings2, oscSettings2, pitchDetune, osc2 );
-					resolveWaveform( oldOscSettings2, oscSettings2, osc2 );
-
-					resolveFineDetune( oldOscSettings3, oscSettings3, pitchDetune, osc3, CONST.OSC3_RANGE_BASE );
-					resolveWaveform( oldOscSettings3, oscSettings3, osc3 );
-				}
+				} );
 
 				self.settings.oscillators = JSON.parse( JSON.stringify( settings ) );
 			}
@@ -332,23 +304,21 @@ Instrument.prototype = {
 			},
 
 			set: function( settings ) {
-				var oldSettings = self.settings.mixer,
-					volumes = self.volumes,
-					volume1 = volumes[ 0 ],
-					volume2 = volumes[ 1 ],
-					volume3 = volumes[ 2 ],
-					volumeSettings1 = settings.volume1,
-					volumeSettings2 = settings.volume2,
-					volumeSettings3 = settings.volume3,
-					resolveVolume = function( settings, volume ) {
-						var value = settings.isEnabled ? settings.value : 0;
+				var oscillatorBank = self.oscillatorBank,
+					oldSettings = self.settings.mixer || { volume1: {}, volume2: {}, volume3: {} };
 
-						volume.gain.value = settingsConvertor.transposeValue( value, [ 0, 100 ], [ 0, 1 ] );
-					};
+				oscillatorBank.forEach( function( osc, index ) {
+					var volumePropName = "volume" + ( index + 1 ),
+						oldOscSettings = oldSettings[ volumePropName ],
+						newOscSettings = settings[ volumePropName ];
 
-				resolveVolume( volumeSettings1, volume1 );
-				resolveVolume( volumeSettings2, volume2 );
-				resolveVolume( volumeSettings3, volume3 );
+					if ( oldOscSettings.isEnabled !== newOscSettings.isEnabled ) {
+						osc.enabled = newOscSettings.isEnabled ? true : false;
+					}
+					if ( oldOscSettings.value !== newOscSettings.value ) {
+						osc.level = settingsConvertor.transposeValue( newOscSettings.value, [ 0, 100 ], [ 0, 1 ] );;
+					}
+				} );
 
 				self.settings.mixer = JSON.parse( JSON.stringify( settings ) );
 			}
@@ -465,7 +435,8 @@ Instrument.prototype = {
 			},
 
 			set: function( settings ) {
-				var oldSettings = self.settings.lfo || {
+				var waveformSource = self.waveformSource,
+					oldSettings = self.settings.lfo || {
 						rate: null,
 						waveform: null,
 						amount: null
@@ -477,7 +448,12 @@ Instrument.prototype = {
 					filterLfo.rate = settings.rate;
 				}
 				if ( oldSettings.waveform !== settings.waveform ) {
-					filterLfo.waveform = self._getWaveForm( settings.waveform );
+					var index = settings.waveform;
+
+					filterLfo.waveform = {
+						defaultForm: waveformSource.defaultForms[ index ],
+						customFormFFT: waveformSource.customForms[ CONST.OSC_WAVEFORM[ index ] ]
+					};
 				}
 				if ( oldSettings.amount !== settings.amount ) {
 					mix.amount = settingsConvertor.transposeValue( settings.amount, [ 0, 100 ], [ 0, 1 ] );
@@ -489,82 +465,12 @@ Instrument.prototype = {
 		} );
 	},
 
-	_getWaveForm: function( index ) {
-		var self = this,
-			defaultForm = CONST.OSC_WAVEFORM[ index ],
-			customFormFFT = null;
+	_pitchDetuneOscillatorBank: function( oscillatorBank, bend ) {
+		var pitchDetune = settingsConvertor.transposeValue( bend, [ -1, 1 ], [ -200, 200 ] );
 
-		if ( !defaultForm ) {
-			customFormFFT = self.getCustomWaveForm(
-				CONST.OSC_WAVEFORM_FFT[ index - CONST.OSC_WAVEFORM.length ]
-			);
-		}
-
-		return {
-			defaultForm: defaultForm,
-			customFormFFT: customFormFFT
-		};
-	},
-
-	_getCustomWaveForm: function( waveformFFT ) {
-		var fft = waveformFFT.fft,
-			size = fft.real.length,
-			real = new Float32Array( size ),
-			imag = new Float32Array( size );
-
-		for ( var i = 0; i < size; i++ ) {
-			real[ i ] = fft.real[ i ];
-			imag[ i ] = fft.imag[ i ];
-		}
-
-		return {
-			real: real,
-			imag: imag
-		};
-	},
-
-	_detuneOscillators: function( oscillators, activeNotes, oscillatorSettings, pitchSettings ) {
-		var self = this,
-			pitchDetune = settingsConvertor.transposeValue( pitchSettings.bend, [ -1, 1 ], [ -200, 200 ] ),
-			osc1 = oscillators[ 0 ],
-			osc2 = oscillators[ 1 ],
-			osc3 = oscillators[ 2 ];
-
-		osc1.detune.setValueAtTime( ( self._getDetune(
-			oscillatorSettings.osc1.range,
-			8
-		) + pitchDetune ), 0 );
-		osc2.detune.setValueAtTime( ( self._getDetune(
-			oscillatorSettings.osc2.range,
-			oscillatorSettings.osc2.fineDetune
-		) + pitchDetune ), 0 );
-		osc3.detune.setValueAtTime( ( self._getDetune(
-			oscillatorSettings.osc3.range,
-			oscillatorSettings.osc3.fineDetune,
-			CONST.OSC3_RANGE_BASE
-		) + pitchDetune ), 0 );
-	},
-
-	_getDetune: function( range, fineDetune, rangeBase ) {
-		rangeBase = rangeBase === undefined ? CONST.RANGE_DEFAULT_BASE : rangeBase;
-		var base = ( range - rangeBase ) * CONST.OCTAVE_CENTS;
-		// if no fineDetune, then fineDetune === FINE_DETUNE_HALF_SPECTRE => fine === 0
-		var fine = ( fineDetune - CONST.FINE_DETUNE_HALF_SPECTRE ) * CONST.SEMITONE_CENTS;
-
-		return base + fine;
-	},
-
-	_setNoteToOscillator: function( noteFrequency, settings, oscillator ) {
-		oscillator.frequency.cancelScheduledValues( 0 );
-		oscillator.frequency.setTargetAtTime(
-			noteFrequency,
-			0,
-			settingsConvertor.transposeValue(
-				settings.modulation.portamento,
-				[ 0, 100 ],
-				[ 0, 1/6 ]
-			)
-		);
+		oscillatorBank.forEach( function( oscillatorSettings ) {
+			oscillatorSettings.cent = pitchDetune;
+		} );
 	}
 
 };

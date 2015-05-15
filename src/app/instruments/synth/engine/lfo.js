@@ -60,16 +60,11 @@ LFO.prototype = {
 					audioContext = self.audioContext,
 					oscillator = self.oscillator,
 					defaultForm = value.defaultForm,
-					customFormFFT = value.customFormFFT;
+					waveTable = value.customFormFFT;
 
 				if ( defaultForm ) {
 					oscillator.type = defaultForm;
 				} else {
-					var waveTable = audioContext.createPeriodicWave(
-						customFormFFT.real,
-						customFormFFT.imag
-					);
-
 					oscillator.setPeriodicWave( waveTable );
 				}
 			}

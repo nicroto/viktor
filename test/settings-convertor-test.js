@@ -55,6 +55,22 @@ describe( "settings convertor", function() {
 			).should.equal( 64 );
 		} );
 
+		it( "transposes in [ -4, 2 ] from [ 0, 6 ]", function() {
+			settingsConvertor.transposeValue(
+				1,
+				[ 0, 6 ],
+				[ -4, 2 ]
+			).should.equal( -3 );
+		} );
+
+		it( "transposes in [ -8, 8 ] from [ 0, 16 ]", function() {
+			settingsConvertor.transposeValue(
+				8,
+				[ 0, 16 ],
+				[ -8, 8 ]
+			).should.equal( 0 );
+		} );
+
 	} );
 
 } );
