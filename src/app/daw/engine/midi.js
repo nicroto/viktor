@@ -4,6 +4,7 @@ function MIDIController() {
 	var self = this;
 
 	self.messageHandler = null;
+	self.inputs = [];
 }
 
 MIDIController.prototype = {
@@ -55,6 +56,10 @@ MIDIController.prototype = {
 
 			while ( predicate( input ) ) {
 				input.value.onmidimessage = midiMessageHandler;
+
+				// preserve not to be garbage collected
+				self.inputs.push( input );
+
 				input = inputs.next();
 			}
 
