@@ -1,7 +1,6 @@
 'use strict';
 
 var CONST = require( "./engine/const" ),
-	settingsConvertor = require( "settings-convertor" ),
 	MIDIController = require( "./engine/midi" ),
 	Tuna = require( "tuna" );
 
@@ -222,11 +221,11 @@ DAW.prototype = {
 			},
 			set: function( settings ) {
 				var self = this,
-					oldSettings = self.settings.masterVolume || {},
+					oldSettings = self.settings.masterVolume || { level: {} },
 					masterVolume = self.masterVolume;
 
-				if ( oldSettings.level !== settings.level ) {
-					masterVolume.gain.value = settingsConvertor.transposeValue( settings.level, [ 0, 100 ], [ 0, 1 ] );
+				if ( oldSettings.level.value !== settings.level.value ) {
+					masterVolume.gain.value = settings.level.value;
 				}
 
 				self.settings.masterVolume = JSON.parse( JSON.stringify( settings ) );

@@ -33,7 +33,10 @@ module.exports = {
 		}
 	},
 	DEFAULT_MASTER_VOLUME_SETTINGS: {
-		level: 80
+		level: {
+			value: 0.8,
+			range: [ 0, 1 ]
+		}
 	},
 
 	TUNA_DELAY_DEFAULT_SETTINGS: {

@@ -2,7 +2,7 @@
 	<div class="row">
 		<webaudio-knob src="images/frequency-knob.png"
 			bind-polymer
-			value="{{masterVolume.level}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Master Volume"></webaudio-knob>
+			value="{{masterVolume.level.value}}" min="{{masterVolume.level.range[ 0 ]}}" max="{{masterVolume.level.range[ 1 ]}}" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Master Volume"></webaudio-knob>
 		<h5>Level</h5>
 	</div>
 	<h4>Volume</h4>
