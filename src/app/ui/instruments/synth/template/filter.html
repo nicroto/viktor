@@ -3,19 +3,19 @@
 		<h5>Cutoff</h5>
 		<webaudio-knob src="images/frequency-knob.png"
 			bind-polymer
-			value="{{filter.cutoff}}" min="1" max="500" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Frequency cutoff"></webaudio-knob>
+			value="{{filter.cutoff.value}}" min="{{filter.cutoff.range[ 0 ]}}" max="{{filter.cutoff.range[ 1 ]}}" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Frequency cutoff"></webaudio-knob>
 	</div>
 	<div class="row">
 		<h5>Emphasis</h5>
 		<webaudio-knob src="images/frequency-knob.png"
 			bind-polymer
-			value="{{filter.emphasis}}" min="1" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Emphasis (Q)"></webaudio-knob>
+			value="{{filter.emphasis.value}}" min="{{filter.emphasis.range[ 0 ]}}" max="{{filter.emphasis.range[ 1 ]}}" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Emphasis (Q)"></webaudio-knob>
 	</div>
 	<div class="row">
 		<h5>Simple/Env</h5>
 		<webaudio-knob src="images/frequency-knob.png"
 			bind-polymer
-			value="{{filter.envAmount}}" min="0" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Simple/Envelope Mix"></webaudio-knob>
+			value="{{filter.envAmount.value}}" min="{{filter.envAmount.range[ 0 ]}}" max="{{filter.envAmount.range[ 1 ]}}" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Simple/Envelope Mix"></webaudio-knob>
 	</div>
 	<h4>LP Filter</h4>
 </div>

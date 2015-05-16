@@ -1,6 +1,7 @@
 'use strict';
 
-var $ = require( "jquery" );
+var $ = require( "jquery" ),
+	settingsConvertor = require( "settings-convertor" );
 
 module.exports = function( mod ) {
 
@@ -8,21 +9,21 @@ module.exports = function( mod ) {
 		var self = this,
 			settingsChangeHandler = function() {
 				synth.filterSettings = {
-					cutoff: self.cutoff,
-					emphasis: self.emphasis,
-					envAmount: self.envAmount
+					cutoff: settingsConvertor.transposeParam( self.cutoff, settings.cutoff.range ),
+					emphasis: settingsConvertor.transposeParam( self.emphasis, settings.emphasis.range ),
+					envAmount: settingsConvertor.transposeParam( self.envAmount, settings.envAmount.range )
 				};
 			},
 			settings = synth.filterSettings;
 
-		self.cutoff = settings.cutoff;
-		self.emphasis = settings.emphasis;
-		self.envAmount = settings.envAmount;
+		self.cutoff = settingsConvertor.transposeParam( settings.cutoff, [ 0, 500 ] );
+		self.emphasis = settingsConvertor.transposeParam( settings.emphasis, [ 1, 100 ] );
+		self.envAmount = settingsConvertor.transposeParam( settings.envAmount, [ 0, 100 ] );
 
 		[
-			"filter.cutoff",
-			"filter.emphasis",
-			"filter.envAmount"
+			"filter.cutoff.value",
+			"filter.emphasis.value",
+			"filter.envAmount.value"
 		].forEach( function( path ) {
 			$scope.$watch( path, settingsChangeHandler );
 		} );

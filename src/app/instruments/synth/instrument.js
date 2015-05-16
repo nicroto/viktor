@@ -374,32 +374,27 @@ Instrument.prototype = {
 			},
 
 			set: function( settings ) {
-				var oldSettings = self.settings.filter || {
-						cutoff: null,
-						emphasis: null
-					},
+				var oldSettings = self.settings.filter,
 					envelopeControlledFilter = self.envelopeControlledFilter,
 					uiControlledFilter = self.uiControlledFilter,
 					lfoControlledFilter = self.lfoControlledFilter,
 					mix = self.envelopeFilterMix;
 
-				if ( oldSettings.cutoff !== settings.cutoff ) {
-					var cutoff = CONST.FILTER_FREQUENCY_UPPER_BOUND * settingsConvertor.transposeValue(
-						settings.cutoff,
-						[ 0, 500 ],
-						[ 0, 1 ]
-					);
+				if ( !oldSettings || oldSettings.cutoff.value !== settings.cutoff.value ) {
+					var cutoff = settings.cutoff.value;
+
 					envelopeControlledFilter.node.frequency.value = cutoff;
 					uiControlledFilter.node.frequency.value = cutoff;
 				}
-				if ( oldSettings.emphasis !== settings.emphasis ) {
-					var emphasis = 40 * settingsConvertor.transposeValue( settings.emphasis, [ 1, 100 ], [ 0, 1 ] );
+				if ( !oldSettings || oldSettings.emphasis.value !== settings.emphasis.value ) {
+					var emphasis = settings.emphasis.value;
+
 					envelopeControlledFilter.node.Q.value = emphasis;
 					uiControlledFilter.node.Q.value = emphasis;
 					lfoControlledFilter.node.Q.value = emphasis;
 				}
-				if ( oldSettings.envAmount !== settings.envAmount ) {
-					mix.amount = settingsConvertor.transposeValue( settings.envAmount, [ 0, 100 ], [ 0, 1 ] );
+				if ( !oldSettings || oldSettings.envAmount.value !== settings.envAmount.value ) {
+					mix.amount = settings.envAmount.value;
 				}
 
 				self.settings.filter = JSON.parse( JSON.stringify( settings ) );

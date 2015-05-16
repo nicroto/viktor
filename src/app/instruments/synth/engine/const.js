@@ -177,9 +177,18 @@ module.exports = {
 		}
 	},
 	DEFAULT_FILTER_SETTINGS: {
-		cutoff: 250,
-		emphasis: 1,
-		envAmount: 0
+		cutoff: {
+			value: 4000,
+			range: [ 0, 8000 ]
+		},
+		emphasis: {
+			value: 2,
+			range: [ 0.4, 40 ]
+		},
+		envAmount: {
+			value: 0,
+			range: [ 0, 1 ]
+		}
 	},
 	DEFAULT_LFO_SETTINGS: {
 		waveform: 0,
