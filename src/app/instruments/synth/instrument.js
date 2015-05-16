@@ -342,10 +342,7 @@ Instrument.prototype = {
 			},
 
 			set: function( settings ) {
-				var oldSettings = self.settings.envelopes || {
-						primary: {},
-						filter: {}
-					},
+				var oldSettings = self.settings.envelopes,
 					resolve = function( oldSettings, settings, envelope ) {
 						[
 							"attack",
@@ -355,20 +352,14 @@ Instrument.prototype = {
 						].forEach( function( name ) {
 							var newVal = settings[ name ];
 
-							if ( oldSettings[ name ] !== newVal ) {
-								newVal = ( ( name === "sustain" ) ?
-									settingsConvertor.transposeValue( newVal, [ 0, 100 ], [ 0.001, 1 ] )
-									:
-									settingsConvertor.transposeValue( newVal, [ 0, 100 ], [ 0, 2 ] )
-								);
-
-								envelope[ name ] = newVal;
+							if ( !oldSettings || oldSettings[ name ].value !== newVal.value ) {
+								envelope[ name ] = newVal.value;
 							}
 						} );
 					};
 
-				resolve( oldSettings.primary, settings.primary, self.gainEnvelope );
-				resolve( oldSettings.filter, settings.filter, self.filterEnvelope );
+				resolve( oldSettings && oldSettings.primary, settings.primary, self.gainEnvelope );
+				resolve( oldSettings && oldSettings.filter, settings.filter, self.filterEnvelope );
 
 				self.settings.envelopes = JSON.parse( JSON.stringify( settings ) );
 			}
