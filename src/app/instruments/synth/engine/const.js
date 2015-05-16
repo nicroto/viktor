@@ -50,19 +50,46 @@ module.exports = {
 	},
 	DEFAULT_OSC_SETTINGS: {
 		osc1: {
-			range: 4,
-			fineDetune: 8,
-			waveform: 0
+			range: {
+				value: 0,
+				range: [ -4, 2 ]
+			},
+			fineDetune: {
+				value: 0,
+				range: [ -8, 8 ]
+			},
+			waveform: {
+				value: 0,
+				range: [ 0, 5 ]
+			}
 		},
 		osc2: {
-			range: 4,
-			fineDetune: 8,
-			waveform: 0
+			range: {
+				value: 0,
+				range: [ -4, 2 ]
+			},
+			fineDetune: {
+				value: 0,
+				range: [ -8, 8 ]
+			},
+			waveform: {
+				value: 0,
+				range: [ 0, 5 ]
+			}
 		},
 		osc3: {
-			range: 3,
-			fineDetune: 8,
-			waveform: 0
+			range: {
+				value: -1,
+				range: [ -4, 2 ]
+			},
+			fineDetune: {
+				value: 0,
+				range: [ -8, 8 ]
+			},
+			waveform: {
+				value: 0,
+				range: [ 0, 5 ]
+			}
 		}
 	},
 	DEFAULT_MIX_SETTINGS: {

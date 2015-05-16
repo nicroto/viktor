@@ -246,31 +246,23 @@ Instrument.prototype = {
 			},
 
 			set: function( settings ) {
-				var oldSettings = self.settings.oscillators || { osc1: {}, osc2: {}, osc3: {} },
+				var oldSettings = self.settings.oscillators,
 					oscillatorBank = self.oscillatorBank,
 					waveformSource = self.waveformSource;
 
 				oscillatorBank.forEach( function( osc, index ) {
 					var propName = "osc" + ( index + 1 ),
-						oldOscSettings = oldSettings[ propName ],
+						oldOscSettings = oldSettings && oldSettings[ propName ],
 						newOscSettings = settings[ propName ];
 
-					if ( oldOscSettings.range !== newOscSettings.range ) {
-						osc.octave = settingsConvertor.transposeValue(
-							newOscSettings.range,
-							[ 0, 6 ],
-							[ -4, 2 ]
-						);
+					if ( !oldSettings || oldOscSettings.range.value !== newOscSettings.range.value ) {
+						osc.octave = newOscSettings.range.value;
 					}
-					if ( oldOscSettings.fineDetune !== newOscSettings.fineDetune ) {
-						osc.semitone = settingsConvertor.transposeValue(
-							newOscSettings.fineDetune,
-							[ 0, 16 ],
-							[ -8, 8 ]
-						);
+					if ( !oldSettings || oldOscSettings.fineDetune.value !== newOscSettings.fineDetune.value ) {
+						osc.semitone = newOscSettings.fineDetune.value;
 					}
-					if ( oldOscSettings.waveform !== newOscSettings.waveform ) {
-						var waveform = newOscSettings.waveform,
+					if ( !oldSettings || oldOscSettings.waveform.value !== newOscSettings.waveform.value ) {
+						var waveform = newOscSettings.waveform.value,
 							defaultForm = waveformSource.defaultForms[ waveform ];
 
 						if ( defaultForm ) {
@@ -278,7 +270,6 @@ Instrument.prototype = {
 						} else {
 							osc.customWaveform = waveformSource.customForms[ CONST.OSC_WAVEFORM[ waveform ] ];
 						}
-
 					}
 
 				} );
@@ -368,7 +359,7 @@ Instrument.prototype = {
 								newVal = ( ( name === "sustain" ) ?
 									settingsConvertor.transposeValue( newVal, [ 0, 100 ], [ 0.001, 1 ] )
 									:
-									2 * settingsConvertor.transposeValue( newVal, [ 0, 100 ], [ 0, 1 ] )
+									settingsConvertor.transposeValue( newVal, [ 0, 100 ], [ 0, 2 ] )
 								);
 
 								envelope[ name ] = newVal;
