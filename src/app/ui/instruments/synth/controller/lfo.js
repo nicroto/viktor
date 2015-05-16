@@ -1,6 +1,7 @@
 'use strict';
 
-var $ = require( "jquery" );
+var $ = require( "jquery" ),
+	settingsConvertor = require( "settings-convertor" );
 
 module.exports = function( mod ) {
 
@@ -10,19 +11,19 @@ module.exports = function( mod ) {
 				synth.lfoSettings = {
 					waveform: self.waveform,
 					rate: self.rate,
-					amount: self.amount
+					amount: settingsConvertor.transposeParam( self.amount, settings.amount.range )
 				};
 			},
 			settings = synth.lfoSettings;
 
 		self.waveform = settings.waveform;
 		self.rate = settings.rate;
-		self.amount = settings.amount;
+		self.amount = settingsConvertor.transposeParam( settings.amount, [ 0, 100 ] );
 
 		[
-			"lfo.waveform",
-			"lfo.rate",
-			"lfo.amount"
+			"lfo.waveform.value",
+			"lfo.rate.value",
+			"lfo.amount.value"
 		].forEach( function( path ) {
 			$scope.$watch( path, settingsChangeHandler );
 		} );

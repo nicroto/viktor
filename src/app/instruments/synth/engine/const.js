@@ -191,9 +191,18 @@ module.exports = {
 		}
 	},
 	DEFAULT_LFO_SETTINGS: {
-		waveform: 0,
-		rate: 3,
-		amount: 0
+		waveform: {
+			value: 0,
+			range: [ 0, 5 ]
+		},
+		rate: {
+			value: 3,
+			range: [ 1, 25 ]
+		},
+		amount: {
+			value: 0,
+			range: [ 0, 1 ]
+		}
 	},
 
 	FILTER_FREQUENCY_UPPER_BOUND: 8000,

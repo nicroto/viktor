@@ -411,27 +411,23 @@ Instrument.prototype = {
 
 			set: function( settings ) {
 				var waveformSource = self.waveformSource,
-					oldSettings = self.settings.lfo || {
-						rate: null,
-						waveform: null,
-						amount: null
-					},
+					oldSettings = self.settings.lfo,
 					filterLfo = self.filterLfo,
 					mix = self.lfoFilterMix;
 
-				if ( oldSettings.rate !== settings.rate ) {
-					filterLfo.rate = settings.rate;
+				if ( !oldSettings || oldSettings.rate.value !== settings.rate.value ) {
+					filterLfo.rate = settings.rate.value;
 				}
-				if ( oldSettings.waveform !== settings.waveform ) {
-					var index = settings.waveform;
+				if ( !oldSettings || oldSettings.waveform.value !== settings.waveform.value ) {
+					var index = settings.waveform.value;
 
 					filterLfo.waveform = {
 						defaultForm: waveformSource.defaultForms[ index ],
 						customFormFFT: waveformSource.customForms[ CONST.OSC_WAVEFORM[ index ] ]
 					};
 				}
-				if ( oldSettings.amount !== settings.amount ) {
-					mix.amount = settingsConvertor.transposeValue( settings.amount, [ 0, 100 ], [ 0, 1 ] );
+				if ( !oldSettings || oldSettings.amount.value !== settings.amount.value ) {
+					mix.amount = settings.amount.value;
 				}
 
 				self.settings.lfo = JSON.parse( JSON.stringify( settings ) );
