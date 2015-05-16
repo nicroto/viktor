@@ -1,6 +1,7 @@
 'use strict';
 
-var $ = require( "jquery" );
+var $ = require( "jquery" ),
+	settingsConvertor = require( "settings-convertor" );
 
 module.exports = function( mod ) {
 
@@ -8,35 +9,48 @@ module.exports = function( mod ) {
 		var self = this,
 			settingsChangeHandler = function() {
 				synth.mixerSettings = {
-					volume1: self.volume1,
-					volume2: self.volume2,
-					volume3: self.volume3,
-					noise: self.noise
+					volume1: {
+						enabled: self.volume1.enabled,
+						level: settingsConvertor.transposeParam( self.volume1.level, settings.volume1.level.range )
+					},
+					volume2: {
+						enabled: self.volume2.enabled,
+						level: settingsConvertor.transposeParam( self.volume2.level, settings.volume2.level.range )
+					},
+					volume3: {
+						enabled: self.volume3.enabled,
+						level: settingsConvertor.transposeParam( self.volume3.level, settings.volume3.level.range )
+					}
 				};
 			},
 			settings = synth.mixerSettings;
 
-		self.volume1 = settings.volume1;
-		self.volume2 = settings.volume2;
-		self.volume3 = settings.volume3;
-		self.noise = settings.noise;
+		self.volume1 = {
+			enabled: settings.volume1.enabled,
+			level: settingsConvertor.transposeParam( settings.volume1.level, [ 0, 100 ] )
+		};
+		self.volume2 = {
+			enabled: settings.volume2.enabled,
+			level: settingsConvertor.transposeParam( settings.volume2.level, [ 0, 100 ] )
+		};
+		self.volume3 = {
+			enabled: settings.volume3.enabled,
+			level: settingsConvertor.transposeParam( settings.volume3.level, [ 0, 100 ] )
+		};
 
 		[
-			"mixer.volume1.isEnabled",
-			"mixer.volume1.value",
-			"mixer.volume2.isEnabled",
-			"mixer.volume2.value",
-			"mixer.volume3.isEnabled",
-			"mixer.volume3.value",
-			"mixer.noise.isEnabled",
-			"mixer.noise.type",
-			"mixer.noise.volume"
+			"mixer.volume1.enabled.value",
+			"mixer.volume1.level.value",
+			"mixer.volume2.enabled.value",
+			"mixer.volume2.level.value",
+			"mixer.volume3.enabled.value",
+			"mixer.volume3.level.value"
 		].forEach( function( path ) {
 			$scope.$watch( path, settingsChangeHandler );
 		} );
 
 		// fix problem with bad init state
-		$( ".mixer .oscillator-switch webaudio-switch" )[ 0 ].setValue( self.volume1.isEnabled );
+		$( ".mixer .oscillator-switch webaudio-switch" )[ 0 ].setValue( self.volume1.enabled.value );
 
 		// fix the lack of attr 'value' update
 		$( ".mixer webaudio-switch" )

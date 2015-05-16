@@ -288,18 +288,18 @@ Instrument.prototype = {
 
 			set: function( settings ) {
 				var oscillatorBank = self.oscillatorBank,
-					oldSettings = self.settings.mixer || { volume1: {}, volume2: {}, volume3: {} };
+					oldSettings = self.settings.mixer;
 
 				oscillatorBank.forEach( function( osc, index ) {
 					var volumePropName = "volume" + ( index + 1 ),
-						oldOscSettings = oldSettings[ volumePropName ],
+						oldOscSettings = oldSettings && oldSettings[ volumePropName ],
 						newOscSettings = settings[ volumePropName ];
 
-					if ( oldOscSettings.isEnabled !== newOscSettings.isEnabled ) {
-						osc.enabled = newOscSettings.isEnabled ? true : false;
+					if ( !oldSettings || oldOscSettings.enabled.value !== newOscSettings.enabled.value ) {
+						osc.enabled = newOscSettings.enabled.value ? true : false;
 					}
-					if ( oldOscSettings.value !== newOscSettings.value ) {
-						osc.level = settingsConvertor.transposeValue( newOscSettings.value, [ 0, 100 ], [ 0, 1 ] );;
+					if ( !oldSettings || oldOscSettings.level.value !== newOscSettings.level.value ) {
+						osc.level = newOscSettings.level.value;
 					}
 				} );
 

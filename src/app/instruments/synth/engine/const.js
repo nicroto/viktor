@@ -94,16 +94,34 @@ module.exports = {
 	},
 	DEFAULT_MIX_SETTINGS: {
 		volume1: {
-			isEnabled: 1,
-			value: 60
+			enabled: {
+				value: 1,
+				range: [ 0, 1 ]
+			},
+			level: {
+				value: 0.6,
+				range: [ 0, 1 ]
+			}
 		},
 		volume2: {
-			isEnabled: 0,
-			value: 60
+			enabled: {
+				value: 0,
+				range: [ 0, 1 ]
+			},
+			level: {
+				value: 0.6,
+				range: [ 0, 1 ]
+			}
 		},
 		volume3: {
-			isEnabled: 0,
-			value: 60
+			enabled: {
+				value: 0,
+				range: [ 0, 1 ]
+			},
+			level: {
+				value: 0.6,
+				range: [ 0, 1 ]
+			}
 		}
 	},
 	DEFAULT_NOISE_SETTINGS: {
