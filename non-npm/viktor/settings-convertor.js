@@ -18,6 +18,12 @@ module.exports = {
 			value: newValue,
 			range: newRange
 		}
+	},
+
+	getRangeCenter: function( range ) {
+		var rangeLength = range[ 1 ] - range[ 0 ];
+
+		return range[ 0 ] + rangeLength / 2;
 	}
 
 };

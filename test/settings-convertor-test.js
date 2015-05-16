@@ -148,4 +148,24 @@ describe( "settings convertor", function() {
 
 	} );
 
+	describe( "getRangeCenter( range )", function() {
+
+		it( "gets the center of [ 0, 1 ]", function() {
+			settingsConvertor.getRangeCenter( [ 0, 1 ] ).should.equal( 0.5 );
+		} );
+
+		it( "gets the center of [ 0, 128 ]", function() {
+			settingsConvertor.getRangeCenter( [ 0, 128 ] ).should.equal( 64 );
+		} );
+
+		it( "gets the center of [ 0, 3 ]", function() {
+			settingsConvertor.getRangeCenter( [ 0, 3 ] ).should.equal( 1.5 );
+		} );
+
+		it( "gets the center of [ -5, 5 ]", function() {
+			settingsConvertor.getRangeCenter( [ -5, 5 ] ).should.equal( 0 );
+		} );
+
+	} );
+
 } );
