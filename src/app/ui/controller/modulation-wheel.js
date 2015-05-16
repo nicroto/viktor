@@ -10,18 +10,17 @@ module.exports = function( mod ) {
 			settingsChangeHandler = function() {
 				var modulationSettings = dawEngine.modulationSettings;
 
-				modulationSettings.rate = settingsConvertor.transposeValue( self.modulation, [ 0, 128 ], [ 0, 15 ] );
+				modulationSettings.rate = settingsConvertor.transposeParam( self.modulation, settings.rate.range );
 
 				dawEngine.modulationSettings = modulationSettings;
 			},
 			settings = dawEngine.modulationSettings,
 			$modulationWheel = $( ".modulation-wheel webaudio-slider" );
 
-		self.RANGE = 128;
-		self.modulation = settingsConvertor.transposeValue( settings.rate, [ 0, 15 ], [ 0, 128 ] );
+		self.modulation = settingsConvertor.transposeParam( settings.rate, [ 0, 128 ] );
 
 		[
-			"modulationWheel.modulation"
+			"modulationWheel.modulation.value"
 		].forEach( function( path ) {
 			$scope.$watch( path, settingsChangeHandler );
 		} );
@@ -29,14 +28,14 @@ module.exports = function( mod ) {
 		dawEngine.addExternalMidiMessageHandler( function( type, parsed ) {
 			if ( type === "modulationWheel" ) {
 				$modulationWheel[ 0 ].setValue(
-					settingsConvertor.transposeValue( parsed.modulation, [ 0, 1 ], [ 0, 128 ] )
+					settingsConvertor.transposeParam( parsed.modulation, self.modulation.range ).value
 				);
 			}
 		} );
 
 		// fix issue with initial value settings
 		$timeout( function() {
-			$modulationWheel[ 0 ].setValue( self.modulation );
+			$modulationWheel[ 0 ].setValue( self.modulation.value );
 		}, 500 );
 
 		// fix the lack of attr 'value' update

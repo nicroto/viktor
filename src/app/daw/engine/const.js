@@ -9,7 +9,10 @@ module.exports = {
 		}
 	},
 	DEFAULT_MODULATION_SETTINGS: {
-		rate: 0
+		rate: {
+			value: 0,
+			range: [ 0, 15 ]
+		}
 	},
 	DEFAULT_DELAY_SETTINGS: {
 		time: {

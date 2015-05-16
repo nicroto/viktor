@@ -34,6 +34,14 @@ module.exports = {
 			range: [ -200, 200 ]
 		}
 	},
+	DEFAULT_MOD_SETTINGS: {
+		waveform: 0,
+		portamento: 5,
+		rate: {
+			value: 0,
+			range: [ 0, 15 ]
+		}
+	},
 	DEFAULT_OSC_SETTINGS: {
 		osc1: {
 			range: 4,
@@ -50,11 +58,6 @@ module.exports = {
 			fineDetune: 8,
 			waveform: 0
 		}
-	},
-	DEFAULT_MOD_SETTINGS: {
-		waveform: 0,
-		portamento: 5,
-		rate: 0
 	},
 	DEFAULT_MIX_SETTINGS: {
 		volume1: {

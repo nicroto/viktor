@@ -179,7 +179,7 @@ Instrument.prototype = {
 	onModulationWheelTurn: function( modulation ) {
 		var self = this,
 			oldSettings = self.modulationSettings,
-			newRate = settingsConvertor.transposeValue( modulation, [ 0, 1 ], [ 0, 15 ] );
+			newRate = settingsConvertor.transposeParam( modulation, [ 0, 15 ] );
 
 		if ( oldSettings.rate !== newRate ) {
 			self.modulationSettings = {
@@ -228,8 +228,8 @@ Instrument.prototype = {
 					oldSettings = self.settings.modulation,
 					modulationLfo = self.modulationLfo;
 
-				if ( !oldSettings || ( oldSettings.rate !== settings.rate ) ) {
-					modulationLfo.rate = settings.rate;
+				if ( !oldSettings || ( oldSettings.rate.value !== settings.rate.value ) ) {
+					modulationLfo.rate = settings.rate.value;
 				}
 
 				if ( !oldSettings || ( oldSettings.waveform !== settings.waveform ) ) {
