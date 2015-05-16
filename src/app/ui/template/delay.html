@@ -3,25 +3,25 @@
 		<div class="col-lg-3">
 			<webaudio-knob src="images/frequency-knob.png"
 				bind-polymer
-				value="{{delay.time}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Delay Time"></webaudio-knob>
+				value="{{delay.time.value}}" min="{{delay.time.range[ 0 ]}}" max="{{delay.time.range[ 1 ]}}" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Delay Time"></webaudio-knob>
 			<h5>Time</h5>
 		</div>
 		<div class="col-lg-3">
 			<webaudio-knob src="images/frequency-knob.png"
 				bind-polymer
-				value="{{delay.feedback}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Delay Feedback"></webaudio-knob>
+				value="{{delay.feedback.value}}" min="{{delay.feedback.range[ 0 ]}}" max="{{delay.feedback.range[ 1 ]}}" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Delay Feedback"></webaudio-knob>
 			<h5>Feedback</h5>
 		</div>
 		<div class="col-lg-3">
 			<webaudio-knob src="images/frequency-knob.png"
 				bind-polymer
-				value="{{delay.dry}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Delay Dry Level"></webaudio-knob>
+				value="{{delay.dry.value}}" min="{{delay.dry.range[ 0 ]}}" max="{{delay.dry.range[ 1 ]}}" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Delay Dry Level"></webaudio-knob>
 			<h5>Dry</h5>
 		</div>
 		<div class="col-lg-3">
 			<webaudio-knob src="images/frequency-knob.png"
 				bind-polymer
-				value="{{delay.wet}}" max="100" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Delay Wet Level"></webaudio-knob>
+				value="{{delay.wet.value}}" min="{{delay.wet.range[ 0 ]}}" max="{{delay.wet.range[ 1 ]}}" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Delay Wet Level"></webaudio-knob>
 			<h5>Wet</h5>
 		</div>
 	</div>

@@ -9,10 +9,22 @@ module.exports = {
 		rate: 0
 	},
 	DEFAULT_DELAY_SETTINGS: {
-		time: 15,
-		feedback: 30,
-		dry: 100,
-		wet: 0
+		time: {
+			value: 150,
+			range: [ 0, 1000 ]
+		},
+		feedback: {
+			value: 0.3,
+			range: [ 0, 0.9 ]
+		},
+		dry: {
+			value: 1,
+			range: [ 0, 1 ]
+		},
+		wet: {
+			value: 0,
+			range: [ 0, 1 ]
+		}
 	},
 	DEFAULT_REVERB_SETTINGS: {
 		level: 0

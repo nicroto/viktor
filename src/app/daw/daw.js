@@ -172,20 +172,20 @@ DAW.prototype = {
 			},
 			set: function( settings ) {
 				var self = this,
-					oldSettings = self.settings.delay || {},
+					oldSettings = self.settings.delay || { time: {}, feedback: {}, dry: {}, wet: {} },
 					delay = self.delay;
 
-				if ( oldSettings.time !== settings.time ) {
-					delay.delayTime = settingsConvertor.transposeValue( settings.time, [ 0, 100 ], [ 0, 1000 ] );
+				if ( oldSettings.time.value !== settings.time.value ) {
+					delay.delayTime = settings.time.value;
 				}
-				if ( oldSettings.feedback !== settings.feedback ) {
-					delay.feedback = settingsConvertor.transposeValue( settings.feedback, [ 0, 100 ], [ 0, 0.9 ] );
+				if ( oldSettings.feedback.value !== settings.feedback.value ) {
+					delay.feedback = settings.feedback.value;
 				}
-				if ( oldSettings.dry !== settings.dry ) {
-					delay.dryLevel = settingsConvertor.transposeValue( settings.dry, [ 0, 100 ], [ 0, 1 ] );
+				if ( oldSettings.dry.value !== settings.dry.value ) {
+					delay.dryLevel = settings.dry.value;
 				}
-				if ( oldSettings.wet !== settings.wet ) {
-					delay.wetLevel = settingsConvertor.transposeValue( settings.wet, [ 0, 100 ], [ 0, 1 ] );
+				if ( oldSettings.wet.value !== settings.wet.value ) {
+					delay.wetLevel = settings.wet.value;
 				}
 
 				self.settings.delay = JSON.parse( JSON.stringify( settings ) );

@@ -1,6 +1,7 @@
 'use strict';
 
-var $ = require( "jquery" );
+var $ = require( "jquery" ),
+	settingsConvertor = require( "settings-convertor" );
 
 module.exports = function( mod ) {
 
@@ -8,24 +9,24 @@ module.exports = function( mod ) {
 		var self = this,
 			settingsChangeHandler = function() {
 				dawEngine.delaySettings = {
-					time: self.time,
-					feedback: self.feedback,
-					dry: self.dry,
-					wet: self.wet
+					time	: settingsConvertor.transposeParam( self.time, settings.time.range ),
+					feedback: settingsConvertor.transposeParam( self.feedback, settings.feedback.range ),
+					dry		: settingsConvertor.transposeParam( self.dry, settings.dry.range ),
+					wet		: settingsConvertor.transposeParam( self.wet, settings.wet.range )
 				};
 			},
 			settings = dawEngine.delaySettings;
 
-		self.time = settings.time;
-		self.feedback = settings.feedback;
-		self.dry = settings.dry;
-		self.wet = settings.wet;
+		self.time = settingsConvertor.transposeParam( settings.time, [ 0, 100 ] );
+		self.feedback = settingsConvertor.transposeParam( settings.feedback, [ 0, 100 ] );
+		self.dry = settingsConvertor.transposeParam( settings.dry, [ 0, 100 ] );
+		self.wet = settingsConvertor.transposeParam( settings.wet, [ 0, 100 ] );
 
 		[
-			"delay.time",
-			"delay.feedback",
-			"delay.dry",
-			"delay.wet"
+			"delay.time.value",
+			"delay.feedback.value",
+			"delay.dry.value",
+			"delay.wet.value"
 		].forEach( function( path ) {
 			$scope.$watch( path, settingsChangeHandler );
 		} );
