@@ -35,8 +35,14 @@ module.exports = {
 		}
 	},
 	DEFAULT_MOD_SETTINGS: {
-		waveform: 0,
-		portamento: 5,
+		waveform: {
+			value: 0,
+			range: [ 0, 5 ]
+		},
+		portamento: {
+			value: 5 / 100 / 6,
+			range: [ 0, 1/6 ]
+		},
 		rate: {
 			value: 0,
 			range: [ 0, 15 ]

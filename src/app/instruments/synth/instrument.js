@@ -116,11 +116,7 @@ Instrument.prototype = {
 			gainEnvelope = self.gainEnvelope,
 			filterEnvelope = self.filterEnvelope,
 			activeNotes = self.activeNotes,
-			portamento = settingsConvertor.transposeValue(
-				self.settings.modulation.portamento,
-				[ 0, 100 ],
-				[ 0, 1/6 ]
-			),
+			portamento = self.settings.modulation.portamento.value,
 			hasANoteDown = activeNotes.length > 0;
 
 		if ( !hasANoteDown ) {
@@ -144,11 +140,7 @@ Instrument.prototype = {
 			gainEnvelope = self.gainEnvelope,
 			filterEnvelope = self.filterEnvelope,
 			activeNotes = self.activeNotes,
-			portamento = settingsConvertor.transposeValue(
-				self.settings.modulation.portamento,
-				[ 0, 100 ],
-				[ 0, 1/6 ]
-			),
+			portamento = self.settings.modulation.portamento.value,
 			position = activeNotes.indexOf( noteFrequency );
 
 		if ( position !== -1 ) {
@@ -232,8 +224,8 @@ Instrument.prototype = {
 					modulationLfo.rate = settings.rate.value;
 				}
 
-				if ( !oldSettings || ( oldSettings.waveform !== settings.waveform ) ) {
-					var index = settings.waveform;
+				if ( !oldSettings || ( oldSettings.waveform.value !== settings.waveform.value ) ) {
+					var index = settings.waveform.value;
 
 					modulationLfo.waveform = {
 						defaultForm: waveformSource.defaultForms[ index ],

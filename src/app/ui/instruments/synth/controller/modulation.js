@@ -1,6 +1,7 @@
 'use strict';
 
-var $ = require( "jquery" );
+var $ = require( "jquery" ),
+	settingsConvertor = require( "settings-convertor" );
 
 module.exports = function( mod ) {
 
@@ -9,18 +10,18 @@ module.exports = function( mod ) {
 			settingsChangeHandler = function() {
 				synth.modulationSettings = {
 					waveform: self.waveform,
-					portamento: self.portamento,
+					portamento: settingsConvertor.transposeParam( self.portamento, settings.portamento.range ),
 					rate: synth.modulationSettings.rate
 				};
 			},
 			settings = synth.modulationSettings;
 
 		self.waveform = settings.waveform;
-		self.portamento = settings.portamento;
+		self.portamento = settingsConvertor.transposeParam( settings.portamento, [ 0, 100 ] );
 
 		[
-			"modulation.waveform",
-			"modulation.portamento"
+			"modulation.waveform.value",
+			"modulation.portamento.value"
 		].forEach( function( path ) {
 			$scope.$watch( path, settingsChangeHandler );
 		} );
