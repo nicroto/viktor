@@ -8,6 +8,16 @@ module.exports = {
 			newRangeLength = newRange[ 1 ] - newRange[ 0 ];
 
 		return newRange[ 0 ] + ratioToRange * newRangeLength;
+	},
+
+	transposeParam: function( param, newRange ) {
+		var self = this,
+			newValue = self.transposeValue( param.value, param.range, newRange );
+
+		return {
+			value: newValue,
+			range: newRange
+		}
 	}
 
 };
