@@ -40,10 +40,10 @@ Noise.prototype = {
 			set: function( value ) {
 				enabled = value;
 
-				if ( !enabled ) {
-					sourceNode.disconnect();
-				} else {
+				if ( enabled ) {
 					sourceNode.connect( volumeNode );
+				} else {
+					sourceNode.disconnect();
 				}
 			}
 

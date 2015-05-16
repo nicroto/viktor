@@ -125,9 +125,18 @@ module.exports = {
 		}
 	},
 	DEFAULT_NOISE_SETTINGS: {
-		enabled: 0,
-		type: 0,
-		level: 0
+		enabled: {
+			value: 0,
+			range: [ 0, 1 ]
+		},
+		type: {
+			value: 0,
+			range: [ 0, 2 ]
+		},
+		level: {
+			value: 0.2,
+			range: [ 0, 1 ]
+		}
 	},
 	DEFAULT_ENVELOPES_SETTINGS: {
 		primary: {

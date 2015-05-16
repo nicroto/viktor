@@ -316,17 +316,17 @@ Instrument.prototype = {
 			},
 
 			set: function( settings ) {
-				var oldSettings = self.settings.noise || {},
+				var oldSettings = self.settings.noise,
 					noise = self.noise;
 
-				if ( oldSettings.enabled !== settings.enabled ) {
-					noise.enabled = settings.enabled;
+				if ( !oldSettings || oldSettings.enabled.value !== settings.enabled.value ) {
+					noise.enabled = settings.enabled.value ? true : false;
 				}
-				if ( oldSettings.level !== settings.level ) {
-					noise.level = settingsConvertor.transposeValue( settings.level, [ 0, 100 ], [ 0, 1 ] );
+				if ( !oldSettings || oldSettings.level.value !== settings.level.value ) {
+					noise.level = settings.level.value;
 				}
-				if ( oldSettings.type !== settings.type ) {
-					noise.type = settings.type;
+				if ( !oldSettings || oldSettings.type.value !== settings.type.value ) {
+					noise.type = settings.type.value;
 				}
 
 				self.settings.noise = JSON.parse( JSON.stringify( settings ) );

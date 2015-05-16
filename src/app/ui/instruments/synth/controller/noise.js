@@ -1,6 +1,7 @@
 'use strict';
 
-var $ = require( "jquery" );
+var $ = require( "jquery" ),
+	settingsConvertor = require( "settings-convertor" );
 
 module.exports = function( mod ) {
 
@@ -9,26 +10,26 @@ module.exports = function( mod ) {
 			settingsChangeHandler = function() {
 				synth.noiseSettings = {
 					enabled: self.enabled,
-					level: self.level,
+					level: settingsConvertor.transposeParam( self.level, settings.level.range ),
 					type: self.type
 				};
 			},
 			settings = synth.noiseSettings;
 
 		self.enabled = settings.enabled;
-		self.level = settings.level;
+		self.level = settingsConvertor.transposeParam( settings.level, [ 0, 100 ] );
 		self.type = settings.type;
 
 		[
-			"noise.enabled",
-			"noise.level",
-			"noise.type"
+			"noise.enabled.value",
+			"noise.level.value",
+			"noise.type.value"
 		].forEach( function( path ) {
 			$scope.$watch( path, settingsChangeHandler );
 		} );
 
 		// fix problem with bad init state
-		$( ".noise webaudio-switch" )[ 0 ].setValue( self.enabled );
+		$( ".noise webaudio-switch" )[ 0 ].setValue( self.enabled.value );
 
 		// fix the lack of attr 'value' update
 		$( ".noise webaudio-switch" )
