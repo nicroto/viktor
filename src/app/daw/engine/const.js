@@ -3,7 +3,10 @@
 module.exports = {
 
 	DEFAULT_PITCH_SETTINGS: {
-		bend: 0
+		bend: {
+			value: 0,
+			range: [ -200, 200 ]
+		}
 	},
 	DEFAULT_MODULATION_SETTINGS: {
 		rate: 0

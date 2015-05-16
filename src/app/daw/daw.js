@@ -127,9 +127,9 @@ DAW.prototype = {
 			},
 			set: function( settings ) {
 				var self = this,
-					oldSettings = self.settings.pitch || {};
+					oldSettings = self.settings.pitch || { bend: {} };
 
-				if ( oldSettings.bend !== settings.bend ) {
+				if ( oldSettings.bend.value !== settings.bend.value ) {
 					self.instruments.forEach( function( instrument ) {
 						instrument.pitchSettings = settings;
 					} );

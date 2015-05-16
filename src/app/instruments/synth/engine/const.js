@@ -29,7 +29,10 @@ module.exports = {
 	RANGE_DEFAULT_BASE: 3,
 
 	DEFAULT_PITCH_SETTINGS: {
-		bend: 0
+		bend: {
+			value: 0,
+			range: [ -200, 200 ]
+		}
 	},
 	DEFAULT_OSC_SETTINGS: {
 		osc1: {

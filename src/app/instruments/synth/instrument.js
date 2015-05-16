@@ -124,7 +124,7 @@ Instrument.prototype = {
 			hasANoteDown = activeNotes.length > 0;
 
 		if ( !hasANoteDown ) {
-			self._pitchDetuneOscillatorBank( oscillatorBank, self.pitchSettings.bend );
+			self._pitchDetuneOscillatorBank( oscillatorBank, self.pitchSettings.bend.value );
 		}
 
 		activeNotes.push( noteFrequency );
@@ -172,7 +172,7 @@ Instrument.prototype = {
 		var self = this;
 
 		self.pitchSettings = {
-			bend: pitchBend
+			bend: settingsConvertor.transposeParam( pitchBend, self.settings.pitch.bend.range )
 		};
 	},
 
@@ -204,11 +204,11 @@ Instrument.prototype = {
 			set: function( settings ) {
 				var self = this,
 					oscillatorBank = self.oscillatorBank,
-					oldSettings = self.settings.pitch || {},
+					oldSettings = self.settings.pitch || { bend: {} },
 					hasANoteDown = self.activeNotes.length > 0;
 
-				if ( hasANoteDown && oldSettings.bend !== settings.bend ) {
-					self._pitchDetuneOscillatorBank( oscillatorBank, settings.bend );
+				if ( hasANoteDown && oldSettings.bend.value !== settings.bend.value ) {
+					self._pitchDetuneOscillatorBank( oscillatorBank, settings.bend.value );
 				}
 
 				self.settings.pitch = JSON.parse( JSON.stringify( settings ) );
@@ -471,11 +471,9 @@ Instrument.prototype = {
 		} );
 	},
 
-	_pitchDetuneOscillatorBank: function( oscillatorBank, bend ) {
-		var pitchDetune = settingsConvertor.transposeValue( bend, [ -1, 1 ], [ -200, 200 ] );
-
+	_pitchDetuneOscillatorBank: function( oscillatorBank, value ) {
 		oscillatorBank.forEach( function( oscillatorSettings ) {
-			oscillatorSettings.cent = pitchDetune;
+			oscillatorSettings.cent = value;
 		} );
 	}
 

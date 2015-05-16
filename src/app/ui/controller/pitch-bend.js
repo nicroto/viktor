@@ -9,30 +9,31 @@ module.exports = function( mod ) {
 		var self = this,
 			settingsChangeHandler = function() {
 				dawEngine.pitchSettings = {
-					bend: settingsConvertor.transposeValue( self.bend, [ 0, 128 ], [ -1, 1 ] )
+					bend: settingsConvertor.transposeParam( self.bend, settings.bend.range )
 				};
 			},
 			settings = dawEngine.pitchSettings,
 			$pitchBend = $( ".pitch-bend webaudio-slider" );
 
-		self.RANGE = 128;
-		self.bend = settingsConvertor.transposeValue( settings.bend, [ -1, 1 ], [ 0, 128 ] );
+		self.bend = settingsConvertor.transposeParam( settings.bend, [ 0, 128 ] );
 
 		[
-			"pitch.bend"
+			"pitch.bend.value"
 		].forEach( function( path ) {
 			$scope.$watch( path, settingsChangeHandler );
 		} );
 
 		dawEngine.addExternalMidiMessageHandler( function( type, parsed ) {
 			if ( type === "pitchBend" ) {
-				$pitchBend[ 0 ].setValue( settingsConvertor.transposeValue( parsed.pitchBend, [ -1, 1 ], [ 0, 128 ] ) );
+				$pitchBend[ 0 ].setValue(
+					settingsConvertor.transposeParam( parsed.pitchBend, self.bend.range ).value
+				);
 			}
 		} );
 
 		// fix issue with initial value settings
 		$timeout( function() {
-			$pitchBend[ 0 ].setValue( self.bend );
+			$pitchBend[ 0 ].setValue( self.bend.value );
 		}, 500 );
 
 		// fix the lack of attr 'value' update
@@ -47,8 +48,8 @@ module.exports = function( mod ) {
 		$( "body" ).on( "mouseup", function() {
 			if ( isPitchBending ) {
 				isPitchBending = false;
-				self.bend = self.RANGE / 2;
-				$pitchBend[ 0 ].setValue( self.bend );
+				self.bend.value = settingsConvertor.getRangeCenter( self.bend.range );
+				$pitchBend[ 0 ].setValue( self.bend.value );
 				settingsChangeHandler();
 			}
 		} );

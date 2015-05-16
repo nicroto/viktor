@@ -122,7 +122,10 @@ MIDIController.prototype = {
 			parsed = true;
 		} else if ( simpleFirstByte === binary( "11100000" ) ) {
 			isPitchBend = true;
-			pitchBend = ( ( thirdByte * 128 + secondByte ) - 8192 ) / 8192;
+			pitchBend = {
+				value: ( ( thirdByte * 128 + secondByte ) - 8192 ) / 8192,
+				range: [ -1, 1 ]
+			};
 			parsed = true;
 		} else if ( simpleFirstByte === binary( "10000000" ) ) {
 			parsed = true;
