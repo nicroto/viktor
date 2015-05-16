@@ -27,7 +27,10 @@ module.exports = {
 		}
 	},
 	DEFAULT_REVERB_SETTINGS: {
-		level: 0
+		level: {
+			value: 0,
+			range: [ 0, 1 ]
+		}
 	},
 	DEFAULT_MASTER_VOLUME_SETTINGS: {
 		level: 80

@@ -200,11 +200,11 @@ DAW.prototype = {
 			},
 			set: function( settings ) {
 				var self = this,
-					oldSettings = self.settings.reverb || {},
+					oldSettings = self.settings.reverb || { level: {} },
 					reverb = self.reverb;
 
-				if ( oldSettings.level !== settings.level ) {
-					var newGain = settingsConvertor.transposeValue( settings.level, [ 0, 100 ], [ 0, 1 ] );
+				if ( oldSettings.level.value !== settings.level.value ) {
+					var newGain = settings.level.value;
 
 					reverb.wetLevel = newGain;
 					reverb.dryLevel = 1 - ( newGain / 2 );

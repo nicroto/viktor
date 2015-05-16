@@ -1,6 +1,7 @@
 'use strict';
 
-var $ = require( "jquery" );
+var $ = require( "jquery" ),
+	settingsConvertor = require( "settings-convertor" );
 
 module.exports = function( mod ) {
 
@@ -8,15 +9,15 @@ module.exports = function( mod ) {
 		var self = this,
 			settingsChangeHandler = function() {
 				dawEngine.reverbSettings = {
-					level: self.level
+					level: settingsConvertor.transposeParam( self.level, settings.level.range )
 				};
 			},
 			settings = dawEngine.reverbSettings;
 
-		self.level = settings.level;
+		self.level = settingsConvertor.transposeParam( settings.level, [ 0, 100 ] );
 
 		[
-			"reverb.level"
+			"reverb.level.value"
 		].forEach( function( path ) {
 			$scope.$watch( path, settingsChangeHandler );
 		} );
