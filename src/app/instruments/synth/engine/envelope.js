@@ -1,7 +1,5 @@
 'use strict';
 
-var settingsConvertor = require( "settings-convertor" );
-
 var FAKE_ZERO = 0.00001;
 
 function customOrDefault( customValue, defaultValue ) {
@@ -18,63 +16,10 @@ function Envelope( audioContext, propName, upperBound ) {
 
 	self.node = null;
 
-	self._defineProps();
+	self.attack = self.decay = self.sustain = self.release = null;
 }
 
 Envelope.prototype = {
-
-	_defineProps: function() {
-
-		var self = this,
-			attack,
-			decay,
-			sustain,
-			release,
-			doubleTransposeValue = function( value ) {
-				return 2 * settingsConvertor.transposeValue( value, [ 0, 100 ], [ 0, 1 ] );
-			};
-
-		Object.defineProperty( self, "attack", {
-			get: function() {
-				return attack;
-			},
-
-			set: function( value ) {
-				attack = doubleTransposeValue( value );
-			}
-		} );
-
-		Object.defineProperty( self, "decay", {
-			get: function() {
-				return decay;
-			},
-
-			set: function( value ) {
-				decay = doubleTransposeValue( value );
-			}
-		} );
-
-		Object.defineProperty( self, "sustain", {
-			get: function() {
-				return sustain;
-			},
-
-			set: function( value ) {
-				sustain = settingsConvertor.transposeValue( value, [ 0, 100 ], [ 0, 1 ] );
-			}
-		} );
-
-		Object.defineProperty( self, "release", {
-			get: function() {
-				return release;
-			},
-
-			set: function( value ) {
-				release = doubleTransposeValue( value );
-			}
-		} );
-
-	},
 
 	start: function( time ) {
 		var self = this,

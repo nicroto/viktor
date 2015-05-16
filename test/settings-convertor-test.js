@@ -71,6 +71,14 @@ describe( "settings convertor", function() {
 			).should.equal( 0 );
 		} );
 
+		it( "transposes in [ 0.001, 1 ] from [ 0, 100 ]", function() {
+			settingsConvertor.transposeValue(
+				0,
+				[ 0, 100 ],
+				[ 0.001, 1 ]
+			).should.equal( 0.001 );
+		} );
+
 	} );
 
 } );

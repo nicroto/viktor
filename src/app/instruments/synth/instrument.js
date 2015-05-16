@@ -373,6 +373,12 @@ Instrument.prototype = {
 							var newVal = settings[ name ];
 
 							if ( oldSettings[ name ] !== newVal ) {
+								newVal = ( ( name === "sustain" ) ?
+									settingsConvertor.transposeValue( newVal, [ 0, 100 ], [ 0.001, 1 ] )
+									:
+									2 * settingsConvertor.transposeValue( newVal, [ 0, 100 ], [ 0, 1 ] )
+								);
+
 								envelope[ name ] = newVal;
 							}
 						} );
