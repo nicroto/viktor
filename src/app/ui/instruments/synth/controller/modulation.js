@@ -5,7 +5,7 @@ var $ = require( "jquery" ),
 
 module.exports = function( mod ) {
 
-	mod.controller( "ModulationCtrl", [ "$scope", "synth", function( $scope, synth ) {
+	mod.controller( "ModulationCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
 		var self = this,
 			settingsChangeHandler = function() {
 				synth.modulationSettings = {
@@ -13,6 +13,8 @@ module.exports = function( mod ) {
 					portamento: settingsConvertor.transposeParam( self.portamento, settings.portamento.range ),
 					rate: synth.modulationSettings.rate
 				};
+
+				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings = synth.modulationSettings;
 

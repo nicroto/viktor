@@ -5,7 +5,7 @@ var $ = require( "jquery" ),
 
 module.exports = function( mod ) {
 
-	mod.controller( "LFOCtrl", [ "$scope", "synth", function( $scope, synth ) {
+	mod.controller( "LFOCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
 		var self = this,
 			settingsChangeHandler = function() {
 				synth.lfoSettings = {
@@ -13,6 +13,8 @@ module.exports = function( mod ) {
 					rate: self.rate,
 					amount: settingsConvertor.transposeParam( self.amount, settings.amount.range )
 				};
+
+				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings = synth.lfoSettings;
 

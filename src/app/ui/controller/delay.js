@@ -5,7 +5,7 @@ var $ = require( "jquery" ),
 
 module.exports = function( mod ) {
 
-	mod.controller( "DelayCtrl", [ "$scope", "dawEngine", function( $scope, dawEngine ) {
+	mod.controller( "DelayCtrl", [ "$scope", "dawEngine", "patchLibrary", function( $scope, dawEngine, patchLibrary ) {
 		var self = this,
 			settingsChangeHandler = function() {
 				dawEngine.delaySettings = {
@@ -14,6 +14,8 @@ module.exports = function( mod ) {
 					dry		: settingsConvertor.transposeParam( self.dry, settings.dry.range ),
 					wet		: settingsConvertor.transposeParam( self.wet, settings.wet.range )
 				};
+
+				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings = dawEngine.delaySettings;
 

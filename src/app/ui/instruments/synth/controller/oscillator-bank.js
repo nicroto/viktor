@@ -5,7 +5,7 @@ var $ = require( "jquery" ),
 
 module.exports = function( mod ) {
 
-	mod.controller( "OscillatorBankCtrl", [ "$scope", "synth", function( $scope, synth ) {
+	mod.controller( "OscillatorBankCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
 		var self = this,
 			settingsChangeHandler = function() {
 				synth.oscillatorSettings = {
@@ -25,6 +25,8 @@ module.exports = function( mod ) {
 						waveform: self.osc3.waveform
 					}
 				};
+
+				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings = synth.oscillatorSettings;
 

@@ -5,7 +5,7 @@ var $ = require( "jquery" ),
 
 module.exports = function( mod ) {
 
-	mod.controller( "NoiseCtrl", [ "$scope", "synth", function( $scope, synth ) {
+	mod.controller( "NoiseCtrl", [ "$scope", "$timeout", "dawEngine", "synth", "patchLibrary", function( $scope, $timeout, dawEngine, synth, patchLibrary ) {
 		var self = this,
 			settingsChangeHandler = function() {
 				synth.noiseSettings = {
@@ -13,6 +13,8 @@ module.exports = function( mod ) {
 					level: settingsConvertor.transposeParam( self.level, settings.level.range ),
 					type: self.type
 				};
+
+				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings = synth.noiseSettings;
 
@@ -29,7 +31,10 @@ module.exports = function( mod ) {
 		} );
 
 		// fix problem with bad init state
-		$( ".noise webaudio-switch" )[ 0 ].setValue( self.enabled.value );
+		$timeout( function() {
+			$( ".noise webaudio-switch" )[ 0 ].setValue( self.enabled.value );
+			$( ".noise webaudio-slider" )[ 0 ].setValue( self.type.value );
+		}, 300 );
 
 		// fix the lack of attr 'value' update
 		$( ".noise webaudio-switch" )

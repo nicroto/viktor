@@ -72,7 +72,7 @@ function Instrument( audioContext ) {
 	self.settings = {
 
 		modulation: null,
-		oscillators: null,
+		oscillator: null,
 		mixer: null,
 		noise: null,
 		envelopes: null,
@@ -95,6 +95,22 @@ function Instrument( audioContext ) {
 }
 
 Instrument.prototype = {
+
+	name: "synth",
+
+	loadPatch: function( patch ) {
+		var self = this;
+
+		Object.keys( patch ).forEach( function( key ) {
+			self[ key + "Settings" ] = patch[ key ];
+		} );
+	},
+
+	getPatch: function() {
+		var self = this;
+
+		return self.settings;
+	},
 
 	onMidiMessage: function( eventType, parsed, rawEvent ) {
 		var self = this;
@@ -242,11 +258,11 @@ Instrument.prototype = {
 
 			get: function() {
 				// if slow - use npm clone
-				return JSON.parse( JSON.stringify( self.settings.oscillators ) );
+				return JSON.parse( JSON.stringify( self.settings.oscillator ) );
 			},
 
 			set: function( settings ) {
-				var oldSettings = self.settings.oscillators,
+				var oldSettings = self.settings.oscillator,
 					oscillatorBank = self.oscillatorBank,
 					waveformSource = self.waveformSource;
 
@@ -274,7 +290,7 @@ Instrument.prototype = {
 
 				} );
 
-				self.settings.oscillators = JSON.parse( JSON.stringify( settings ) );
+				self.settings.oscillator = JSON.parse( JSON.stringify( settings ) );
 			}
 
 		} );

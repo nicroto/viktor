@@ -5,12 +5,14 @@ var $ = require( "jquery" ),
 
 module.exports = function( mod ) {
 
-	mod.controller( "MasterVolumeCtrl", [ "$scope", "dawEngine", function( $scope, dawEngine ) {
+	mod.controller( "MasterVolumeCtrl", [ "$scope", "dawEngine", "patchLibrary", function( $scope, dawEngine, patchLibrary ) {
 		var self = this,
 			settingsChangeHandler = function() {
 				dawEngine.masterVolumeSettings = {
 					level: settingsConvertor.transposeParam( self.level, settings.level.range )
 				};
+
+				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings = dawEngine.masterVolumeSettings;
 

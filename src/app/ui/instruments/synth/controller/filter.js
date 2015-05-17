@@ -5,7 +5,7 @@ var $ = require( "jquery" ),
 
 module.exports = function( mod ) {
 
-	mod.controller( "FilterCtrl", [ "$scope", "synth", function( $scope, synth ) {
+	mod.controller( "FilterCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
 		var self = this,
 			settingsChangeHandler = function() {
 				synth.filterSettings = {
@@ -13,6 +13,8 @@ module.exports = function( mod ) {
 					emphasis: settingsConvertor.transposeParam( self.emphasis, settings.emphasis.range ),
 					envAmount: settingsConvertor.transposeParam( self.envAmount, settings.envAmount.range )
 				};
+
+				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings = synth.filterSettings;
 

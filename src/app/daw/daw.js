@@ -4,7 +4,7 @@ var CONST = require( "./engine/const" ),
 	MIDIController = require( "./engine/midi" ),
 	Tuna = require( "tuna" );
 
-function DAW( AudioContext, instrumentTypes ) {
+function DAW( AudioContext, instrumentTypes, selectedPatch ) {
 	var self = this,
 		audioContext = new AudioContext(),
 		tuna = new Tuna( audioContext ),
@@ -19,6 +19,7 @@ function DAW( AudioContext, instrumentTypes ) {
 	masterVolume.connect( audioContext.destination );
 
 	self.audioContext = audioContext;
+	self.selectedPatch = selectedPatch;
 	self.instrumentTypes = instrumentTypes;
 	self.midiController = new MIDIController();
 	self.delay = delay;
@@ -66,12 +67,47 @@ DAW.prototype = {
 			self.pitchSettings = CONST.DEFAULT_PITCH_SETTINGS;
 			self.modulationSettings = CONST.DEFAULT_MODULATION_SETTINGS;
 
+			self.loadPatch( self.selectedPatch );
+
 			if ( callback ) {
 				callback();
 			}
 		} );
 
 		self.audioContext = audioContext;
+	},
+
+	loadPatch: function( patch ) {
+		var self = this,
+			instruments = self.instruments;
+
+		if ( patch ) {
+			// first apply instrument patches (pitch, modulation etc. should override)
+			instruments.forEach( function( instrument ) {
+				var instrumentPatch = patch.instruments[ instrument.name ];
+				if ( instrumentPatch ) {
+					instrument.loadPatch( instrumentPatch );
+				}
+			} );
+
+			Object.keys( patch.daw ).forEach( function( key ) {
+				self[ key + "Settings" ] = patch.daw[ key ];
+			} );
+		}
+	},
+
+	getPatch: function() {
+		var self = this,
+			instrumentPatches = {};
+
+		self.instruments.forEach( function( instrument ) {
+			instrumentPatches[ instrument.name ] = instrument.getPatch();
+		} );
+
+		return JSON.parse( JSON.stringify( {
+			daw: self.settings,
+			instruments: instrumentPatches
+		} ) );
 	},
 
 	selectInstrument: function( index ) {

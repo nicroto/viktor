@@ -5,7 +5,7 @@ var $ = require( "jquery" ),
 
 module.exports = function( mod ) {
 
-	mod.controller( "MixerCtrl", [ "$scope", "synth", function( $scope, synth ) {
+	mod.controller( "MixerCtrl", [ "$scope", "$timeout", "dawEngine", "synth", "patchLibrary", function( $scope, $timeout, dawEngine, synth, patchLibrary ) {
 		var self = this,
 			settingsChangeHandler = function() {
 				synth.mixerSettings = {
@@ -22,6 +22,8 @@ module.exports = function( mod ) {
 						level: settingsConvertor.transposeParam( self.volume3.level, settings.volume3.level.range )
 					}
 				};
+
+				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings = synth.mixerSettings;
 
@@ -50,9 +52,11 @@ module.exports = function( mod ) {
 		} );
 
 		// fix problem with bad init state
-		$( ".mixer .oscillator-switch webaudio-switch" ).each( function( index, element ) {
-			element.setValue( self[ "volume" + ( index + 1 ) ].enabled.value );
-		} );
+		$timeout( function() {
+			$( ".mixer .oscillator-switch webaudio-switch" ).each( function( index, element ) {
+				element.setValue( self[ "volume" + ( index + 1 ) ].enabled.value );
+			} );
+		}, 300 );
 
 		// fix the lack of attr 'value' update
 		$( ".mixer webaudio-switch" )

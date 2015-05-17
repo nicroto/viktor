@@ -5,7 +5,7 @@ var $ = require( "jquery" ),
 
 module.exports = function( mod ) {
 
-	mod.controller( "EnvelopesCtrl", [ "$scope", "synth", function( $scope, synth ) {
+	mod.controller( "EnvelopesCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
 		var self = this,
 			settingsChangeHandler = function() {
 				synth.envelopesSettings = {
@@ -22,6 +22,8 @@ module.exports = function( mod ) {
 						release: settingsConvertor.transposeParam( self.filter.release, filter.release.range )
 					}
 				};
+
+				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings = synth.envelopesSettings,
 			primary = settings.primary,
