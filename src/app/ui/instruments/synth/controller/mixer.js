@@ -50,7 +50,9 @@ module.exports = function( mod ) {
 		} );
 
 		// fix problem with bad init state
-		$( ".mixer .oscillator-switch webaudio-switch" )[ 0 ].setValue( self.volume1.enabled.value );
+		$( ".mixer .oscillator-switch webaudio-switch" ).each( function( index, element ) {
+			element.setValue( self[ "volume" + ( index + 1 ) ].enabled.value );
+		} );
 
 		// fix the lack of attr 'value' update
 		$( ".mixer webaudio-switch" )
