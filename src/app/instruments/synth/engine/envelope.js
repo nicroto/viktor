@@ -4,7 +4,7 @@ var FAKE_ZERO = 0.00001;
 
 function customOrDefault( customValue, defaultValue ) {
 	return customValue !== undefined ? customValue : defaultValue;
-};
+}
 
 
 function Envelope( audioContext, propName, upperBound ) {

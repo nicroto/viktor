@@ -57,7 +57,6 @@ LFO.prototype = {
 		Object.defineProperty( self, "waveform", {
 			set: function( value ) {
 				var self = this,
-					audioContext = self.audioContext,
 					oscillator = self.oscillator,
 					defaultForm = value.defaultForm,
 					waveTable = value.customFormFFT;

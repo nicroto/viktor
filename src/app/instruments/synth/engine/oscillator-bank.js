@@ -1,3 +1,5 @@
+/* jshint -W083 */
+
 'use strict';
 
 var DEFAULT_OSCILLATOR_COUNT = 3,
@@ -56,7 +58,6 @@ OscillatorBank.prototype = {
 	_defineProps: function() {
 
 		var self = this,
-			audioContext = self.audioContext,
 			oscillators = self.oscillators,
 			volumes = self.volumes,
 			note;
