@@ -29,34 +29,57 @@ module.exports = function( mod ) {
 
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
-			settings = synth.envelopesSettings,
-			primary = settings.primary,
-			filter = settings.filter;
+			settings,
+			primary,
+			filter,
+			pollSettings = function() {
+				settings = synth.envelopesSettings;
+				primary = settings.primary;
+				filter = settings.filter;
 
-		self.primary = {
-			attack: settingsConvertor.transposeParam( primary.attack, [ 0, 100 ] ),
-			decay: settingsConvertor.transposeParam( primary.decay, [ 0, 100 ] ),
-			sustain: settingsConvertor.transposeParam( primary.sustain, [ 0, 100 ] ),
-			release: settingsConvertor.transposeParam( primary.release, [ 0, 100 ] )
-		};
-		self.filter = {
-			attack: settingsConvertor.transposeParam( filter.attack, [ 0, 100 ] ),
-			decay: settingsConvertor.transposeParam( filter.decay, [ 0, 100 ] ),
-			sustain: settingsConvertor.transposeParam( filter.sustain, [ 0, 100 ] ),
-			release: settingsConvertor.transposeParam( filter.release, [ 0, 100 ] )
-		};
+				self.primary = {
+					attack: settingsConvertor.transposeParam( primary.attack, [ 0, 100 ] ),
+					decay: settingsConvertor.transposeParam( primary.decay, [ 0, 100 ] ),
+					sustain: settingsConvertor.transposeParam( primary.sustain, [ 0, 100 ] ),
+					release: settingsConvertor.transposeParam( primary.release, [ 0, 100 ] )
+				};
+				self.filter = {
+					attack: settingsConvertor.transposeParam( filter.attack, [ 0, 100 ] ),
+					decay: settingsConvertor.transposeParam( filter.decay, [ 0, 100 ] ),
+					sustain: settingsConvertor.transposeParam( filter.sustain, [ 0, 100 ] ),
+					release: settingsConvertor.transposeParam( filter.release, [ 0, 100 ] )
+				};
+			},
+			watchers = [],
+			registerForChanges = function() {
+				[
+					"envs.primary.attack.value",
+					"envs.primary.decay.value",
+					"envs.primary.sustain.value",
+					"envs.primary.release.value",
+					"envs.filter.attack.value",
+					"envs.filter.decay.value",
+					"envs.filter.sustain.value",
+					"envs.filter.release.value"
+				].forEach( function( path ) {
+					watchers.push( $scope.$watch( path, settingsChangeHandler ) );
+				} );
+			},
+			unregisterFromChanges = function() {
+				watchers.forEach( function( unregister ) {
+					unregister();
+				} );
+				watchers = [];
+			};
 
-		[
-			"envs.primary.attack.value",
-			"envs.primary.decay.value",
-			"envs.primary.sustain.value",
-			"envs.primary.release.value",
-			"envs.filter.attack.value",
-			"envs.filter.decay.value",
-			"envs.filter.sustain.value",
-			"envs.filter.release.value"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
+		pollSettings();
+
+		registerForChanges();
+
+		dawEngine.onPatchChange( function() {
+			unregisterFromChanges();
+			pollSettings();
+			registerForChanges();
 		} );
 
 		// fix the lack of attr 'value' update

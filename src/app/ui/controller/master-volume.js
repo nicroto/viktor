@@ -18,14 +18,34 @@ module.exports = function( mod ) {
 
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
-			settings = dawEngine.masterVolumeSettings;
+			settings,
+			pollSettings = function() {
+				settings = dawEngine.masterVolumeSettings;
+				self.level = settingsConvertor.transposeParam( settings.level, [ 0, 100 ] );
+			},
+			watchers = [],
+			registerForChanges = function() {
+				[
+					"masterVolume.level.value"
+				].forEach( function( path ) {
+					watchers.push( $scope.$watch( path, settingsChangeHandler ) );
+				} );
+			},
+			unregisterFromChanges = function() {
+				watchers.forEach( function( unregister ) {
+					unregister();
+				} );
+				watchers = [];
+			};
 
-		self.level = settingsConvertor.transposeParam( settings.level, [ 0, 100 ] );
+		pollSettings();
 
-		[
-			"masterVolume.level.value"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
+		registerForChanges();
+
+		dawEngine.onPatchChange( function() {
+			unregisterFromChanges();
+			pollSettings();
+			registerForChanges();
 		} );
 
 		// fix the lack of attr 'value' update

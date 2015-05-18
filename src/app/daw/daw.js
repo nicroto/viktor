@@ -35,6 +35,7 @@ function DAW( AudioContext, instrumentTypes, selectedPatch ) {
 		reverb: null,
 		masterVolume: null
 	};
+	self._patchChangeHandlers = [];
 
 	self._defineProps();
 
@@ -51,7 +52,8 @@ DAW.prototype = {
 		var self = this,
 			audioContext = self.audioContext,
 			midiController = self.midiController,
-			instruments = self.instruments;
+			instruments = self.instruments,
+			quietPatchChange = true;
 
 		midiController.init( function() {
 			midiController.setMessageHandler(
@@ -67,7 +69,7 @@ DAW.prototype = {
 			self.pitchSettings = CONST.DEFAULT_PITCH_SETTINGS;
 			self.modulationSettings = CONST.DEFAULT_MODULATION_SETTINGS;
 
-			self.loadPatch( self.selectedPatch );
+			self.loadPatch( self.selectedPatch, quietPatchChange );
 
 			if ( callback ) {
 				callback();
@@ -77,7 +79,7 @@ DAW.prototype = {
 		self.audioContext = audioContext;
 	},
 
-	loadPatch: function( patch ) {
+	loadPatch: function( patch, quiet ) {
 		var self = this,
 			instruments = self.instruments;
 
@@ -93,6 +95,12 @@ DAW.prototype = {
 			Object.keys( patch.daw ).forEach( function( key ) {
 				self[ key + "Settings" ] = patch.daw[ key ];
 			} );
+
+			if ( !quiet ) {
+				self._patchChangeHandlers.forEach( function( handler ) {
+					handler( patch );
+				} );
+			}
 		}
 	},
 
@@ -108,6 +116,12 @@ DAW.prototype = {
 			daw: self.settings,
 			instruments: instrumentPatches
 		} ) );
+	},
+
+	onPatchChange: function( handler ) {
+		var self = this;
+
+		self._patchChangeHandlers.push( handler );
 	},
 
 	selectInstrument: function( index ) {

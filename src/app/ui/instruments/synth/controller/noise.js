@@ -20,25 +20,46 @@ module.exports = function( mod ) {
 
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
-			settings = synth.noiseSettings;
+			settings,
+			pollSettings = function() {
+				settings = synth.noiseSettings;
 
-		self.enabled = settings.enabled;
-		self.level = settingsConvertor.transposeParam( settings.level, [ 0, 100 ] );
-		self.type = settings.type;
+				self.enabled = settings.enabled;
+				self.level = settingsConvertor.transposeParam( settings.level, [ 0, 100 ] );
+				self.type = settings.type;
 
-		[
-			"noise.enabled.value",
-			"noise.level.value",
-			"noise.type.value"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
+				// fix problem with bad init state
+				$timeout( function() {
+					$( ".noise webaudio-switch" )[ 0 ].setValue( self.enabled.value );
+					$( ".noise webaudio-slider" )[ 0 ].setValue( self.type.value );
+				}, 300 );
+			},
+			watchers = [],
+			registerForChanges = function() {
+				[
+					"noise.enabled.value",
+					"noise.level.value",
+					"noise.type.value"
+				].forEach( function( path ) {
+					watchers.push( $scope.$watch( path, settingsChangeHandler ) );
+				} );
+			},
+			unregisterFromChanges = function() {
+				watchers.forEach( function( unregister ) {
+					unregister();
+				} );
+				watchers = [];
+			};
+
+		pollSettings();
+
+		registerForChanges();
+
+		dawEngine.onPatchChange( function() {
+			unregisterFromChanges();
+			pollSettings();
+			registerForChanges();
 		} );
-
-		// fix problem with bad init state
-		$timeout( function() {
-			$( ".noise webaudio-switch" )[ 0 ].setValue( self.enabled.value );
-			$( ".noise webaudio-slider" )[ 0 ].setValue( self.type.value );
-		}, 300 );
 
 		// fix the lack of attr 'value' update
 		$( ".noise webaudio-switch" )

@@ -15,7 +15,7 @@ var angular = require( "angular" ),
 		[
 			require( "./instruments/synth/instrument" )
 		],
-		patchLibrary.getSelected()
+		patchLibrary.getSelected().patch
 	);
 
 // !!! DEFFERS THE BOOTSTRAP !!!

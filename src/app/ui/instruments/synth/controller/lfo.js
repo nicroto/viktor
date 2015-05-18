@@ -20,18 +20,39 @@ module.exports = function( mod ) {
 
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
-			settings = synth.lfoSettings;
+			settings,
+			pollSettings = function() {
+				settings = synth.lfoSettings;
 
-		self.waveform = settings.waveform;
-		self.rate = settings.rate;
-		self.amount = settingsConvertor.transposeParam( settings.amount, [ 0, 100 ] );
+				self.waveform = settings.waveform;
+				self.rate = settings.rate;
+				self.amount = settingsConvertor.transposeParam( settings.amount, [ 0, 100 ] );
+			},
+			watchers = [],
+			registerForChanges = function() {
+				[
+					"lfo.waveform.value",
+					"lfo.rate.value",
+					"lfo.amount.value"
+				].forEach( function( path ) {
+					watchers.push( $scope.$watch( path, settingsChangeHandler ) );
+				} );
+			},
+			unregisterFromChanges = function() {
+				watchers.forEach( function( unregister ) {
+					unregister();
+				} );
+				watchers = [];
+			};
 
-		[
-			"lfo.waveform.value",
-			"lfo.rate.value",
-			"lfo.amount.value"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
+		pollSettings();
+
+		registerForChanges();
+
+		dawEngine.onPatchChange( function() {
+			unregisterFromChanges();
+			pollSettings();
+			registerForChanges();
 		} );
 
 		// fix the lack of attr 'value' update

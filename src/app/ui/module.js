@@ -4,6 +4,7 @@ var angular = require( "angular" ),
 	template = require( "./template/daw.html" ),
 	mod = angular.module( "dawModule", [
 		template.name,
+		require( "./patch-library/module" ).name,
 		require( "./instruments/synth/module" ).name,
 		require( "./template/master-controls.html" ).name,
 		require( "./template/delay.html" ).name,

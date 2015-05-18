@@ -20,18 +20,39 @@ module.exports = function( mod ) {
 
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
-			settings = synth.filterSettings;
+			settings,
+			pollSettings = function() {
+				settings = synth.filterSettings;
 
-		self.cutoff = settingsConvertor.transposeParam( settings.cutoff, [ 0, 500 ] );
-		self.emphasis = settingsConvertor.transposeParam( settings.emphasis, [ 1, 100 ] );
-		self.envAmount = settingsConvertor.transposeParam( settings.envAmount, [ 0, 100 ] );
+				self.cutoff = settingsConvertor.transposeParam( settings.cutoff, [ 0, 500 ] );
+				self.emphasis = settingsConvertor.transposeParam( settings.emphasis, [ 1, 100 ] );
+				self.envAmount = settingsConvertor.transposeParam( settings.envAmount, [ 0, 100 ] );
+			},
+			watchers = [],
+			registerForChanges = function() {
+				[
+					"filter.cutoff.value",
+					"filter.emphasis.value",
+					"filter.envAmount.value"
+				].forEach( function( path ) {
+					watchers.push( $scope.$watch( path, settingsChangeHandler ) );
+				} );
+			},
+			unregisterFromChanges = function() {
+				watchers.forEach( function( unregister ) {
+					unregister();
+				} );
+				watchers = [];
+			};
 
-		[
-			"filter.cutoff.value",
-			"filter.emphasis.value",
-			"filter.envAmount.value"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
+		pollSettings();
+
+		registerForChanges();
+
+		dawEngine.onPatchChange( function() {
+			unregisterFromChanges();
+			pollSettings();
+			registerForChanges();
 		} );
 
 		// fix the lack of attr 'value' update

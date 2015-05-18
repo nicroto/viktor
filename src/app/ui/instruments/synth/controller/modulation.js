@@ -20,16 +20,37 @@ module.exports = function( mod ) {
 
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
-			settings = synth.modulationSettings;
+			settings,
+			pollSettings = function() {
+				settings = synth.modulationSettings;
 
-		self.waveform = settings.waveform;
-		self.portamento = settingsConvertor.transposeParam( settings.portamento, [ 0, 100 ] );
+				self.waveform = settings.waveform;
+				self.portamento = settingsConvertor.transposeParam( settings.portamento, [ 0, 100 ] );
+			},
+			watchers = [],
+			registerForChanges = function() {
+				[
+					"modulation.waveform.value",
+					"modulation.portamento.value"
+				].forEach( function( path ) {
+					watchers.push( $scope.$watch( path, settingsChangeHandler ) );
+				} );
+			},
+			unregisterFromChanges = function() {
+				watchers.forEach( function( unregister ) {
+					unregister();
+				} );
+				watchers = [];
+			};
 
-		[
-			"modulation.waveform.value",
-			"modulation.portamento.value"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
+		pollSettings();
+
+		registerForChanges();
+
+		dawEngine.onPatchChange( function() {
+			unregisterFromChanges();
+			pollSettings();
+			registerForChanges();
 		} );
 
 		// fix the lack of attr 'value' update

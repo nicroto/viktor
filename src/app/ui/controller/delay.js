@@ -21,20 +21,41 @@ module.exports = function( mod ) {
 
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
-			settings = dawEngine.delaySettings;
+			settings,
+			pollSettings = function() {
+				settings = dawEngine.delaySettings;
 
-		self.time = settingsConvertor.transposeParam( settings.time, [ 0, 100 ] );
-		self.feedback = settingsConvertor.transposeParam( settings.feedback, [ 0, 100 ] );
-		self.dry = settingsConvertor.transposeParam( settings.dry, [ 0, 100 ] );
-		self.wet = settingsConvertor.transposeParam( settings.wet, [ 0, 100 ] );
+				self.time = settingsConvertor.transposeParam( settings.time, [ 0, 100 ] );
+				self.feedback = settingsConvertor.transposeParam( settings.feedback, [ 0, 100 ] );
+				self.dry = settingsConvertor.transposeParam( settings.dry, [ 0, 100 ] );
+				self.wet = settingsConvertor.transposeParam( settings.wet, [ 0, 100 ] );
+			},
+			watchers = [],
+			registerForChanges = function() {
+				[
+					"delay.time.value",
+					"delay.feedback.value",
+					"delay.dry.value",
+					"delay.wet.value"
+				].forEach( function( path ) {
+					watchers.push( $scope.$watch( path, settingsChangeHandler ) );
+				} );
+			},
+			unregisterFromChanges = function() {
+				watchers.forEach( function( unregister ) {
+					unregister();
+				} );
+				watchers = [];
+			};
 
-		[
-			"delay.time.value",
-			"delay.feedback.value",
-			"delay.dry.value",
-			"delay.wet.value"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
+		pollSettings();
+
+		registerForChanges();
+
+		dawEngine.onPatchChange( function() {
+			unregisterFromChanges();
+			pollSettings();
+			registerForChanges();
 		} );
 
 		// fix the lack of attr 'value' update
