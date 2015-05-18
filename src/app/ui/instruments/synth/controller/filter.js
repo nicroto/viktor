@@ -7,7 +7,11 @@ module.exports = function( mod ) {
 
 	mod.controller( "FilterCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
 		var self = this,
-			settingsChangeHandler = function() {
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
 				synth.filterSettings = {
 					cutoff: settingsConvertor.transposeParam( self.cutoff, settings.cutoff.range ),
 					emphasis: settingsConvertor.transposeParam( self.emphasis, settings.emphasis.range ),

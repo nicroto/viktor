@@ -7,7 +7,11 @@ module.exports = function( mod ) {
 
 	mod.controller( "MixerCtrl", [ "$scope", "$timeout", "dawEngine", "synth", "patchLibrary", function( $scope, $timeout, dawEngine, synth, patchLibrary ) {
 		var self = this,
-			settingsChangeHandler = function() {
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
 				synth.mixerSettings = {
 					volume1: {
 						enabled: self.volume1.enabled,

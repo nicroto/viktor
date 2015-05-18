@@ -7,7 +7,11 @@ module.exports = function( mod ) {
 
 	mod.controller( "NoiseCtrl", [ "$scope", "$timeout", "dawEngine", "synth", "patchLibrary", function( $scope, $timeout, dawEngine, synth, patchLibrary ) {
 		var self = this,
-			settingsChangeHandler = function() {
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
 				synth.noiseSettings = {
 					enabled: self.enabled,
 					level: settingsConvertor.transposeParam( self.level, settings.level.range ),

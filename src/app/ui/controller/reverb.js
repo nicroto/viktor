@@ -7,7 +7,11 @@ module.exports = function( mod ) {
 
 	mod.controller( "ReverbCtrl", [ "$scope", "dawEngine", "patchLibrary", function( $scope, dawEngine, patchLibrary ) {
 		var self = this,
-			settingsChangeHandler = function() {
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
 				dawEngine.reverbSettings = {
 					level: settingsConvertor.transposeParam( self.level, settings.level.range )
 				};

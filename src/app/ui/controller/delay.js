@@ -7,7 +7,11 @@ module.exports = function( mod ) {
 
 	mod.controller( "DelayCtrl", [ "$scope", "dawEngine", "patchLibrary", function( $scope, dawEngine, patchLibrary ) {
 		var self = this,
-			settingsChangeHandler = function() {
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
 				dawEngine.delaySettings = {
 					time	: settingsConvertor.transposeParam( self.time, settings.time.range ),
 					feedback: settingsConvertor.transposeParam( self.feedback, settings.feedback.range ),

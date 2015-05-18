@@ -7,7 +7,11 @@ module.exports = function( mod ) {
 
 	mod.controller( "LFOCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
 		var self = this,
-			settingsChangeHandler = function() {
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
 				synth.lfoSettings = {
 					waveform: self.waveform,
 					rate: self.rate,

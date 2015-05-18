@@ -7,7 +7,11 @@ module.exports = function( mod ) {
 
 	mod.controller( "ModulationCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
 		var self = this,
-			settingsChangeHandler = function() {
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
 				synth.modulationSettings = {
 					waveform: self.waveform,
 					portamento: settingsConvertor.transposeParam( self.portamento, settings.portamento.range ),

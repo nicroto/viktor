@@ -7,7 +7,11 @@ module.exports = function( mod ) {
 
 	mod.controller( "MasterVolumeCtrl", [ "$scope", "dawEngine", "patchLibrary", function( $scope, dawEngine, patchLibrary ) {
 		var self = this,
-			settingsChangeHandler = function() {
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
 				dawEngine.masterVolumeSettings = {
 					level: settingsConvertor.transposeParam( self.level, settings.level.range )
 				};

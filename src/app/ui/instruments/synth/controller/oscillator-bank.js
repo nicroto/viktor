@@ -7,7 +7,11 @@ module.exports = function( mod ) {
 
 	mod.controller( "OscillatorBankCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
 		var self = this,
-			settingsChangeHandler = function() {
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
 				synth.oscillatorSettings = {
 					osc1: {
 						range: settingsConvertor.transposeParam( self.osc1.range, settings.osc1.range.range ),

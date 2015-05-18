@@ -7,7 +7,11 @@ module.exports = function( mod ) {
 
 	mod.controller( "EnvelopesCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
 		var self = this,
-			settingsChangeHandler = function() {
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
 				synth.envelopesSettings = {
 					primary: {
 						attack: settingsConvertor.transposeParam( self.primary.attack, primary.attack.range ),
