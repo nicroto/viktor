@@ -37565,7 +37565,7 @@ var angular = require( "angular" ),
 		[
 			require( "./instruments/synth/instrument" )
 		],
-		patchLibrary.getSelected()
+		patchLibrary.getSelected().patch
 	);
 
 // !!! DEFFERS THE BOOTSTRAP !!!
@@ -37630,6 +37630,7 @@ function DAW( AudioContext, instrumentTypes, selectedPatch ) {
 		reverb: null,
 		masterVolume: null
 	};
+	self._patchChangeHandlers = [];
 
 	self._defineProps();
 
@@ -37646,7 +37647,8 @@ DAW.prototype = {
 		var self = this,
 			audioContext = self.audioContext,
 			midiController = self.midiController,
-			instruments = self.instruments;
+			instruments = self.instruments,
+			quietPatchChange = true;
 
 		midiController.init( function() {
 			midiController.setMessageHandler(
@@ -37662,7 +37664,7 @@ DAW.prototype = {
 			self.pitchSettings = CONST.DEFAULT_PITCH_SETTINGS;
 			self.modulationSettings = CONST.DEFAULT_MODULATION_SETTINGS;
 
-			self.loadPatch( self.selectedPatch );
+			self.loadPatch( self.selectedPatch, quietPatchChange );
 
 			if ( callback ) {
 				callback();
@@ -37672,7 +37674,7 @@ DAW.prototype = {
 		self.audioContext = audioContext;
 	},
 
-	loadPatch: function( patch ) {
+	loadPatch: function( patch, quiet ) {
 		var self = this,
 			instruments = self.instruments;
 
@@ -37688,6 +37690,12 @@ DAW.prototype = {
 			Object.keys( patch.daw ).forEach( function( key ) {
 				self[ key + "Settings" ] = patch.daw[ key ];
 			} );
+
+			if ( !quiet ) {
+				self._patchChangeHandlers.forEach( function( handler ) {
+					handler( patch );
+				} );
+			}
 		}
 	},
 
@@ -37703,6 +37711,12 @@ DAW.prototype = {
 			daw: self.settings,
 			instruments: instrumentPatches
 		} ) );
+	},
+
+	onPatchChange: function( handler ) {
+		var self = this;
+
+		self._patchChangeHandlers.push( handler );
 	},
 
 	selectInstrument: function( index ) {
@@ -39621,11 +39635,240 @@ module.exports = {
 				}
 			}
 		}
+	},
+
+	"Not so Clean Sine": {
+		daw: {
+			pitch: {
+				bend: {
+					value: 0,
+					range: [ -200, 200 ]
+				}
+			},
+			modulation: {
+				rate: {
+					value: 0,
+					range: [ 0, 15 ]
+				}
+			},
+			delay: {
+				time: {
+					value: 150,
+					range: [ 0, 1000 ]
+				},
+				feedback: {
+					value: 0.3,
+					range: [ 0, 0.9 ]
+				},
+				dry: {
+					value: 1,
+					range: [ 0, 1 ]
+				},
+				wet: {
+					value: 0,
+					range: [ 0, 1 ]
+				}
+			},
+			reverb: {
+				level: {
+					value: 0,
+					range: [ 0, 1 ]
+				}
+			},
+			masterVolume: {
+				level: {
+					value: 0.8,
+					range: [ 0, 1 ]
+				}
+			}
+		},
+		instruments: {
+			"synth": {
+				pitch: {
+					bend: {
+						value: 0,
+						range: [ -200, 200 ]
+					}
+				},
+				modulation: {
+					waveform: {
+						value: 0,
+						range: [ 0, 5 ]
+					},
+					portamento: {
+						value: 5 / 100 / 6,
+						range: [ 0, 1/6 ]
+					},
+					rate: {
+						value: 0,
+						range: [ 0, 15 ]
+					}
+				},
+				oscillator: {
+					osc1: {
+						range: {
+							value: 0,
+							range: [ -4, 2 ]
+						},
+						fineDetune: {
+							value: 0,
+							range: [ -8, 8 ]
+						},
+						waveform: {
+							value: 0,
+							range: [ 0, 5 ]
+						}
+					},
+					osc2: {
+						range: {
+							value: 0,
+							range: [ -4, 2 ]
+						},
+						fineDetune: {
+							value: -7,
+							range: [ -8, 8 ]
+						},
+						waveform: {
+							value: 0,
+							range: [ 0, 5 ]
+						}
+					},
+					osc3: {
+						range: {
+							value: -1,
+							range: [ -4, 2 ]
+						},
+						fineDetune: {
+							value: 0,
+							range: [ -8, 8 ]
+						},
+						waveform: {
+							value: 0,
+							range: [ 0, 5 ]
+						}
+					}
+				},
+				mixer: {
+					volume1: {
+						enabled: {
+							value: 1,
+							range: [ 0, 1 ]
+						},
+						level: {
+							value: 0.6,
+							range: [ 0, 1 ]
+						}
+					},
+					volume2: {
+						enabled: {
+							value: 1,
+							range: [ 0, 1 ]
+						},
+						level: {
+							value: 0.6,
+							range: [ 0, 1 ]
+						}
+					},
+					volume3: {
+						enabled: {
+							value: 0,
+							range: [ 0, 1 ]
+						},
+						level: {
+							value: 0.6,
+							range: [ 0, 1 ]
+						}
+					}
+				},
+				noise: {
+					enabled: {
+						value: 0,
+						range: [ 0, 1 ]
+					},
+					type: {
+						value: 0,
+						range: [ 0, 2 ]
+					},
+					level: {
+						value: 0.2,
+						range: [ 0, 1 ]
+					}
+				},
+				envelopes: {
+					primary: {
+						attack: {
+							value: 0.5,
+							range: [ 0, 2 ]
+						},
+						decay: {
+							value: 0.5,
+							range: [ 0.002, 2 ]
+						},
+						sustain: {
+							value: 0.5,
+							range: [ 0, 1 ]
+						},
+						release: {
+							value: 0.1,
+							range: [ 0, 2 ]
+						}
+					},
+					filter: {
+						attack: {
+							value: 0.5,
+							range: [ 0, 2 ]
+						},
+						decay: {
+							value: 0.5,
+							range: [ 0, 2 ]
+						},
+						sustain: {
+							value: 0.5,
+							range: [ 0.001, 1 ]
+						},
+						release: {
+							value: 0.1,
+							range: [ 0, 2 ]
+						}
+					}
+				},
+				filter: {
+					cutoff: {
+						value: 4000,
+						range: [ 0, 8000 ]
+					},
+					emphasis: {
+						value: 2,
+						range: [ 0.4, 40 ]
+					},
+					envAmount: {
+						value: 0,
+						range: [ 0, 1 ]
+					}
+				},
+				lfo: {
+					waveform: {
+						value: 0,
+						range: [ 0, 5 ]
+					},
+					rate: {
+						value: 3,
+						range: [ 1, 25 ]
+					},
+					amount: {
+						value: 0,
+						range: [ 0, 1 ]
+					}
+				}
+			}
+		}
 	}
 
 };
 },{}],22:[function(require,module,exports){
 'use strict';
+
+var UNSAVED_NAME = "Custom Unsaved";
 
 function Library( name, defaultPatches, store ) {
 	var self = this;
@@ -39633,17 +39876,19 @@ function Library( name, defaultPatches, store ) {
 	self.store = store;
 
 	self.SELECTED = name + "_selected";
-	self.PERSONAL = name + "_personal";
+	self.CUSTOM = name + "_custom";
 	self.UNSAVED = name + "_unsaved";
 
-	var personalPatches = store.get( self.PERSONAL ),
+	var customPatches = store.get( self.CUSTOM ),
 		unsavedPatch = store.get( self.UNSAVED ),
 		selectedName = store.get( self.SELECTED );
 
 	self.defaultPatches = defaultPatches || {};
-	self.personalPatches = personalPatches ? JSON.parse( personalPatches ) : {};
+	self.customPatches = customPatches ? JSON.parse( customPatches ) : {};
 	self.unsavedPatch = unsavedPatch ? JSON.parse( unsavedPatch) : null;
 	self.selectedName = selectedName;
+
+	self._selectionChangeHandlers = [];
 }
 
 Library.prototype = {
@@ -39651,23 +39896,40 @@ Library.prototype = {
 	getSelected: function() {
 		var self = this,
 			defaultPatches = self.defaultPatches,
-			personalPatches = self.personalPatches,
+			customPatches = self.customPatches,
 			unsavedPatch = self.unsavedPatch,
 			selectedName = self.selectedName,
 			result = null;
 
 		if ( unsavedPatch ) {
-			result = unsavedPatch;
+			result = {
+				name: UNSAVED_NAME,
+				patch: unsavedPatch
+			};
 		} else if ( selectedName ) {
-			result = defaultPatches[ selectedName ] || personalPatches[ selectedName ];
+			result = {
+				name: selectedName,
+				patch: defaultPatches[ selectedName ] || customPatches[ selectedName ]
+			};
 		} else {
 			var defaultNames = Object.keys( defaultPatches ),
-				personalNames = Object.keys( personalPatches );
+				personalNames = Object.keys( customPatches ),
+				name;
 
 			if ( defaultNames.length ) {
-				result = defaultPatches[ defaultNames[ 0 ] ];
-			} else if ( personalPatches.length ) {
-				result = personalPatches[ personalNames[ 0 ] ];
+				name = defaultNames[ 0 ];
+
+				result = {
+					name: name,
+					patch: defaultPatches[ name ]
+				};
+			} else if ( customPatches.length ) {
+				name = personalNames[ 0 ];
+
+				result = {
+					name: name,
+					patch: customPatches[ name ]
+				};
 			}
 		}
 
@@ -39676,13 +39938,60 @@ Library.prototype = {
 
 	preserveUnsaved: function( patch ) {
 		var self = this,
-			store = self.store;
+			store = self.store,
+			isSelectionChanging = self.selectedName || !self.unsavedPatch || false;
 
 		store.remove( self.SELECTED );
 		self.selectedName = null;
 
 		store.set( self.UNSAVED, JSON.stringify( patch ) );
 		self.unsavedPatch = patch;
+
+		if ( isSelectionChanging ) {
+			self._announceSelectionChange();
+		}
+	},
+
+	getDefaultNames: function() {
+		var self = this,
+			defaultPatches = self.defaultPatches;
+
+		return Object.keys( defaultPatches );
+	},
+
+	getCustomNames: function() {
+		var self = this,
+			customPatches = self.customPatches;
+
+		return Object.keys( customPatches );
+	},
+
+	_announceSelectionChange: function() {
+		var self = this,
+			selectedPatch = self.getSelected();
+
+		self._selectionChangeHandlers.forEach( function( handler ) {
+			handler( selectedPatch );
+		} );
+	},
+
+	selectPatch: function( patchName ) {
+		var self = this,
+			store = self.store;
+
+		self.unsavedPatch = null;
+		store.remove( self.UNSAVED );
+
+		self.selectedName = patchName;
+		store.set( self.SELECTED, patchName );
+
+		self._announceSelectionChange();
+	},
+
+	onSelectionChange: function( handler ) {
+		var self = this;
+
+		self._selectionChangeHandlers.push( handler );
 	}
 
 };
@@ -39698,7 +40007,11 @@ module.exports = function( mod ) {
 
 	mod.controller( "DelayCtrl", [ "$scope", "dawEngine", "patchLibrary", function( $scope, dawEngine, patchLibrary ) {
 		var self = this,
-			settingsChangeHandler = function() {
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
 				dawEngine.delaySettings = {
 					time	: settingsConvertor.transposeParam( self.time, settings.time.range ),
 					feedback: settingsConvertor.transposeParam( self.feedback, settings.feedback.range ),
@@ -39708,20 +40021,41 @@ module.exports = function( mod ) {
 
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
-			settings = dawEngine.delaySettings;
+			settings,
+			pollSettings = function() {
+				settings = dawEngine.delaySettings;
 
-		self.time = settingsConvertor.transposeParam( settings.time, [ 0, 100 ] );
-		self.feedback = settingsConvertor.transposeParam( settings.feedback, [ 0, 100 ] );
-		self.dry = settingsConvertor.transposeParam( settings.dry, [ 0, 100 ] );
-		self.wet = settingsConvertor.transposeParam( settings.wet, [ 0, 100 ] );
+				self.time = settingsConvertor.transposeParam( settings.time, [ 0, 100 ] );
+				self.feedback = settingsConvertor.transposeParam( settings.feedback, [ 0, 100 ] );
+				self.dry = settingsConvertor.transposeParam( settings.dry, [ 0, 100 ] );
+				self.wet = settingsConvertor.transposeParam( settings.wet, [ 0, 100 ] );
+			},
+			watchers = [],
+			registerForChanges = function() {
+				[
+					"delay.time.value",
+					"delay.feedback.value",
+					"delay.dry.value",
+					"delay.wet.value"
+				].forEach( function( path ) {
+					watchers.push( $scope.$watch( path, settingsChangeHandler ) );
+				} );
+			},
+			unregisterFromChanges = function() {
+				watchers.forEach( function( unregister ) {
+					unregister();
+				} );
+				watchers = [];
+			};
 
-		[
-			"delay.time.value",
-			"delay.feedback.value",
-			"delay.dry.value",
-			"delay.wet.value"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
+		pollSettings();
+
+		registerForChanges();
+
+		dawEngine.onPatchChange( function() {
+			unregisterFromChanges();
+			pollSettings();
+			registerForChanges();
 		} );
 
 		// fix the lack of attr 'value' update
@@ -39806,21 +40140,45 @@ module.exports = function( mod ) {
 
 	mod.controller( "MasterVolumeCtrl", [ "$scope", "dawEngine", "patchLibrary", function( $scope, dawEngine, patchLibrary ) {
 		var self = this,
-			settingsChangeHandler = function() {
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
 				dawEngine.masterVolumeSettings = {
 					level: settingsConvertor.transposeParam( self.level, settings.level.range )
 				};
 
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
-			settings = dawEngine.masterVolumeSettings;
+			settings,
+			pollSettings = function() {
+				settings = dawEngine.masterVolumeSettings;
+				self.level = settingsConvertor.transposeParam( settings.level, [ 0, 100 ] );
+			},
+			watchers = [],
+			registerForChanges = function() {
+				[
+					"masterVolume.level.value"
+				].forEach( function( path ) {
+					watchers.push( $scope.$watch( path, settingsChangeHandler ) );
+				} );
+			},
+			unregisterFromChanges = function() {
+				watchers.forEach( function( unregister ) {
+					unregister();
+				} );
+				watchers = [];
+			};
 
-		self.level = settingsConvertor.transposeParam( settings.level, [ 0, 100 ] );
+		pollSettings();
 
-		[
-			"masterVolume.level.value"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
+		registerForChanges();
+
+		dawEngine.onPatchChange( function() {
+			unregisterFromChanges();
+			pollSettings();
+			registerForChanges();
 		} );
 
 		// fix the lack of attr 'value' update
@@ -39981,21 +40339,45 @@ module.exports = function( mod ) {
 
 	mod.controller( "ReverbCtrl", [ "$scope", "dawEngine", "patchLibrary", function( $scope, dawEngine, patchLibrary ) {
 		var self = this,
-			settingsChangeHandler = function() {
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
 				dawEngine.reverbSettings = {
 					level: settingsConvertor.transposeParam( self.level, settings.level.range )
 				};
 
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
-			settings = dawEngine.reverbSettings;
+			settings,
+			pollSettings = function() {
+				settings = dawEngine.reverbSettings;
+				self.level = settingsConvertor.transposeParam( settings.level, [ 0, 100 ] );
+			},
+			watchers = [],
+			registerForChanges = function() {
+				[
+					"reverb.level.value"
+				].forEach( function( path ) {
+					watchers.push( $scope.$watch( path, settingsChangeHandler ) );
+				} );
+			},
+			unregisterFromChanges = function() {
+				watchers.forEach( function( unregister ) {
+					unregister();
+				} );
+				watchers = [];
+			};
 
-		self.level = settingsConvertor.transposeParam( settings.level, [ 0, 100 ] );
+		pollSettings();
 
-		[
-			"reverb.level.value"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
+		registerForChanges();
+
+		dawEngine.onPatchChange( function() {
+			unregisterFromChanges();
+			pollSettings();
+			registerForChanges();
 		} );
 
 		// fix the lack of attr 'value' update
@@ -40026,7 +40408,11 @@ module.exports = function( mod ) {
 
 	mod.controller( "EnvelopesCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
 		var self = this,
-			settingsChangeHandler = function() {
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
 				synth.envelopesSettings = {
 					primary: {
 						attack: settingsConvertor.transposeParam( self.primary.attack, primary.attack.range ),
@@ -40044,34 +40430,57 @@ module.exports = function( mod ) {
 
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
-			settings = synth.envelopesSettings,
-			primary = settings.primary,
-			filter = settings.filter;
+			settings,
+			primary,
+			filter,
+			pollSettings = function() {
+				settings = synth.envelopesSettings;
+				primary = settings.primary;
+				filter = settings.filter;
 
-		self.primary = {
-			attack: settingsConvertor.transposeParam( primary.attack, [ 0, 100 ] ),
-			decay: settingsConvertor.transposeParam( primary.decay, [ 0, 100 ] ),
-			sustain: settingsConvertor.transposeParam( primary.sustain, [ 0, 100 ] ),
-			release: settingsConvertor.transposeParam( primary.release, [ 0, 100 ] )
-		};
-		self.filter = {
-			attack: settingsConvertor.transposeParam( filter.attack, [ 0, 100 ] ),
-			decay: settingsConvertor.transposeParam( filter.decay, [ 0, 100 ] ),
-			sustain: settingsConvertor.transposeParam( filter.sustain, [ 0, 100 ] ),
-			release: settingsConvertor.transposeParam( filter.release, [ 0, 100 ] )
-		};
+				self.primary = {
+					attack: settingsConvertor.transposeParam( primary.attack, [ 0, 100 ] ),
+					decay: settingsConvertor.transposeParam( primary.decay, [ 0, 100 ] ),
+					sustain: settingsConvertor.transposeParam( primary.sustain, [ 0, 100 ] ),
+					release: settingsConvertor.transposeParam( primary.release, [ 0, 100 ] )
+				};
+				self.filter = {
+					attack: settingsConvertor.transposeParam( filter.attack, [ 0, 100 ] ),
+					decay: settingsConvertor.transposeParam( filter.decay, [ 0, 100 ] ),
+					sustain: settingsConvertor.transposeParam( filter.sustain, [ 0, 100 ] ),
+					release: settingsConvertor.transposeParam( filter.release, [ 0, 100 ] )
+				};
+			},
+			watchers = [],
+			registerForChanges = function() {
+				[
+					"envs.primary.attack.value",
+					"envs.primary.decay.value",
+					"envs.primary.sustain.value",
+					"envs.primary.release.value",
+					"envs.filter.attack.value",
+					"envs.filter.decay.value",
+					"envs.filter.sustain.value",
+					"envs.filter.release.value"
+				].forEach( function( path ) {
+					watchers.push( $scope.$watch( path, settingsChangeHandler ) );
+				} );
+			},
+			unregisterFromChanges = function() {
+				watchers.forEach( function( unregister ) {
+					unregister();
+				} );
+				watchers = [];
+			};
 
-		[
-			"envs.primary.attack.value",
-			"envs.primary.decay.value",
-			"envs.primary.sustain.value",
-			"envs.primary.release.value",
-			"envs.filter.attack.value",
-			"envs.filter.decay.value",
-			"envs.filter.sustain.value",
-			"envs.filter.release.value"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
+		pollSettings();
+
+		registerForChanges();
+
+		dawEngine.onPatchChange( function() {
+			unregisterFromChanges();
+			pollSettings();
+			registerForChanges();
 		} );
 
 		// fix the lack of attr 'value' update
@@ -40102,7 +40511,11 @@ module.exports = function( mod ) {
 
 	mod.controller( "FilterCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
 		var self = this,
-			settingsChangeHandler = function() {
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
 				synth.filterSettings = {
 					cutoff: settingsConvertor.transposeParam( self.cutoff, settings.cutoff.range ),
 					emphasis: settingsConvertor.transposeParam( self.emphasis, settings.emphasis.range ),
@@ -40111,18 +40524,39 @@ module.exports = function( mod ) {
 
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
-			settings = synth.filterSettings;
+			settings,
+			pollSettings = function() {
+				settings = synth.filterSettings;
 
-		self.cutoff = settingsConvertor.transposeParam( settings.cutoff, [ 0, 500 ] );
-		self.emphasis = settingsConvertor.transposeParam( settings.emphasis, [ 1, 100 ] );
-		self.envAmount = settingsConvertor.transposeParam( settings.envAmount, [ 0, 100 ] );
+				self.cutoff = settingsConvertor.transposeParam( settings.cutoff, [ 0, 500 ] );
+				self.emphasis = settingsConvertor.transposeParam( settings.emphasis, [ 1, 100 ] );
+				self.envAmount = settingsConvertor.transposeParam( settings.envAmount, [ 0, 100 ] );
+			},
+			watchers = [],
+			registerForChanges = function() {
+				[
+					"filter.cutoff.value",
+					"filter.emphasis.value",
+					"filter.envAmount.value"
+				].forEach( function( path ) {
+					watchers.push( $scope.$watch( path, settingsChangeHandler ) );
+				} );
+			},
+			unregisterFromChanges = function() {
+				watchers.forEach( function( unregister ) {
+					unregister();
+				} );
+				watchers = [];
+			};
 
-		[
-			"filter.cutoff.value",
-			"filter.emphasis.value",
-			"filter.envAmount.value"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
+		pollSettings();
+
+		registerForChanges();
+
+		dawEngine.onPatchChange( function() {
+			unregisterFromChanges();
+			pollSettings();
+			registerForChanges();
 		} );
 
 		// fix the lack of attr 'value' update
@@ -40153,7 +40587,11 @@ module.exports = function( mod ) {
 
 	mod.controller( "LFOCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
 		var self = this,
-			settingsChangeHandler = function() {
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
 				synth.lfoSettings = {
 					waveform: self.waveform,
 					rate: self.rate,
@@ -40162,18 +40600,39 @@ module.exports = function( mod ) {
 
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
-			settings = synth.lfoSettings;
+			settings,
+			pollSettings = function() {
+				settings = synth.lfoSettings;
 
-		self.waveform = settings.waveform;
-		self.rate = settings.rate;
-		self.amount = settingsConvertor.transposeParam( settings.amount, [ 0, 100 ] );
+				self.waveform = settings.waveform;
+				self.rate = settings.rate;
+				self.amount = settingsConvertor.transposeParam( settings.amount, [ 0, 100 ] );
+			},
+			watchers = [],
+			registerForChanges = function() {
+				[
+					"lfo.waveform.value",
+					"lfo.rate.value",
+					"lfo.amount.value"
+				].forEach( function( path ) {
+					watchers.push( $scope.$watch( path, settingsChangeHandler ) );
+				} );
+			},
+			unregisterFromChanges = function() {
+				watchers.forEach( function( unregister ) {
+					unregister();
+				} );
+				watchers = [];
+			};
 
-		[
-			"lfo.waveform.value",
-			"lfo.rate.value",
-			"lfo.amount.value"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
+		pollSettings();
+
+		registerForChanges();
+
+		dawEngine.onPatchChange( function() {
+			unregisterFromChanges();
+			pollSettings();
+			registerForChanges();
 		} );
 
 		// fix the lack of attr 'value' update
@@ -40204,7 +40663,11 @@ module.exports = function( mod ) {
 
 	mod.controller( "MixerCtrl", [ "$scope", "$timeout", "dawEngine", "synth", "patchLibrary", function( $scope, $timeout, dawEngine, synth, patchLibrary ) {
 		var self = this,
-			settingsChangeHandler = function() {
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
 				synth.mixerSettings = {
 					volume1: {
 						enabled: self.volume1.enabled,
@@ -40222,38 +40685,59 @@ module.exports = function( mod ) {
 
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
-			settings = synth.mixerSettings;
+			settings,
+			pollSettings = function() {
+				settings = synth.mixerSettings;
 
-		self.volume1 = {
-			enabled: settings.volume1.enabled,
-			level: settingsConvertor.transposeParam( settings.volume1.level, [ 0, 100 ] )
-		};
-		self.volume2 = {
-			enabled: settings.volume2.enabled,
-			level: settingsConvertor.transposeParam( settings.volume2.level, [ 0, 100 ] )
-		};
-		self.volume3 = {
-			enabled: settings.volume3.enabled,
-			level: settingsConvertor.transposeParam( settings.volume3.level, [ 0, 100 ] )
-		};
+				self.volume1 = {
+					enabled: settings.volume1.enabled,
+					level: settingsConvertor.transposeParam( settings.volume1.level, [ 0, 100 ] )
+				};
+				self.volume2 = {
+					enabled: settings.volume2.enabled,
+					level: settingsConvertor.transposeParam( settings.volume2.level, [ 0, 100 ] )
+				};
+				self.volume3 = {
+					enabled: settings.volume3.enabled,
+					level: settingsConvertor.transposeParam( settings.volume3.level, [ 0, 100 ] )
+				};
 
-		[
-			"mixer.volume1.enabled.value",
-			"mixer.volume1.level.value",
-			"mixer.volume2.enabled.value",
-			"mixer.volume2.level.value",
-			"mixer.volume3.enabled.value",
-			"mixer.volume3.level.value"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
+				// fix problem with bad init state
+				$timeout( function() {
+					$( ".mixer .oscillator-switch webaudio-switch" ).each( function( index, element ) {
+						element.setValue( self[ "volume" + ( index + 1 ) ].enabled.value );
+					} );
+				}, 300 );
+			},
+			watchers = [],
+			registerForChanges = function() {
+				[
+					"mixer.volume1.enabled.value",
+					"mixer.volume1.level.value",
+					"mixer.volume2.enabled.value",
+					"mixer.volume2.level.value",
+					"mixer.volume3.enabled.value",
+					"mixer.volume3.level.value"
+				].forEach( function( path ) {
+					watchers.push( $scope.$watch( path, settingsChangeHandler ) );
+				} );
+			},
+			unregisterFromChanges = function() {
+				watchers.forEach( function( unregister ) {
+					unregister();
+				} );
+				watchers = [];
+			};
+
+		pollSettings();
+
+		registerForChanges();
+
+		dawEngine.onPatchChange( function() {
+			unregisterFromChanges();
+			pollSettings();
+			registerForChanges();
 		} );
-
-		// fix problem with bad init state
-		$timeout( function() {
-			$( ".mixer .oscillator-switch webaudio-switch" ).each( function( index, element ) {
-				element.setValue( self[ "volume" + ( index + 1 ) ].enabled.value );
-			} );
-		}, 300 );
 
 		// fix the lack of attr 'value' update
 		$( ".mixer webaudio-switch" )
@@ -40286,7 +40770,11 @@ module.exports = function( mod ) {
 
 	mod.controller( "ModulationCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
 		var self = this,
-			settingsChangeHandler = function() {
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
 				synth.modulationSettings = {
 					waveform: self.waveform,
 					portamento: settingsConvertor.transposeParam( self.portamento, settings.portamento.range ),
@@ -40295,16 +40783,37 @@ module.exports = function( mod ) {
 
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
-			settings = synth.modulationSettings;
+			settings,
+			pollSettings = function() {
+				settings = synth.modulationSettings;
 
-		self.waveform = settings.waveform;
-		self.portamento = settingsConvertor.transposeParam( settings.portamento, [ 0, 100 ] );
+				self.waveform = settings.waveform;
+				self.portamento = settingsConvertor.transposeParam( settings.portamento, [ 0, 100 ] );
+			},
+			watchers = [],
+			registerForChanges = function() {
+				[
+					"modulation.waveform.value",
+					"modulation.portamento.value"
+				].forEach( function( path ) {
+					watchers.push( $scope.$watch( path, settingsChangeHandler ) );
+				} );
+			},
+			unregisterFromChanges = function() {
+				watchers.forEach( function( unregister ) {
+					unregister();
+				} );
+				watchers = [];
+			};
 
-		[
-			"modulation.waveform.value",
-			"modulation.portamento.value"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
+		pollSettings();
+
+		registerForChanges();
+
+		dawEngine.onPatchChange( function() {
+			unregisterFromChanges();
+			pollSettings();
+			registerForChanges();
 		} );
 
 		// fix the lack of attr 'value' update
@@ -40335,7 +40844,11 @@ module.exports = function( mod ) {
 
 	mod.controller( "NoiseCtrl", [ "$scope", "$timeout", "dawEngine", "synth", "patchLibrary", function( $scope, $timeout, dawEngine, synth, patchLibrary ) {
 		var self = this,
-			settingsChangeHandler = function() {
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
 				synth.noiseSettings = {
 					enabled: self.enabled,
 					level: settingsConvertor.transposeParam( self.level, settings.level.range ),
@@ -40344,25 +40857,46 @@ module.exports = function( mod ) {
 
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
-			settings = synth.noiseSettings;
+			settings,
+			pollSettings = function() {
+				settings = synth.noiseSettings;
 
-		self.enabled = settings.enabled;
-		self.level = settingsConvertor.transposeParam( settings.level, [ 0, 100 ] );
-		self.type = settings.type;
+				self.enabled = settings.enabled;
+				self.level = settingsConvertor.transposeParam( settings.level, [ 0, 100 ] );
+				self.type = settings.type;
 
-		[
-			"noise.enabled.value",
-			"noise.level.value",
-			"noise.type.value"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
+				// fix problem with bad init state
+				$timeout( function() {
+					$( ".noise webaudio-switch" )[ 0 ].setValue( self.enabled.value );
+					$( ".noise webaudio-slider" )[ 0 ].setValue( self.type.value );
+				}, 300 );
+			},
+			watchers = [],
+			registerForChanges = function() {
+				[
+					"noise.enabled.value",
+					"noise.level.value",
+					"noise.type.value"
+				].forEach( function( path ) {
+					watchers.push( $scope.$watch( path, settingsChangeHandler ) );
+				} );
+			},
+			unregisterFromChanges = function() {
+				watchers.forEach( function( unregister ) {
+					unregister();
+				} );
+				watchers = [];
+			};
+
+		pollSettings();
+
+		registerForChanges();
+
+		dawEngine.onPatchChange( function() {
+			unregisterFromChanges();
+			pollSettings();
+			registerForChanges();
 		} );
-
-		// fix problem with bad init state
-		$timeout( function() {
-			$( ".noise webaudio-switch" )[ 0 ].setValue( self.enabled.value );
-			$( ".noise webaudio-slider" )[ 0 ].setValue( self.type.value );
-		}, 300 );
 
 		// fix the lack of attr 'value' update
 		$( ".noise webaudio-switch" )
@@ -40395,7 +40929,11 @@ module.exports = function( mod ) {
 
 	mod.controller( "OscillatorBankCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
 		var self = this,
-			settingsChangeHandler = function() {
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
 				synth.oscillatorSettings = {
 					osc1: {
 						range: settingsConvertor.transposeParam( self.osc1.range, settings.osc1.range.range ),
@@ -40416,35 +40954,56 @@ module.exports = function( mod ) {
 
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
-			settings = synth.oscillatorSettings;
+			settings,
+			pollSettings = function() {
+				settings  = synth.oscillatorSettings;
 
-		self.osc1 = {
-			range: settingsConvertor.transposeParam( settings.osc1.range, [ 0, 6 ] ),
-			fineDetune: settingsConvertor.transposeParam( settings.osc1.fineDetune, [ 0, 16 ] ),
-			waveform: settings.osc1.waveform
-		};
-		self.osc2 = {
-			range: settingsConvertor.transposeParam( settings.osc2.range, [ 0, 6 ] ),
-			fineDetune: settingsConvertor.transposeParam( settings.osc2.fineDetune, [ 0, 16 ] ),
-			waveform: settings.osc2.waveform
-		};
-		self.osc3 = {
-			range: settingsConvertor.transposeParam( settings.osc3.range, [ 0, 6 ] ),
-			fineDetune: settingsConvertor.transposeParam( settings.osc3.fineDetune, [ 0, 16 ] ),
-			waveform: settings.osc3.waveform
-		};
+				self.osc1 = {
+					range: settingsConvertor.transposeParam( settings.osc1.range, [ 0, 6 ] ),
+					fineDetune: settingsConvertor.transposeParam( settings.osc1.fineDetune, [ 0, 16 ] ),
+					waveform: settings.osc1.waveform
+				};
+				self.osc2 = {
+					range: settingsConvertor.transposeParam( settings.osc2.range, [ 0, 6 ] ),
+					fineDetune: settingsConvertor.transposeParam( settings.osc2.fineDetune, [ 0, 16 ] ),
+					waveform: settings.osc2.waveform
+				};
+				self.osc3 = {
+					range: settingsConvertor.transposeParam( settings.osc3.range, [ 0, 6 ] ),
+					fineDetune: settingsConvertor.transposeParam( settings.osc3.fineDetune, [ 0, 16 ] ),
+					waveform: settings.osc3.waveform
+				};
+			},
+			watchers = [],
+			registerForChanges = function() {
+				[
+					"oscillators.osc1.range.value",
+					"oscillators.osc1.waveform.value",
+					"oscillators.osc2.range.value",
+					"oscillators.osc2.fineDetune.value",
+					"oscillators.osc2.waveform.value",
+					"oscillators.osc3.range.value",
+					"oscillators.osc3.fineDetune.value",
+					"oscillators.osc3.waveform.value"
+				].forEach( function( path ) {
+					watchers.push( $scope.$watch( path, settingsChangeHandler ) );
+				} );
+			},
+			unregisterFromChanges = function() {
+				watchers.forEach( function( unregister ) {
+					unregister();
+				} );
+				watchers = [];
+			};
 
-		[
-			"oscillators.osc1.range.value",
-			"oscillators.osc1.waveform.value",
-			"oscillators.osc2.range.value",
-			"oscillators.osc2.fineDetune.value",
-			"oscillators.osc2.waveform.value",
-			"oscillators.osc3.range.value",
-			"oscillators.osc3.fineDetune.value",
-			"oscillators.osc3.waveform.value"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
+		pollSettings();
+
+		registerForChanges();
+
+		dawEngine.onPatchChange( function() {
+			unregisterFromChanges();
+			pollSettings();
+			registerForChanges();
 		} );
 
 		$( ".oscillator webaudio-knob" ).on( "change", function( e ) {
@@ -40796,6 +41355,7 @@ var angular = require( "angular" ),
 	template = require( "./template/daw.html" ),
 	mod = angular.module( "dawModule", [
 		template.name,
+		require( "./patch-library/module" ).name,
 		require( "./instruments/synth/module" ).name,
 		require( "./template/master-controls.html" ).name,
 		require( "./template/delay.html" ).name,
@@ -40853,12 +41413,185 @@ require( "./controller/modulation-wheel" )( mod );
 require( "./controller/keyboard" )( mod );
 
 module.exports = mod;
-},{"../instruments/synth/instrument":20,"./controller/delay":23,"./controller/keyboard":24,"./controller/master-controls":25,"./controller/master-volume":26,"./controller/modulation-wheel":27,"./controller/pitch-bend":28,"./controller/reverb":29,"./instruments/synth/module":37,"./template/daw.html":47,"./template/delay.html":48,"./template/keyboard.html":49,"./template/master-controls.html":50,"./template/master-volume.html":51,"./template/modulation-wheel.html":52,"./template/pitch-bend.html":53,"./template/reverb.html":54,"angular":2}],47:[function(require,module,exports){
+},{"../instruments/synth/instrument":20,"./controller/delay":23,"./controller/keyboard":24,"./controller/master-controls":25,"./controller/master-volume":26,"./controller/modulation-wheel":27,"./controller/pitch-bend":28,"./controller/reverb":29,"./instruments/synth/module":37,"./patch-library/module":48,"./template/daw.html":51,"./template/delay.html":52,"./template/keyboard.html":53,"./template/master-controls.html":54,"./template/master-volume.html":55,"./template/modulation-wheel.html":56,"./template/pitch-bend.html":57,"./template/reverb.html":58,"angular":2}],47:[function(require,module,exports){
+'use strict';
+
+module.exports = function( mod ) {
+
+	mod.controller( "DropDownCtrl", [ "$scope", "dawEngine", "patchLibrary", function( $scope, dawEngine, patchLibrary ) {
+		var self = this,
+			defaultPatches,
+			customPatches,
+			selectedName,
+			pollSettings = function() {
+				defaultPatches = patchLibrary.getDefaultNames();
+				customPatches = patchLibrary.getCustomNames();
+				selectedName = patchLibrary.getSelected().name;
+
+				self.patches = [ { name: "Built-in", separator: "presentation" } ]
+					.concat( defaultPatches.map( function( patchName, originalIndex ) {
+						return { name: patchName, originalIndex: originalIndex };
+					} ) )
+					.concat( [ { name: "User's", separator: "presentation" } ] )
+					.concat( customPatches.map( function( patchName, originalIndex ) {
+						return { name: patchName, isCustom: true, originalIndex: originalIndex };
+					} ) );
+				self.selectedName = selectedName;
+			},
+			getSelectedIndex = function() {
+				var patches = self.patches,
+					index = -1;
+
+				for ( var i = 0; i < patches.length; i++ ) {
+					var patch = patches[ i ];
+
+					if ( !patch.separator && patch.name === self.selectedName ) {
+						index = i;
+						break;
+					}
+				}
+
+				return index;
+			};
+
+		pollSettings();
+
+		self.selectPatch = function( patch ) {
+			if ( !patch.separator ) {
+				patchLibrary.selectPatch( patch.name );
+			}
+		};
+
+		self.selectPrevious = function() {
+			var selectedIndex = getSelectedIndex(),
+				patchName = defaultPatches[ 0 ];
+
+			if ( selectedIndex !== -1 ) {
+				var patches = self.patches,
+					patch = patches[ selectedIndex ],
+					isCustom = patch.isCustom,
+					array = isCustom ? customPatches : defaultPatches,
+					newIndex = patch.originalIndex - 1;
+
+				if ( isCustom ) {
+					patchName = newIndex < 0 ? defaultPatches[ defaultPatches.length - 1 ] : array[ newIndex ];
+				} else {
+					var fallbackArray = ( customPatches.length > 0 ) ? customPatches : defaultPatches;
+					patchName = newIndex < 0 ? fallbackArray[ fallbackArray.length - 1 ] : array[ newIndex ];
+				}
+			}
+
+			patchLibrary.selectPatch( patchName );
+		};
+
+		self.selectNext = function() {
+			var selectedIndex = getSelectedIndex(),
+				patchName = defaultPatches[ 0 ];
+
+			if ( selectedIndex !== -1 ) {
+				var patches = self.patches,
+					patch = patches[ selectedIndex ],
+					isCustom = patch.isCustom,
+					array = isCustom ? customPatches : defaultPatches,
+					newIndex = patch.originalIndex + 1;
+
+				if ( isCustom ) {
+					patchName = newIndex === array.length ? defaultPatches[ 0 ] : array[ newIndex ];
+				} else {
+					var fallbackArray = ( customPatches.length > 0 ) ? customPatches : defaultPatches;
+					patchName = newIndex === array.length ? fallbackArray[ 0 ] : array[ newIndex ];
+				}
+			}
+
+			patchLibrary.selectPatch( patchName );
+		};
+
+		patchLibrary.onSelectionChange( function( selectedPatch ) {
+			pollSettings();
+			dawEngine.loadPatch( selectedPatch.patch );
+		} );
+
+	} ] );
+
+	mod.directive( "dropDown", [ "$templateCache", function( $templateCache ) {
+		return {
+			restrict: "E",
+			replace: true,
+			template: $templateCache.get( "drop-down.html" )
+		};
+	} ] );
+
+};
+},{}],48:[function(require,module,exports){
+'use strict';
+
+var angular = require( "angular" ),
+	template = require( "./template/patch-library.html" ),
+	mod = angular.module( "patch-library", [
+		template.name,
+		require( "./template/drop-down.html" ).name
+	] );
+
+mod.directive( "patchLibrary", [ "$templateCache", function( $templateCache ) {
+	return {
+		restrict: "E",
+		replace: true,
+		template: $templateCache.get( template.name )
+	};
+} ] );
+
+// Controllers
+require( "./controller/drop-down" )( mod );
+
+module.exports = mod;
+},{"./controller/drop-down":47,"./template/drop-down.html":49,"./template/patch-library.html":50,"angular":2}],49:[function(require,module,exports){
+var ngModule = angular.module('drop-down.html', []);
+ngModule.run(['$templateCache', function($templateCache) {
+  $templateCache.put('drop-down.html',
+    '<div class="patches-drop-down" ng-controller="DropDownCtrl as dropDown">\n' +
+    '	<a data-target="#" class="patch-button glyphicon glyphicon-chevron-left" ng-click="dropDown.selectPrevious()"></a>\n' +
+    '	<div class="dropdown">\n' +
+    '		<a id="dLabel" data-target="#" data-toggle="dropdown" aria-haspopup="true" role="button" aria-expanded="false">\n' +
+    '			{{dropDown.selectedName}}\n' +
+    '		</a>\n' +
+    '\n' +
+    '		<ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">\n' +
+    '			<li ng-repeat="patch in dropDown.patches"\n' +
+    '				ng-attr-role="{{patch.separator}}"\n' +
+    '				ng-class="{\'dropdown-header\': patch.separator}"\n' +
+    '				ng-click="dropDown.selectPatch(patch)">\n' +
+    '					{{patch.name}}\n' +
+    '			</li>\n' +
+    '		</ul>\n' +
+    '	</div>\n' +
+    '	<a data-target="#" class="patch-button glyphicon glyphicon-chevron-right" ng-click="dropDown.selectNext()"></a>\n' +
+    '</div>');
+}]);
+
+module.exports = ngModule;
+},{}],50:[function(require,module,exports){
+var ngModule = angular.module('patch-library.html', []);
+ngModule.run(['$templateCache', function($templateCache) {
+  $templateCache.put('patch-library.html',
+    '<div id="patchLibrary">\n' +
+    '	<div class="row">\n' +
+    '		<div class="col-lg-offset-4 col-lg-4 text-center">\n' +
+    '			<drop-down></drop-down>\n' +
+    '		</div>\n' +
+    '	</div>\n' +
+    '</div>');
+}]);
+
+module.exports = ngModule;
+},{}],51:[function(require,module,exports){
 var ngModule = angular.module('daw.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('daw.html',
     '<div id="dawContainer">\n' +
-    '	<div id="controlPanel">\n' +
+    '	<div id="upperRow">\n' +
+    '		<patch-library></patch-library>\n' +
+    '	</div>\n' +
+    '	<div id="middleRow">\n' +
     '		<synth></synth>\n' +
     '		<master-controls></master-controls>\n' +
     '	</div>\n' +
@@ -40873,7 +41606,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],48:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 var ngModule = angular.module('delay.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('delay.html',
@@ -40909,7 +41642,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],49:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 var ngModule = angular.module('keyboard.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('keyboard.html',
@@ -40919,7 +41652,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],50:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 var ngModule = angular.module('master-controls.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('master-controls.html',
@@ -40933,7 +41666,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],51:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 var ngModule = angular.module('master-volume.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('master-volume.html',
@@ -40949,7 +41682,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],52:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 var ngModule = angular.module('modulation-wheel.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('modulation-wheel.html',
@@ -40961,7 +41694,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],53:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 var ngModule = angular.module('pitch-bend.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('pitch-bend.html',
@@ -40973,7 +41706,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],54:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 var ngModule = angular.module('reverb.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('reverb.html',
