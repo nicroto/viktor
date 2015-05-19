@@ -3,12 +3,11 @@
 module.exports = function( mod ) {
 
 	mod.controller( "PatchLibraryCtrl", [ "$scope", "$modal", "dawEngine", "patchLibrary", function( $scope, $modal, dawEngine, patchLibrary ) {
-		var self = this;
-
-		self.selectedName = patchLibrary.getSelected().name;
+		var self = this,
+			selectedPatch = patchLibrary.getSelected();
 
 		self.isSavePatchVisible = function() {
-			return patchLibrary.unsavedPatch ? true : false;
+			return selectedPatch.isUnsaved ? true : false;
 		};
 
 		self.openSavePatchModal = function() {
@@ -26,7 +25,29 @@ module.exports = function( mod ) {
 			}, function() {} );
 		};
 
-		patchLibrary.onSelectionChange( function( selectedPatch ) {
+		self.isDeletePatchVisible = function() {
+			return selectedPatch.isCustom ? true : false;
+		};
+
+		self.openDeletePatchModal = function() {
+			var modalInstance = $modal.open( {
+				animation: $scope.animationsEnabled,
+				templateUrl: 'deletePatchModal.html',
+				controller: 'DeletePatchModalCtrl',
+				controllerAs: 'deletePatchModal',
+				size: null,
+				resolve: null
+			} );
+
+			modalInstance.result.then( function() {
+				patchLibrary.removeCustom( selectedPatch.name );
+			}, function() {} );
+		};
+
+
+		patchLibrary.onSelectionChange( function( newSelectedPatch ) {
+			selectedPatch = newSelectedPatch;
+
 			dawEngine.loadPatch( selectedPatch.patch );
 		} );
 	} ] );
@@ -42,6 +63,18 @@ module.exports = function( mod ) {
 
 		self.savePatch = function() {
 			$modalInstance.close( self.name );
+		};
+	} ] );
+
+	mod.controller( "DeletePatchModalCtrl", [ "$modalInstance", function( $modalInstance ) {
+		var self = this;
+
+		self.close = function() {
+			$modalInstance.dismiss();
+		};
+
+		self.deletePatch = function() {
+			$modalInstance.close();
 		};
 	} ] );
 

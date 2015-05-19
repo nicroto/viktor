@@ -21,21 +21,6 @@ module.exports = function( mod ) {
 						return { name: patchName, isCustom: true, originalIndex: originalIndex };
 					} ) );
 				self.selectedName = selectedName;
-			},
-			getSelectedIndex = function() {
-				var patches = self.patches,
-					index = -1;
-
-				for ( var i = 0; i < patches.length; i++ ) {
-					var patch = patches[ i ];
-
-					if ( !patch.separator && patch.name === self.selectedName ) {
-						index = i;
-						break;
-					}
-				}
-
-				return index;
 			};
 
 		pollSettings();
@@ -47,47 +32,15 @@ module.exports = function( mod ) {
 		};
 
 		self.selectPrevious = function() {
-			var selectedIndex = getSelectedIndex(),
-				patchName = defaultPatches[ 0 ];
+			var previousName = patchLibrary.getPreviousName( selectedName );
 
-			if ( selectedIndex !== -1 ) {
-				var patches = self.patches,
-					patch = patches[ selectedIndex ],
-					isCustom = patch.isCustom,
-					array = isCustom ? customPatches : defaultPatches,
-					newIndex = patch.originalIndex - 1;
-
-				if ( isCustom ) {
-					patchName = newIndex < 0 ? defaultPatches[ defaultPatches.length - 1 ] : array[ newIndex ];
-				} else {
-					var fallbackArray = ( customPatches.length > 0 ) ? customPatches : defaultPatches;
-					patchName = newIndex < 0 ? fallbackArray[ fallbackArray.length - 1 ] : array[ newIndex ];
-				}
-			}
-
-			patchLibrary.selectPatch( patchName );
+			patchLibrary.selectPatch( previousName ? previousName : defaultPatches[ 0 ] );
 		};
 
 		self.selectNext = function() {
-			var selectedIndex = getSelectedIndex(),
-				patchName = defaultPatches[ 0 ];
+			var nextName = patchLibrary.getNextName( selectedName );
 
-			if ( selectedIndex !== -1 ) {
-				var patches = self.patches,
-					patch = patches[ selectedIndex ],
-					isCustom = patch.isCustom,
-					array = isCustom ? customPatches : defaultPatches,
-					newIndex = patch.originalIndex + 1;
-
-				if ( isCustom ) {
-					patchName = newIndex === array.length ? defaultPatches[ 0 ] : array[ newIndex ];
-				} else {
-					var fallbackArray = ( customPatches.length > 0 ) ? customPatches : defaultPatches;
-					patchName = newIndex === array.length ? fallbackArray[ 0 ] : array[ newIndex ];
-				}
-			}
-
-			patchLibrary.selectPatch( patchName );
+			patchLibrary.selectPatch( nextName ? nextName : defaultPatches[ 0 ] );
 		};
 
 		patchLibrary.onSelectionChange( function() {

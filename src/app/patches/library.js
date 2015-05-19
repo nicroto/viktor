@@ -36,12 +36,15 @@ Library.prototype = {
 		if ( unsavedPatch ) {
 			result = {
 				name: UNSAVED_NAME,
-				patch: unsavedPatch
+				patch: unsavedPatch,
+				isUnsaved: true
 			};
 		} else if ( selectedName ) {
+			var isCustom = customPatches[ selectedName ] ? true : false;
 			result = {
 				name: selectedName,
-				patch: defaultPatches[ selectedName ] || customPatches[ selectedName ]
+				patch: isCustom ? customPatches[ selectedName ] : defaultPatches[ selectedName ],
+				isCustom: isCustom
 			};
 		} else {
 			var defaultNames = Object.keys( defaultPatches ),
@@ -60,7 +63,8 @@ Library.prototype = {
 
 				result = {
 					name: name,
-					patch: customPatches[ name ]
+					patch: customPatches[ name ],
+					isCustom: true
 				};
 			}
 		}
@@ -155,6 +159,59 @@ Library.prototype = {
 		store.set( self.SELECTED, patchName );
 
 		customPatches[ patchName ] = patch;
+		store.set( self.CUSTOM, JSON.stringify( customPatches ) );
+
+		self._announceSelectionChange();
+	},
+
+	getPreviousName: function( patchName ) {
+		var self = this,
+			names = self.getDefaultNames().concat( self.getCustomNames() ),
+			index = names.indexOf( patchName ),
+			result;
+
+		if ( index !== -1 ) {
+			result = ( index > 0 ) ? names[ --index ] : names[ names.length - 1 ];
+		}
+
+		return result;
+	},
+
+	getNextName: function( patchName ) {
+		var self = this,
+			names = self.getDefaultNames().concat( self.getCustomNames() ),
+			index = names.indexOf( patchName ),
+			result;
+
+		if ( index !== -1 ) {
+			result = ( index < ( names.length - 1 ) ) ? names[ ++index ] : names[ 0 ];
+		}
+
+		return result;
+	},
+
+	removeCustom: function( patchName ) {
+		var self = this,
+			customPatches = self.customPatches,
+			store = self.store;
+
+		if ( !customPatches[ patchName ] ) {
+			return;
+		}
+
+		var previousPatchName = self.getPreviousName( patchName );
+
+		self.unsavedPatch = null;
+		store.remove( self.UNSAVED );
+
+		self.selectedName = previousPatchName;
+		if ( previousPatchName ) {
+			store.set( self.SELECTED, previousPatchName );
+		} else {
+			store.remove( self.SELECTED );
+		}
+
+		delete customPatches[ patchName ];
 		store.set( self.CUSTOM, JSON.stringify( customPatches ) );
 
 		self._announceSelectionChange();
