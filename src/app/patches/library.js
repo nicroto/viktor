@@ -215,6 +215,16 @@ Library.prototype = {
 		store.set( self.CUSTOM, JSON.stringify( customPatches ) );
 
 		self._announceSelectionChange();
+	},
+
+	overrideCustomLibrary: function( customPatches ) {
+		var self = this,
+			store = self.store;
+
+		self.customPatches = customPatches;
+		store.set( self.CUSTOM, JSON.stringify( customPatches ) );
+
+		self._announceSelectionChange();
 	}
 
 };

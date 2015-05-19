@@ -4,6 +4,7 @@ var angular = require( "angular" ),
 	store = require( "store" ),
 	app = angular.module( "app", [
 		require( "angular-bootstrap-npm" ),
+		require( "ng-file-upload" ).name,
 		require( "angular-bind-polymer" ).name,
 		require( "./ui/module" ).name
 	] ),

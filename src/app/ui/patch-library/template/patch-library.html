@@ -1,6 +1,9 @@
 <div id="patchLibrary" ng-controller="PatchLibraryCtrl as library">
 	<div class="row">
 		<div class="col-lg-offset-4 col-lg-4 text-center">
+			<a ngf-select ngf-change="library.upload($files)">Import</a>
+			<a ng-show="library.isExportVisible()" ng-click="library.export()">Export</a>
+			<a ng-show="library.isExportVisible()" ng-click="library.clear()">Clear</a>
 			<drop-down></drop-down>
 			<a class="glyphicon glyphicon-floppy-disk"
 				ng-show="library.isSavePatchVisible()"
