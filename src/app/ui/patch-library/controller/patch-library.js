@@ -51,7 +51,7 @@ module.exports = function( mod ) {
 			if ( files.length ) {
 				var reader = new FileReader();
 
-				reader.onload = function(e) {
+				reader.onload = function() {
 					var text = reader.result,
 						customPatches;
 
@@ -62,7 +62,7 @@ module.exports = function( mod ) {
 					if ( customPatches ) {
 						patchLibrary.overrideCustomLibrary( customPatches );
 					}
-				}
+				};
 
 				reader.readAsText( files[ 0 ], "utf-8" );
 			}
