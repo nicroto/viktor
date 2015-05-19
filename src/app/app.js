@@ -3,6 +3,7 @@
 var angular = require( "angular" ),
 	store = require( "store" ),
 	app = angular.module( "app", [
+		require( "angular-bootstrap-npm" ),
 		require( "angular-bind-polymer" ).name,
 		require( "./ui/module" ).name
 	] ),

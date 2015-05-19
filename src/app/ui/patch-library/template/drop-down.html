@@ -1,11 +1,11 @@
 <div class="patches-drop-down" ng-controller="DropDownCtrl as dropDown">
 	<a data-target="#" class="patch-button glyphicon glyphicon-chevron-left" ng-click="dropDown.selectPrevious()"></a>
-	<div class="dropdown">
-		<a id="dLabel" data-target="#" data-toggle="dropdown" aria-haspopup="true" role="button" aria-expanded="false">
+	<div class="dropdown" dropdown>
+		<a id="dLabel" class="dropdown-toggle" dropdown-toggle>
 			{{dropDown.selectedName}}
 		</a>
 
-		<ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+		<ul class="dropdown-menu">
 			<li ng-repeat="patch in dropDown.patches"
 				ng-attr-role="{{patch.separator}}"
 				ng-class="{'dropdown-header': patch.separator}"

@@ -2,7 +2,7 @@
 
 module.exports = function( mod ) {
 
-	mod.controller( "DropDownCtrl", [ "$scope", "dawEngine", "patchLibrary", function( $scope, dawEngine, patchLibrary ) {
+	mod.controller( "DropDownCtrl", [ "dawEngine", "patchLibrary", function( dawEngine, patchLibrary ) {
 		var self = this,
 			defaultPatches,
 			customPatches,
@@ -90,9 +90,8 @@ module.exports = function( mod ) {
 			patchLibrary.selectPatch( patchName );
 		};
 
-		patchLibrary.onSelectionChange( function( selectedPatch ) {
+		patchLibrary.onSelectionChange( function() {
 			pollSettings();
-			dawEngine.loadPatch( selectedPatch.patch );
 		} );
 
 	} ] );

@@ -124,6 +124,40 @@ Library.prototype = {
 		var self = this;
 
 		self._selectionChangeHandlers.push( handler );
+	},
+
+	getUniqueName: function() {
+		var self = this,
+			names = self.getDefaultNames().concat( self.getCustomNames() ),
+			count = 0,
+			result;
+
+		while( !result && count < 1000 ) {
+			var name = UNSAVED_NAME + ( ++count );
+			if ( names.indexOf( name ) === -1 ) {
+				result = name;
+				break;
+			}
+		}
+
+		return result;
+	},
+
+	saveCustom: function( patchName, patch ) {
+		var self = this,
+			customPatches = self.customPatches,
+			store = self.store;
+
+		self.unsavedPatch = null;
+		store.remove( self.UNSAVED );
+
+		self.selectedName = patchName;
+		store.set( self.SELECTED, patchName );
+
+		customPatches[ patchName ] = patch;
+		store.set( self.CUSTOM, JSON.stringify( customPatches ) );
+
+		self._announceSelectionChange();
 	}
 
 };
