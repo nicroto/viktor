@@ -44746,12 +44746,15 @@ Library.prototype = {
 		if ( unsavedPatch ) {
 			result = {
 				name: UNSAVED_NAME,
-				patch: unsavedPatch
+				patch: unsavedPatch,
+				isUnsaved: true
 			};
 		} else if ( selectedName ) {
+			var isCustom = customPatches[ selectedName ] ? true : false;
 			result = {
 				name: selectedName,
-				patch: defaultPatches[ selectedName ] || customPatches[ selectedName ]
+				patch: isCustom ? customPatches[ selectedName ] : defaultPatches[ selectedName ],
+				isCustom: isCustom
 			};
 		} else {
 			var defaultNames = Object.keys( defaultPatches ),
@@ -44770,7 +44773,8 @@ Library.prototype = {
 
 				result = {
 					name: name,
-					patch: customPatches[ name ]
+					patch: customPatches[ name ],
+					isCustom: true
 				};
 			}
 		}
@@ -44865,6 +44869,59 @@ Library.prototype = {
 		store.set( self.SELECTED, patchName );
 
 		customPatches[ patchName ] = patch;
+		store.set( self.CUSTOM, JSON.stringify( customPatches ) );
+
+		self._announceSelectionChange();
+	},
+
+	getPreviousName: function( patchName ) {
+		var self = this,
+			names = self.getDefaultNames().concat( self.getCustomNames() ),
+			index = names.indexOf( patchName ),
+			result;
+
+		if ( index !== -1 ) {
+			result = ( index > 0 ) ? names[ --index ] : names[ names.length - 1 ];
+		}
+
+		return result;
+	},
+
+	getNextName: function( patchName ) {
+		var self = this,
+			names = self.getDefaultNames().concat( self.getCustomNames() ),
+			index = names.indexOf( patchName ),
+			result;
+
+		if ( index !== -1 ) {
+			result = ( index < ( names.length - 1 ) ) ? names[ ++index ] : names[ 0 ];
+		}
+
+		return result;
+	},
+
+	removeCustom: function( patchName ) {
+		var self = this,
+			customPatches = self.customPatches,
+			store = self.store;
+
+		if ( !customPatches[ patchName ] ) {
+			return;
+		}
+
+		var previousPatchName = self.getPreviousName( patchName );
+
+		self.unsavedPatch = null;
+		store.remove( self.UNSAVED );
+
+		self.selectedName = previousPatchName;
+		if ( previousPatchName ) {
+			store.set( self.SELECTED, previousPatchName );
+		} else {
+			store.remove( self.SELECTED );
+		}
+
+		delete customPatches[ patchName ];
 		store.set( self.CUSTOM, JSON.stringify( customPatches ) );
 
 		self._announceSelectionChange();
@@ -46313,21 +46370,6 @@ module.exports = function( mod ) {
 						return { name: patchName, isCustom: true, originalIndex: originalIndex };
 					} ) );
 				self.selectedName = selectedName;
-			},
-			getSelectedIndex = function() {
-				var patches = self.patches,
-					index = -1;
-
-				for ( var i = 0; i < patches.length; i++ ) {
-					var patch = patches[ i ];
-
-					if ( !patch.separator && patch.name === self.selectedName ) {
-						index = i;
-						break;
-					}
-				}
-
-				return index;
 			};
 
 		pollSettings();
@@ -46339,47 +46381,15 @@ module.exports = function( mod ) {
 		};
 
 		self.selectPrevious = function() {
-			var selectedIndex = getSelectedIndex(),
-				patchName = defaultPatches[ 0 ];
+			var previousName = patchLibrary.getPreviousName( selectedName );
 
-			if ( selectedIndex !== -1 ) {
-				var patches = self.patches,
-					patch = patches[ selectedIndex ],
-					isCustom = patch.isCustom,
-					array = isCustom ? customPatches : defaultPatches,
-					newIndex = patch.originalIndex - 1;
-
-				if ( isCustom ) {
-					patchName = newIndex < 0 ? defaultPatches[ defaultPatches.length - 1 ] : array[ newIndex ];
-				} else {
-					var fallbackArray = ( customPatches.length > 0 ) ? customPatches : defaultPatches;
-					patchName = newIndex < 0 ? fallbackArray[ fallbackArray.length - 1 ] : array[ newIndex ];
-				}
-			}
-
-			patchLibrary.selectPatch( patchName );
+			patchLibrary.selectPatch( previousName ? previousName : defaultPatches[ 0 ] );
 		};
 
 		self.selectNext = function() {
-			var selectedIndex = getSelectedIndex(),
-				patchName = defaultPatches[ 0 ];
+			var nextName = patchLibrary.getNextName( selectedName );
 
-			if ( selectedIndex !== -1 ) {
-				var patches = self.patches,
-					patch = patches[ selectedIndex ],
-					isCustom = patch.isCustom,
-					array = isCustom ? customPatches : defaultPatches,
-					newIndex = patch.originalIndex + 1;
-
-				if ( isCustom ) {
-					patchName = newIndex === array.length ? defaultPatches[ 0 ] : array[ newIndex ];
-				} else {
-					var fallbackArray = ( customPatches.length > 0 ) ? customPatches : defaultPatches;
-					patchName = newIndex === array.length ? fallbackArray[ 0 ] : array[ newIndex ];
-				}
-			}
-
-			patchLibrary.selectPatch( patchName );
+			patchLibrary.selectPatch( nextName ? nextName : defaultPatches[ 0 ] );
 		};
 
 		patchLibrary.onSelectionChange( function() {
@@ -46403,12 +46413,11 @@ module.exports = function( mod ) {
 module.exports = function( mod ) {
 
 	mod.controller( "PatchLibraryCtrl", [ "$scope", "$modal", "dawEngine", "patchLibrary", function( $scope, $modal, dawEngine, patchLibrary ) {
-		var self = this;
-
-		self.selectedName = patchLibrary.getSelected().name;
+		var self = this,
+			selectedPatch = patchLibrary.getSelected();
 
 		self.isSavePatchVisible = function() {
-			return patchLibrary.unsavedPatch ? true : false;
+			return selectedPatch.isUnsaved ? true : false;
 		};
 
 		self.openSavePatchModal = function() {
@@ -46426,7 +46435,29 @@ module.exports = function( mod ) {
 			}, function() {} );
 		};
 
-		patchLibrary.onSelectionChange( function( selectedPatch ) {
+		self.isDeletePatchVisible = function() {
+			return selectedPatch.isCustom ? true : false;
+		};
+
+		self.openDeletePatchModal = function() {
+			var modalInstance = $modal.open( {
+				animation: $scope.animationsEnabled,
+				templateUrl: 'deletePatchModal.html',
+				controller: 'DeletePatchModalCtrl',
+				controllerAs: 'deletePatchModal',
+				size: null,
+				resolve: null
+			} );
+
+			modalInstance.result.then( function() {
+				patchLibrary.removeCustom( selectedPatch.name );
+			}, function() {} );
+		};
+
+
+		patchLibrary.onSelectionChange( function( newSelectedPatch ) {
+			selectedPatch = newSelectedPatch;
+
 			dawEngine.loadPatch( selectedPatch.patch );
 		} );
 	} ] );
@@ -46442,6 +46473,18 @@ module.exports = function( mod ) {
 
 		self.savePatch = function() {
 			$modalInstance.close( self.name );
+		};
+	} ] );
+
+	mod.controller( "DeletePatchModalCtrl", [ "$modalInstance", function( $modalInstance ) {
+		var self = this;
+
+		self.close = function() {
+			$modalInstance.dismiss();
+		};
+
+		self.deletePatch = function() {
+			$modalInstance.close();
 		};
 	} ] );
 
@@ -46513,6 +46556,9 @@ ngModule.run(['$templateCache', function($templateCache) {
     '			<a class="glyphicon glyphicon-floppy-disk"\n' +
     '				ng-show="library.isSavePatchVisible()"\n' +
     '				ng-click="library.openSavePatchModal()"></a>\n' +
+    '			<a class="glyphicon glyphicon-remove-circle"\n' +
+    '				ng-show="library.isDeletePatchVisible()"\n' +
+    '				ng-click="library.openDeletePatchModal()"></a>\n' +
     '		</div>\n' +
     '	</div>\n' +
     '\n' +
@@ -46534,6 +46580,22 @@ ngModule.run(['$templateCache', function($templateCache) {
     '		<div class="modal-footer">\n' +
     '			<button type="button" class="btn btn-primary"\n' +
     '				ng-click="savePatchModal.savePatch()">Save</button>\n' +
+    '		</div>\n' +
+    '	</script>\n' +
+    '\n' +
+    '	<script type="text/ng-template" id="deletePatchModal.html">\n' +
+    '		<div class="modal-header">\n' +
+    '			<button type="button" class="close" ng-click="deletePatchModal.close()"><span>&times;</span></button>\n' +
+    '			<h4 class="modal-title">Are you sure?</h4>\n' +
+    '		</div>\n' +
+    '		<div class="modal-body">\n' +
+    '			<h5 class="modal-title">Are you sure you want to delete this patch?</h5>\n' +
+    '		</div>\n' +
+    '		<div class="modal-footer">\n' +
+    '			<button type="button" class="btn btn-primary"\n' +
+    '				ng-click="deletePatchModal.deletePatch()">Yes</button>\n' +
+    '			<button type="button" class="btn btn-primary"\n' +
+    '				ng-click="deletePatchModal.close()">Cancel</button>\n' +
     '		</div>\n' +
     '	</script>\n' +
     '</div>');
