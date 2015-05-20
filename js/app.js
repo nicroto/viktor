@@ -46186,7 +46186,15 @@ Library.prototype = {
 
 	overrideCustomLibrary: function( customPatches ) {
 		var self = this,
-			store = self.store;
+			store = self.store,
+			selectedPatch = self.getSelected();
+
+		if ( selectedPatch.isCustom && !customPatches[ selectedPatch.name ] ) {
+			store.remove( self.SELECTED );
+			self.selectedName = null;
+
+			self.preserveUnsaved( selectedPatch.patch );
+		}
 
 		self.customPatches = customPatches;
 		store.set( self.CUSTOM, JSON.stringify( customPatches ) );
@@ -47724,7 +47732,7 @@ module.exports = function( mod ) {
 			}, function() {} );
 		};
 
-		self.upload = function( files ) {
+		self.import = function( files ) {
 			if ( files.length ) {
 				var reader = new FileReader();
 
@@ -47734,10 +47742,12 @@ module.exports = function( mod ) {
 
 					try {
 						customPatches = JSON.parse( text );
-					} catch ( exception ) {}
 
-					if ( customPatches ) {
-						patchLibrary.overrideCustomLibrary( customPatches );
+						if ( customPatches ) {
+							patchLibrary.overrideCustomLibrary( customPatches );
+						}
+					} catch ( exception ) {
+						console.log( "The file you try to import isn't a valid JSON." );
 					}
 				};
 
@@ -47857,7 +47867,7 @@ ngModule.run(['$templateCache', function($templateCache) {
     '<div id="patchLibrary" ng-controller="PatchLibraryCtrl as library">\n' +
     '	<div class="row">\n' +
     '		<div class="col-lg-offset-4 col-lg-4 text-center">\n' +
-    '			<a ngf-select ngf-change="library.upload($files)">Import</a>\n' +
+    '			<a ngf-select ngf-change="library.import($files)">Import</a>\n' +
     '			<a ng-show="library.isExportVisible()" ng-click="library.export()">Export</a>\n' +
     '			<a ng-show="library.isExportVisible()" ng-click="library.clear()">Clear</a>\n' +
     '			<drop-down></drop-down>\n' +
