@@ -47,7 +47,7 @@ module.exports = function( mod ) {
 			}, function() {} );
 		};
 
-		self.upload = function( files ) {
+		self.import = function( files ) {
 			if ( files.length ) {
 				var reader = new FileReader();
 
@@ -57,10 +57,12 @@ module.exports = function( mod ) {
 
 					try {
 						customPatches = JSON.parse( text );
-					} catch ( exception ) {}
 
-					if ( customPatches ) {
-						patchLibrary.overrideCustomLibrary( customPatches );
+						if ( customPatches ) {
+							patchLibrary.overrideCustomLibrary( customPatches );
+						}
+					} catch ( exception ) {
+						console.log( "The file you try to import isn't a valid JSON." );
 					}
 				};
 
