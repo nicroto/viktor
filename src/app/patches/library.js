@@ -219,7 +219,15 @@ Library.prototype = {
 
 	overrideCustomLibrary: function( customPatches ) {
 		var self = this,
-			store = self.store;
+			store = self.store,
+			selectedPatch = self.getSelected();
+
+		if ( selectedPatch.isCustom && !customPatches[ selectedPatch.name ] ) {
+			store.remove( self.SELECTED );
+			self.selectedName = null;
+
+			self.preserveUnsaved( selectedPatch.patch );
+		}
 
 		self.customPatches = customPatches;
 		store.set( self.CUSTOM, JSON.stringify( customPatches ) );
