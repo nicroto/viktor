@@ -3,19 +3,19 @@
 		<h5>Form</h5>
 		<webaudio-knob src="images/range-knob.png"
 			bind-polymer
-			value="{{lfo.waveform.value}}" min="{{lfo.waveform.range[ 0 ]}}" max="{{lfo.waveform.range[ 1 ]}}" step="1" diameter="110" sprites="30" width="40" height="40" tooltip="Oscillator waveform"></webaudio-knob>
+			value="{{lfo.waveform.value}}" min="{{lfo.waveform.range[ 0 ]}}" max="{{lfo.waveform.range[ 1 ]}}" step="1" diameter="240" sprites="5" width="60" height="60" tooltip="Oscillator waveform"></webaudio-knob>
 	</div>
 	<div class="row">
 		<h5>Rate</h5>
-		<webaudio-knob src="images/frequency-knob.png"
+		<webaudio-knob src="images/0-100-knob.png"
 			bind-polymer
-			value="{{lfo.rate.value}}" min="{{lfo.rate.range[ 0 ]}}" max="{{lfo.rate.range[ 1 ]}}" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Rate in HZ"></webaudio-knob>
+			value="{{lfo.rate.value}}" min="{{lfo.rate.range[ 0 ]}}" max="{{lfo.rate.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60" tooltip="Rate in HZ"></webaudio-knob>
 	</div>
 	<div class="row">
 		<h5>Clean/LFO</h5>
-		<webaudio-knob src="images/frequency-knob.png"
+		<webaudio-knob src="images/0-100-knob.png"
 			bind-polymer
-			value="{{lfo.amount.value}}" min="{{lfo.amount.range[ 0 ]}}" max="{{lfo.amount.range[ 1 ]}}" step="1" diameter="66" sprites="44" width="40" height="40" tooltip="Clean/LFO Mix"></webaudio-knob>
+			value="{{lfo.amount.value}}" min="{{lfo.amount.range[ 0 ]}}" max="{{lfo.amount.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60" tooltip="Clean/LFO Mix"></webaudio-knob>
 	</div>
 	<h4>LFO</h4>
 </div>
