@@ -13,7 +13,7 @@ module.exports = function( mod ) {
 				};
 			},
 			settings = dawEngine.pitchSettings,
-			$pitchBend = $( ".pitch-bend webaudio-slider" );
+			$pitchBend = $( ".pitch-bend webaudio-knob" );
 
 		self.bend = settingsConvertor.transposeParam( settings.bend, [ 0, 128 ] );
 
@@ -31,11 +31,6 @@ module.exports = function( mod ) {
 			}
 		} );
 
-		// fix issue with initial value settings
-		$timeout( function() {
-			$pitchBend[ 0 ].setValue( self.bend.value );
-		}, 500 );
-
 		// fix the lack of attr 'value' update
 		$pitchBend.on( "change", function( e ) {
 			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
@@ -45,7 +40,7 @@ module.exports = function( mod ) {
 
 		// handle pitch return to center
 		var isPitchBending = false;
-		$( "body" ).on( "mouseup", function() {
+		$( document ).on( "mouseup", function() {
 			if ( isPitchBending ) {
 				isPitchBending = false;
 				self.bend.value = settingsConvertor.getRangeCenter( self.bend.range );

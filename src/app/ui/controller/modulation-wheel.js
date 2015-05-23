@@ -15,7 +15,7 @@ module.exports = function( mod ) {
 				dawEngine.modulationSettings = modulationSettings;
 			},
 			settings = dawEngine.modulationSettings,
-			$modulationWheel = $( ".modulation-wheel webaudio-slider" );
+			$modulationWheel = $( ".modulation-wheel webaudio-knob" );
 
 		self.modulation = settingsConvertor.transposeParam( settings.rate, [ 0, 128 ] );
 
@@ -32,11 +32,6 @@ module.exports = function( mod ) {
 				);
 			}
 		} );
-
-		// fix issue with initial value settings
-		$timeout( function() {
-			$modulationWheel[ 0 ].setValue( self.modulation.value );
-		}, 500 );
 
 		// fix the lack of attr 'value' update
 		$modulationWheel.on( "change", function( e ) {

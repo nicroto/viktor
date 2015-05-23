@@ -1,5 +1,6 @@
 <div class="modulation-wheel wheel inline-block" ng-controller="ModulationWheelCtrl as modulationWheel">
-	<webaudio-slider value="{{modulationWheel.modulation.value}}" direction="vert" min="{{modulationWheel.modulation.range[ 0 ]}}" max="{{modulationWheel.modulation.range[ 1 ]}}" step="1"
+	<webaudio-knob src="images/wheel.png" value="{{modulationWheel.modulation.value}}"
+		min="{{modulationWheel.modulation.range[ 0 ]}}" max="{{modulationWheel.modulation.range[ 1 ]}}"
 		bind-polymer
-		width="16" height="120"></webaudio-slider>
+		sprites="44" width="60" height="120"></webaudio-knob>
 </div>
