@@ -21,7 +21,7 @@ module.exports = function( mod ) {
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings,
-			pollSettings = function() {
+			pollSettings = function( time ) {
 				settings = synth.noiseSettings;
 
 				self.enabled = settings.enabled;
@@ -32,7 +32,7 @@ module.exports = function( mod ) {
 				$timeout( function() {
 					$( ".noise webaudio-switch" )[ 0 ].setValue( self.enabled.value );
 					$( ".noise webaudio-slider" )[ 0 ].setValue( self.type.value );
-				}, 300 );
+				}, time );
 			},
 			watchers = [],
 			registerForChanges = function() {
@@ -51,7 +51,7 @@ module.exports = function( mod ) {
 				watchers = [];
 			};
 
-		pollSettings();
+		pollSettings( 300 );
 
 		registerForChanges();
 

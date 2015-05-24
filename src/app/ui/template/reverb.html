@@ -1,9 +1,11 @@
 <div class="col-lg-1 reverb master-control-bank text-center" ng-controller="ReverbCtrl as reverb">
-	<div class="row">
-		<webaudio-knob src="images/0-100-knob.png"
-			bind-polymer
-			value="{{reverb.level.value}}" min="{{reverb.level.range[ 0 ]}}" max="{{reverb.level.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60" tooltip="Reverb"></webaudio-knob>
-		<h5>Level</h5>
-	</div>
 	<h4>Reverb</h4>
+	<div class="row">
+		<webaudio-slider direction="vert"
+			bind-polymer
+			value="{{reverb.level.value}}" min="{{reverb.level.range[ 0 ]}}" max="{{reverb.level.range[ 1 ]}}" step="1"
+			src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
+			height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
+		<h6>Level</h6>
+	</div>
 </div>

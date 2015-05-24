@@ -1,29 +1,37 @@
-<div class="col-lg-4 col-lg-offset-2 delay master-control-bank text-center" ng-controller="DelayCtrl as delay">
+<div class="col-lg-2 delay master-control-bank text-center" ng-controller="DelayCtrl as delay">
+	<h4>Delay</h4>
 	<div class="row">
-		<div class="col-lg-3">
-			<webaudio-knob src="images/0-100-knob.png"
+		<div class="col-lg-3 no-padding">
+			<webaudio-slider direction="vert"
 				bind-polymer
-				value="{{delay.time.value}}" min="{{delay.time.range[ 0 ]}}" max="{{delay.time.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60" tooltip="Delay Time"></webaudio-knob>
-			<h5>Time</h5>
+				value="{{delay.time.value}}" min="{{delay.time.range[ 0 ]}}" max="{{delay.time.range[ 1 ]}}" step="1"
+				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
+				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
+			<h6>Time</h6>
 		</div>
-		<div class="col-lg-3">
-			<webaudio-knob src="images/0-100-knob.png"
+		<div class="col-lg-3 no-padding">
+			<webaudio-slider direction="vert"
 				bind-polymer
-				value="{{delay.feedback.value}}" min="{{delay.feedback.range[ 0 ]}}" max="{{delay.feedback.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60" tooltip="Delay Feedback"></webaudio-knob>
-			<h5>Feedback</h5>
+				value="{{delay.feedback.value}}" min="{{delay.feedback.range[ 0 ]}}" max="{{delay.feedback.range[ 1 ]}}" step="1"
+				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
+				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
+			<h6>Feed</h6>
 		</div>
-		<div class="col-lg-3">
-			<webaudio-knob src="images/0-100-knob.png"
+		<div class="col-lg-3 no-padding">
+			<webaudio-slider direction="vert"
 				bind-polymer
-				value="{{delay.dry.value}}" min="{{delay.dry.range[ 0 ]}}" max="{{delay.dry.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60" tooltip="Delay Dry Level"></webaudio-knob>
-			<h5>Dry</h5>
+				value="{{delay.dry.value}}" min="{{delay.dry.range[ 0 ]}}" max="{{delay.dry.range[ 1 ]}}" step="1"
+				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
+				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
+			<h6>Dry</h6>
 		</div>
-		<div class="col-lg-3">
-			<webaudio-knob src="images/0-100-knob.png"
+		<div class="col-lg-3 no-padding">
+			<webaudio-slider direction="vert"
 				bind-polymer
-				value="{{delay.wet.value}}" min="{{delay.wet.range[ 0 ]}}" max="{{delay.wet.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60" tooltip="Delay Wet Level"></webaudio-knob>
-			<h5>Wet</h5>
+				value="{{delay.wet.value}}" min="{{delay.wet.range[ 0 ]}}" max="{{delay.wet.range[ 1 ]}}" step="1"
+				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
+				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
+			<h6>Wet</h6>
 		</div>
 	</div>
-	<h4>Delay</h4>
 </div>

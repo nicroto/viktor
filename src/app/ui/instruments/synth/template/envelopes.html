@@ -1,48 +1,57 @@
-<div class="col-lg-3 envelopes control-bank text-center" ng-controller="EnvelopesCtrl as envs">
+<div class="col-lg-2 envelopes control-bank text-center" ng-controller="EnvelopesCtrl as envs">
 	<div class="envelope row">
 		<h5>Primary</h5>
-		<div class="col-lg-3">
-			<webaudio-knob src="images/0-100-knob.png"
+		<div class="col-lg-3">	
+			<webaudio-slider direction="vert" value="{{envs.primary.attack.value}}"
+				min="{{envs.primary.attack.range[ 0 ]}}" max="{{envs.primary.attack.range[ 1 ]}}" step="1"
 				bind-polymer
-				value="{{envs.primary.attack.value}}" min="{{envs.primary.attack.range[ 0 ]}}" max="{{envs.primary.attack.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60" tooltip="Primary attack"></webaudio-knob>
+				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
+				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
 		</div>
 		<div class="col-lg-3">
-			<webaudio-knob src="images/0-100-knob.png"
-				bind-polymer
-				value="{{envs.primary.decay.value}}" min="{{envs.primary.decay.range[ 0 ]}}" max="{{envs.primary.decay.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60" tooltip="Primary decay"></webaudio-knob>
+			<webaudio-slider direction="vert"
+				value="{{envs.primary.decay.value}}" min="{{envs.primary.decay.range[ 0 ]}}" max="{{envs.primary.decay.range[ 1 ]}}" step="1" bind-polymer
+				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
+				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
 		</div>
 		<div class="col-lg-3">
-			<webaudio-knob src="images/0-100-knob.png"
-				bind-polymer
-				value="{{envs.primary.sustain.value}}" min="{{envs.primary.sustain.range[ 0 ]}}" max="{{envs.primary.sustain.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60" tooltip="Primary sustain"></webaudio-knob>
+			<webaudio-slider direction="vert"
+				value="{{envs.primary.sustain.value}}" min="{{envs.primary.sustain.range[ 0 ]}}" max="{{envs.primary.sustain.range[ 1 ]}}" step="1" bind-polymer
+				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
+				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
 		</div>
 		<div class="col-lg-3">
-			<webaudio-knob src="images/0-100-knob.png"
-				bind-polymer
-				value="{{envs.primary.release.value}}" min="{{envs.primary.release.range[ 0 ]}}" max="{{envs.primary.release.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60" tooltip="Primary release"></webaudio-knob>
+			<webaudio-slider direction="vert"
+				value="{{envs.primary.release.value}}" min="{{envs.primary.release.range[ 0 ]}}" max="{{envs.primary.release.range[ 1 ]}}" step="1" bind-polymer
+				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
+				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
 		</div>
 	</div>
 	<div class="envelope row">
 		<h5>Filter</h5>
 		<div class="col-lg-3">
-			<webaudio-knob src="images/0-100-knob.png"
-				bind-polymer
-				value="{{envs.filter.attack.value}}" min="{{envs.filter.attack.range[ 0 ]}}" max="{{envs.filter.attack.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60" tooltip="Filter attack"></webaudio-knob>
+			<webaudio-slider direction="vert"
+				value="{{envs.filter.attack.value}}" min="{{envs.filter.attack.range[ 0 ]}}" max="{{envs.filter.attack.range[ 1 ]}}" step="1" bind-polymer
+				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
+				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
 		</div>
 		<div class="col-lg-3">
-			<webaudio-knob src="images/0-100-knob.png"
-				bind-polymer
-				value="{{envs.filter.decay.value}}" min="{{envs.filter.decay.range[ 0 ]}}" max="{{envs.filter.decay.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60" tooltip="Filter decay"></webaudio-knob>
+			<webaudio-slider direction="vert"
+				value="{{envs.filter.decay.value}}" min="{{envs.filter.decay.range[ 0 ]}}" max="{{envs.filter.decay.range[ 1 ]}}" step="1" bind-polymer
+				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
+				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
 		</div>
 		<div class="col-lg-3">
-			<webaudio-knob src="images/0-100-knob.png"
-				bind-polymer
-				value="{{envs.filter.sustain.value}}" min="{{envs.filter.sustain.range[ 0 ]}}" max="{{envs.filter.sustain.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60" tooltip="Filter sustain"></webaudio-knob>
+			<webaudio-slider direction="vert"
+				value="{{envs.filter.sustain.value}}" min="{{envs.filter.sustain.range[ 0 ]}}" max="{{envs.filter.sustain.range[ 1 ]}}" step="1" bind-polymer
+				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
+				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
 		</div>
 		<div class="col-lg-3">
-			<webaudio-knob src="images/0-100-knob.png"
-				bind-polymer
-				value="{{envs.filter.release.value}}" min="{{envs.filter.release.range[ 0 ]}}" max="{{envs.filter.release.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60" tooltip="Filter release"></webaudio-knob>
+			<webaudio-slider direction="vert"
+				value="{{envs.filter.release.value}}" min="{{envs.filter.release.range[ 0 ]}}" max="{{envs.filter.release.range[ 1 ]}}" step="1" bind-polymer
+				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
+				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
 		</div>
 	</div>
 	<div class="row">

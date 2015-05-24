@@ -5,7 +5,7 @@ var $ = require( "jquery" ),
 
 module.exports = function( mod ) {
 
-	mod.controller( "ReverbCtrl", [ "$scope", "dawEngine", "patchLibrary", function( $scope, dawEngine, patchLibrary ) {
+	mod.controller( "ReverbCtrl", [ "$scope", "$timeout", "dawEngine", "patchLibrary", function( $scope, $timeout, dawEngine, patchLibrary ) {
 		var self = this,
 			settingsChangeHandler = function( newValue, oldValue ) {
 				if ( newValue === oldValue ) {
@@ -19,9 +19,14 @@ module.exports = function( mod ) {
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings,
-			pollSettings = function() {
+			pollSettings = function( time ) {
 				settings = dawEngine.reverbSettings;
 				self.level = settingsConvertor.transposeParam( settings.level, [ 0, 100 ] );
+
+				// fix problem with bad init state
+				$timeout( function() {
+					$( ".reverb webaudio-slider" )[ 0 ].setValue( self.level.value );
+				}, time );
 			},
 			watchers = [],
 			registerForChanges = function() {
@@ -38,7 +43,7 @@ module.exports = function( mod ) {
 				watchers = [];
 			};
 
-		pollSettings();
+		pollSettings( 300 );
 
 		registerForChanges();
 
@@ -49,7 +54,7 @@ module.exports = function( mod ) {
 		} );
 
 		// fix the lack of attr 'value' update
-		$( ".reverb webaudio-knob" ).on( "change", function( e ) {
+		$( ".reverb webaudio-slider" ).on( "change", function( e ) {
 			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
 				$( e.target ).attr( "value", e.target.value );
 			}

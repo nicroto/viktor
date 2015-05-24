@@ -5,7 +5,7 @@ var $ = require( "jquery" ),
 
 module.exports = function( mod ) {
 
-	mod.controller( "DelayCtrl", [ "$scope", "dawEngine", "patchLibrary", function( $scope, dawEngine, patchLibrary ) {
+	mod.controller( "DelayCtrl", [ "$scope", "$timeout", "dawEngine", "patchLibrary", function( $scope, $timeout, dawEngine, patchLibrary ) {
 		var self = this,
 			settingsChangeHandler = function( newValue, oldValue ) {
 				if ( newValue === oldValue ) {
@@ -22,13 +22,22 @@ module.exports = function( mod ) {
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings,
-			pollSettings = function() {
+			pollSettings = function( time ) {
 				settings = dawEngine.delaySettings;
 
 				self.time = settingsConvertor.transposeParam( settings.time, [ 0, 100 ] );
 				self.feedback = settingsConvertor.transposeParam( settings.feedback, [ 0, 100 ] );
 				self.dry = settingsConvertor.transposeParam( settings.dry, [ 0, 100 ] );
 				self.wet = settingsConvertor.transposeParam( settings.wet, [ 0, 100 ] );
+
+				// fix problem with bad init state
+				$timeout( function() {
+					var sliders = $( ".delay webaudio-slider" );
+					sliders[ 0 ].setValue( self.time.value );
+					sliders[ 1 ].setValue( self.feedback.value );
+					sliders[ 2 ].setValue( self.dry.value );
+					sliders[ 3 ].setValue( self.wet.value );
+				}, time );
 			},
 			watchers = [],
 			registerForChanges = function() {
@@ -48,7 +57,7 @@ module.exports = function( mod ) {
 				watchers = [];
 			};
 
-		pollSettings();
+		pollSettings( 300 );
 
 		registerForChanges();
 
@@ -59,7 +68,7 @@ module.exports = function( mod ) {
 		} );
 
 		// fix the lack of attr 'value' update
-		$( ".delay webaudio-knob" ).on( "change", function( e ) {
+		$( ".delay webaudio-slider" ).on( "change", function( e ) {
 			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
 				$( e.target ).attr( "value", e.target.value );
 			}

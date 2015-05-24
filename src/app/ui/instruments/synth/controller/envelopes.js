@@ -5,7 +5,7 @@ var $ = require( "jquery" ),
 
 module.exports = function( mod ) {
 
-	mod.controller( "EnvelopesCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
+	mod.controller( "EnvelopesCtrl", [ "$scope", "$timeout", "dawEngine", "synth", "patchLibrary", function( $scope, $timeout, dawEngine, synth, patchLibrary ) {
 		var self = this,
 			settingsChangeHandler = function( newValue, oldValue ) {
 				if ( newValue === oldValue ) {
@@ -32,7 +32,7 @@ module.exports = function( mod ) {
 			settings,
 			primary,
 			filter,
-			pollSettings = function() {
+			pollSettings = function( time ) {
 				settings = synth.envelopesSettings;
 				primary = settings.primary;
 				filter = settings.filter;
@@ -49,6 +49,19 @@ module.exports = function( mod ) {
 					sustain: settingsConvertor.transposeParam( filter.sustain, [ 0, 100 ] ),
 					release: settingsConvertor.transposeParam( filter.release, [ 0, 100 ] )
 				};
+
+				// fix problem with bad init state
+				$timeout( function() {
+					var sliders = $( ".envelopes webaudio-slider" );
+					sliders[ 0 ].setValue( self.primary.attack.value );
+					sliders[ 1 ].setValue( self.primary.decay.value );
+					sliders[ 2 ].setValue( self.primary.sustain.value );
+					sliders[ 3 ].setValue( self.primary.release.value );
+					sliders[ 4 ].setValue( self.filter.attack.value );
+					sliders[ 5 ].setValue( self.filter.decay.value );
+					sliders[ 6 ].setValue( self.filter.sustain.value );
+					sliders[ 7 ].setValue( self.filter.release.value );
+				}, time );
 			},
 			watchers = [],
 			registerForChanges = function() {
@@ -72,7 +85,7 @@ module.exports = function( mod ) {
 				watchers = [];
 			};
 
-		pollSettings();
+		pollSettings( 300 );
 
 		registerForChanges();
 
@@ -83,7 +96,7 @@ module.exports = function( mod ) {
 		} );
 
 		// fix the lack of attr 'value' update
-		$( ".envelopes webaudio-knob" ).on( "change", function( e ) {
+		$( ".envelopes webaudio-slider" ).on( "change", function( e ) {
 			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
 				$( e.target ).attr( "value", e.target.value );
 			}
