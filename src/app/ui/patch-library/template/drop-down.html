@@ -1,18 +1,20 @@
-<div class="patches-drop-down" ng-controller="DropDownCtrl as dropDown">
-	<a data-target="#" class="patch-button glyphicon glyphicon-chevron-left" ng-click="dropDown.selectPrevious()"></a>
-	<div class="dropdown" dropdown>
-		<a id="dLabel" class="dropdown-toggle" dropdown-toggle>
-			{{dropDown.selectedName}}
-		</a>
+<div id="patchesDropDown" ng-controller="DropDownCtrl as dropDown">
+	<a data-target="#" class="arrow-button glyphicon glyphicon-chevron-left" ng-click="dropDown.selectPrevious()"></a>
+	<div class="display-container">
+		<div class="display-container-inner dropdown" dropdown>
+			<div class="dropdown-toggle" dropdown-toggle>
+				{{dropDown.getSelectedName()}}
+			</div>
 
-		<ul class="dropdown-menu">
-			<li ng-repeat="patch in dropDown.patches"
-				ng-attr-role="{{patch.separator}}"
-				ng-class="{'dropdown-header': patch.separator}"
-				ng-click="dropDown.selectPatch(patch)">
-					{{patch.name}}
-			</li>
-		</ul>
+			<ul class="dropdown-menu">
+				<li ng-repeat="patch in dropDown.patches"
+					ng-attr-role="{{patch.separator}}"
+					ng-class="{'dropdown-header': patch.separator, 'regular-item': !patch.separator}"
+					ng-click="dropDown.selectPatch(patch)">
+						{{patch.name}}
+				</li>
+			</ul>
+		</div>
 	</div>
-	<a data-target="#" class="patch-button glyphicon glyphicon-chevron-right" ng-click="dropDown.selectNext()"></a>
+	<a data-target="#" class="arrow-button glyphicon glyphicon-chevron-right" ng-click="dropDown.selectNext()"></a>
 </div>

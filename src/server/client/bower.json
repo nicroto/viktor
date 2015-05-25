@@ -15,6 +15,7 @@
   ],
   "dependencies": {
     "bootstrap": "~3.3.4",
-    "webaudio-controls": "*"
+    "webaudio-controls": "*",
+    "orbitron": "*"
   }
 }

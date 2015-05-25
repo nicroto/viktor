@@ -1,10 +1,63 @@
-.patches-drop-down
-	.dropdown
+#patchesDropDown
+	display: inline-block
+	.arrow-button
+		top: 3px
+		cursor: pointer
+		&:hover
+			text-decoration: none
+	.display-container
 		display: inline-block
+		border: solid 1px #3D3D3D
+		margin-top: 10px
+		width: 270px
+		background-color: green
+		-webkit-box-shadow: inset 2px 2px 31px 2px rgba(0,0,0,0.57)
+		-moz-box-shadow: inset 2px 2px 31px 2px rgba(0,0,0,0.57)
+		box-shadow: inset 2px 2px 31px 2px rgba(0,0,0,0.57)
+		.display-container-inner
+			background: -webkit-gradient(linear, left top, left bottom, color-stop(0.05, rgba(150, 150, 150, 0.69)), color-stop(1, rgba(230, 230, 230, 0)))
+			background: -moz-linear-gradient(top, rgba(150, 150, 150, 0.69) 5%, rgba(230, 230, 230, 0) 100%)
+			background: -webkit-linear-gradient(top, rgba(150, 150, 150, 0.69) 5%, rgba(230, 230, 230, 0) 100%)
+			background: -o-linear-gradient(top, rgba(150, 150, 150, 0.69) 5%, rgba(230, 230, 230, 0) 100%)
+			background: -ms-linear-gradient(top, rgba(150, 150, 150, 0.69) 5%, rgba(230, 230, 230, 0) 100%)
+			background: linear-gradient(to bottom, rgba(150, 150, 150, 0.69) 5%, rgba(230, 230, 230, 0) 100%)
+	.dropdown-toggle
+		padding: 10px
+		cursor: pointer
 		color: black
+		font-family: "orbitron_light"
 	.dropdown-menu
-		width: 200px;
-		text-align: center;
-		background-color: #2A2A2A;
-		color: white;
-		border: solid 1px #8E8E8E;
+		width: 270px
+		background-color: $panel-grey
+		color: $panel-text-grey
+		border: solid 1px #8e8e8e
+		padding: 20px
+		font-size: 1.1em
+		overflow: hidden
+		> li
+			line-height: 1.62857143
+			border-bottom: solid 1px rgba(255,255,255,0.1)
+			white-space: nowrap
+			overflow: hidden
+			&.regular-item
+				cursor: pointer
+				&:hover:before
+					position: absolute
+					content: ""
+					width: 5px
+					height: 1px
+					left: 7px
+					margin-top: 11px
+					border-bottom: solid 1px rgba(255,255,255,0.4)
+				&:hover:after
+					position: absolute
+					content: ""
+					width: 5px
+					height: 1px
+					right: 7px
+					margin-top: 11px
+					border-bottom: solid 1px rgba(255,255,255,0.4)
+		.dropdown-header
+			text-align: center
+			font-size: 19px
+			color: $panel-header-grey
