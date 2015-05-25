@@ -25,6 +25,16 @@ module.exports = function( mod ) {
 
 		pollSettings();
 
+		self.getSelectedName = function() {
+			var name = self.selectedName;
+
+			if ( name.length > 28 ) {
+				return name.substr( 0, 24 ) + "...";
+			} else {
+				return name;
+			}
+		};
+
 		self.selectPatch = function( patch ) {
 			if ( !patch.separator ) {
 				patchLibrary.selectPatch( patch.name );
