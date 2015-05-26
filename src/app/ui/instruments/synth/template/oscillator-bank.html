@@ -1,14 +1,14 @@
-<div class="col-lg-2 control-bank text-center" ng-controller="OscillatorBankCtrl as oscillators">
+<div class="col-xs-2 control-bank text-center" ng-controller="OscillatorBankCtrl as oscillators">
 	<div class="oscillator row">
 		<h5>Oscilator 1</h5>
-		<div class="col-lg-4">
+		<div class="col-xs-4">
 			<webaudio-knob src="images/6-range-knob.png"
 				bind-polymer
 				value="{{oscillators.osc1.range.value}}" min="1" max="{{oscillators.osc1.range.range[ 1 ]}}" step="1" diameter="240" sprites="5" width="60" height="60"></webaudio-knob>
 		</div>
-		<div class="col-lg-4">
+		<div class="col-xs-4">
 		</div>
-		<div class="col-lg-4">
+		<div class="col-xs-4">
 			<webaudio-knob src="images/range-knob.png"
 				bind-polymer
 				value="{{oscillators.osc1.waveform.value}}" min="{{oscillators.osc1.waveform.range[ 0 ]}}" max="{{oscillators.osc1.waveform.range[ 1 ]}}" step="1" diameter="240" sprites="5" width="60" height="60"></webaudio-knob>
@@ -16,17 +16,17 @@
 	</div>
 	<div class="oscillator row">
 		<h5>Oscilator 2</h5>
-		<div class="col-lg-4">
+		<div class="col-xs-4">
 			<webaudio-knob src="images/6-range-knob.png"
 				bind-polymer
 				value="{{oscillators.osc2.range.value}}" min="1" max="{{oscillators.osc2.range.range[ 1 ]}}" step="1" diameter="240" sprites="5" width="60" height="60"></webaudio-knob>
 		</div>
-		<div class="col-lg-4">
+		<div class="col-xs-4">
 			<webaudio-knob src="images/0-100-knob.png"
 				bind-polymer
 				value="{{oscillators.osc2.fineDetune.value}}" min="{{oscillators.osc2.fineDetune.range[ 0 ]}}" max="{{oscillators.osc2.fineDetune.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60"></webaudio-knob>
 		</div>
-		<div class="col-lg-4">
+		<div class="col-xs-4">
 			<webaudio-knob src="images/range-knob.png"
 				bind-polymer
 				value="{{oscillators.osc2.waveform.value}}" min="{{oscillators.osc2.waveform.range[ 0 ]}}" max="{{oscillators.osc2.waveform.range[ 1 ]}}" step="1" diameter="240" sprites="5" width="60" height="60"></webaudio-knob>
@@ -34,26 +34,26 @@
 	</div>
 	<div class="oscillator row">
 		<h5>Oscilator 3</h5>
-		<div class="col-lg-4">
+		<div class="col-xs-4">
 			<webaudio-knob src="images/lfo-knob.png"
 				bind-polymer
 				value="{{oscillators.osc3.range.value}}" min="{{oscillators.osc3.range.range[ 0 ]}}" max="{{oscillators.osc3.range.range[ 1 ]}}" step="1" diameter="240" sprites="6" width="60" height="60"></webaudio-knob>
 		</div>
-		<div class="col-lg-4">
+		<div class="col-xs-4">
 			<webaudio-knob src="images/0-100-knob.png"
 				bind-polymer
 				value="{{oscillators.osc3.fineDetune.value}}" min="{{oscillators.osc3.fineDetune.range[ 0 ]}}" max="{{oscillators.osc3.fineDetune.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60"></webaudio-knob>
 		</div>
-		<div class="col-lg-4">
+		<div class="col-xs-4">
 			<webaudio-knob src="images/range-knob.png"
 				bind-polymer
 				value="{{oscillators.osc3.waveform.value}}" min="{{oscillators.osc3.waveform.range[ 0 ]}}" max="{{oscillators.osc3.waveform.range[ 1 ]}}" step="1" diameter="240" sprites="5" width="60" height="60"></webaudio-knob>
 		</div>
 	</div>
 	<div class="row">
-		<div class="col-lg-4">Range</div>
-		<div class="col-lg-4">Detune</div>
-		<div class="col-lg-4">Form</div>
+		<div class="col-xs-4">Range</div>
+		<div class="col-xs-4">Detune</div>
+		<div class="col-xs-4">Form</div>
 	</div>
 	<h4>Oscillator Bank</h4>
 </div>

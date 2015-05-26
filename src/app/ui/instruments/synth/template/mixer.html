@@ -1,6 +1,6 @@
-<div class="col-lg-2 mixer control-bank text-center" ng-controller="MixerCtrl as mixer">
+<div class="col-xs-2 mixer control-bank text-center" ng-controller="MixerCtrl as mixer">
 	<div class="row">
-		<div class="oscillator-switch col-lg-6">
+		<div class="oscillator-switch col-xs-6">
 			<div class="row">
 				<webaudio-switch src="images/switch.png" width="40" height="40" bind-polymer value="{{mixer.volume1.enabled.value}}"></webaudio-switch>
 			</div>
@@ -11,7 +11,7 @@
 				<webaudio-switch src="images/switch.png" width="40" height="40" bind-polymer value="{{mixer.volume3.enabled.value}}"></webaudio-switch>
 			</div>
 		</div>
-		<div class="oscillator-volume col-lg-6">
+		<div class="oscillator-volume col-xs-6">
 			<div class="row">
 				<webaudio-knob src="images/0-100-knob.png"
 					bind-polymer
@@ -30,8 +30,8 @@
 		</div>
 	</div>
 	<div class="row">
-		<div class="col-lg-6">On/Off</div>
-		<div class="col-lg-6">Volume</div>
+		<div class="col-xs-6">On/Off</div>
+		<div class="col-xs-6">Volume</div>
 	</div>
 	<h4>Mixer</h4>
 </div>
