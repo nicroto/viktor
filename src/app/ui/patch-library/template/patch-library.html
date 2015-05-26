@@ -10,7 +10,7 @@
 		<div id="libActions">
 			<a class="lib-button glyphicon glyphicon-import" ngf-select ngf-change="library.import($files)" tooltip="Import library"></a>
 			<a class="lib-button glyphicon glyphicon-export" ng-show="library.isExportVisible()" ng-click="library.export()" tooltip="Export library"></a>
-			<a class="lib-button glyphicon glyphicon-trash" ng-show="library.isExportVisible()" ng-click="library.clear()" tooltip="Reset to Defaults"></a>
+			<a class="lib-button glyphicon glyphicon-trash" ng-show="library.isExportVisible()" ng-click="library.openClearLibraryModal()" tooltip="Reset to Defaults"></a>
 		</div>
 	</div>
 
@@ -35,19 +35,19 @@
 		</div>
 	</script>
 
-	<script type="text/ng-template" id="deletePatchModal.html">
+	<script type="text/ng-template" id="confirmationModal.html">
 		<div class="modal-header">
-			<button type="button" class="close" ng-click="deletePatchModal.close()"><span>&times;</span></button>
+			<button type="button" class="close" ng-click="confirmationModal.dismiss()"><span>&times;</span></button>
 			<h4 class="modal-title">Are you sure?</h4>
 		</div>
 		<div class="modal-body">
-			<h5 class="modal-title">Are you sure you want to delete this patch?</h5>
+			<h5 class="modal-title">{{confirmationModal.message}}</h5>
 		</div>
 		<div class="modal-footer">
 			<button type="button" class="btn btn-primary"
-				ng-click="deletePatchModal.deletePatch()">Yes</button>
+				ng-click="confirmationModal.confirm()">Yes</button>
 			<button type="button" class="btn btn-primary"
-				ng-click="deletePatchModal.close()">Cancel</button>
+				ng-click="confirmationModal.dismiss()">Cancel</button>
 		</div>
 	</script>
 </div>

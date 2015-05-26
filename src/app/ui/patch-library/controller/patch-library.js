@@ -35,15 +35,38 @@ module.exports = function( mod ) {
 		self.openDeletePatchModal = function() {
 			var modalInstance = $modal.open( {
 				animation: $scope.animationsEnabled,
-				templateUrl: 'deletePatchModal.html',
-				controller: 'DeletePatchModalCtrl',
-				controllerAs: 'deletePatchModal',
+				templateUrl: 'confirmationModal.html',
+				controller: 'ConfirmationModalCtrl',
+				controllerAs: 'confirmationModal',
 				size: null,
-				resolve: null
+				resolve: {
+					message: function() {
+						return "Are you sure you want to delete this patch?";
+					}
+				}
 			} );
 
 			modalInstance.result.then( function() {
 				patchLibrary.removeCustom( selectedPatch.name );
+			}, function() {} );
+		};
+
+		self.openClearLibraryModal = function() {
+			var modalInstance = $modal.open( {
+				animation: $scope.animationsEnabled,
+				templateUrl: 'confirmationModal.html',
+				controller: 'ConfirmationModalCtrl',
+				controllerAs: 'confirmationModal',
+				size: null,
+				resolve: {
+					message: function() {
+						return "This will reset your library to \"Factory\" and you will lose your custom patches. You can export it to back it up. Do you still want to do this?";
+					}
+				}
+			} );
+
+			modalInstance.result.then( function() {
+				patchLibrary.overrideCustomLibrary( {} );
 			}, function() {} );
 		};
 
@@ -59,7 +82,22 @@ module.exports = function( mod ) {
 						customPatches = JSON.parse( text );
 
 						if ( customPatches ) {
-							patchLibrary.overrideCustomLibrary( customPatches );
+							var modalInstance = $modal.open( {
+								animation: $scope.animationsEnabled,
+								templateUrl: 'confirmationModal.html',
+								controller: 'ConfirmationModalCtrl',
+								controllerAs: 'confirmationModal',
+								size: null,
+								resolve: {
+									message: function() {
+										return "This will completely replace your custom patch library (the defaults will remain untouched). You could export the library as a backup, first. Do you still want to do this?";
+									}
+								}
+							} );
+
+							modalInstance.result.then( function() {
+								patchLibrary.overrideCustomLibrary( customPatches );
+							}, function() {} );
 						}
 					} catch ( exception ) {
 						console.log( "The file you try to import isn't a valid JSON." );
@@ -68,10 +106,6 @@ module.exports = function( mod ) {
 
 				reader.readAsText( files[ 0 ], "utf-8" );
 			}
-		};
-
-		self.clear = function() {
-			patchLibrary.overrideCustomLibrary( {} );
 		};
 
 		self.isExportVisible = function() {
@@ -106,14 +140,16 @@ module.exports = function( mod ) {
 		};
 	} ] );
 
-	mod.controller( "DeletePatchModalCtrl", [ "$modalInstance", function( $modalInstance ) {
+	mod.controller( "ConfirmationModalCtrl", [ "$modalInstance", "message", function( $modalInstance, message ) {
 		var self = this;
 
-		self.close = function() {
+		self.message = message;
+
+		self.dismiss = function() {
 			$modalInstance.dismiss();
 		};
 
-		self.deletePatch = function() {
+		self.confirm = function() {
 			$modalInstance.close();
 		};
 	} ] );
