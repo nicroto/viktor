@@ -3,10 +3,12 @@
 		<drop-down></drop-down>
 		<a class="lib-button patch-button glyphicon glyphicon-floppy-disk"
 			ng-show="library.isSavePatchVisible()"
-			ng-click="library.openSavePatchModal()"></a>
+			ng-click="library.openSavePatchModal()"
+			tooltip="Save Patch"></a>
 		<a class="lib-button patch-button glyphicon glyphicon-remove-circle"
 			ng-show="library.isDeletePatchVisible()"
-			ng-click="library.openDeletePatchModal()"></a>
+			ng-click="library.openDeletePatchModal()"
+			tooltip="Delete Patch"></a>
 		<div id="libActions">
 			<a class="lib-button glyphicon glyphicon-import" ngf-select ngf-change="library.import($files)" tooltip="Import library"></a>
 			<a class="lib-button glyphicon glyphicon-export" ng-show="library.isExportVisible()" ng-click="library.export()" tooltip="Export library"></a>
