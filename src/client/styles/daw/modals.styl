@@ -1,6 +1,28 @@
-.modal-dialog .modal-content,
-.close
-	background-color: $panel-grey
-	color: $panel-text-grey
-	h1, h2, h3, h4, h5, h6
-		color: $panel-header-grey
+.modal-dialog
+	.modal-content
+		background-color: $panel-grey
+		color: $panel-text-grey
+		h1, h2, h3, h4, h5, h6
+			color: $panel-header-grey
+		label
+			font-weight: $font-weight
+		input
+			background-color: gray
+			color: white
+	.close
+		color: white
+		opacity: 0.6
+		text-shadow: none
+		&:focus
+			outline: none
+			opacity: 0.8
+		&:active
+			opacity: 0.3
+	.btn
+		color: #CDCDCD
+		background-color: #345776
+		border-color: #63717E
+		&:focus
+			color: #DBDBDB
+			background-color: #3F6A91
+			outline: none
