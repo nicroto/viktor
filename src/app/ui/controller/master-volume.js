@@ -5,7 +5,7 @@ var $ = require( "jquery" ),
 
 module.exports = function( mod ) {
 
-	mod.controller( "MasterVolumeCtrl", [ "$scope", "dawEngine", "patchLibrary", function( $scope, dawEngine, patchLibrary ) {
+	mod.controller( "MasterVolumeCtrl", [ "$scope", "$timeout", "dawEngine", "patchLibrary", function( $scope, $timeout, dawEngine, patchLibrary ) {
 		var self = this,
 			settingsChangeHandler = function( newValue, oldValue ) {
 				if ( newValue === oldValue ) {
@@ -19,9 +19,14 @@ module.exports = function( mod ) {
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings,
-			pollSettings = function() {
+			pollSettings = function( time ) {
 				settings = dawEngine.masterVolumeSettings;
 				self.level = settingsConvertor.transposeParam( settings.level, [ 0, 100 ] );
+
+				// fix problem with bad init state
+				$timeout( function() {
+					$volume[ 0 ].redraw();
+				}, time );
 			},
 			watchers = [],
 			registerForChanges = function() {
@@ -36,9 +41,10 @@ module.exports = function( mod ) {
 					unregister();
 				} );
 				watchers = [];
-			};
+			},
+			$volume = $( ".master-volume webaudio-knob" );
 
-		pollSettings();
+		pollSettings( 300 );
 
 		registerForChanges();
 
@@ -49,7 +55,7 @@ module.exports = function( mod ) {
 		} );
 
 		// fix the lack of attr 'value' update
-		$( ".master-volume webaudio-knob" ).on( "change", function( e ) {
+		$volume.on( "change", function( e ) {
 			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
 				$( e.target ).attr( "value", e.target.value );
 			}

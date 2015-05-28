@@ -5,7 +5,7 @@ var $ = require( "jquery" ),
 
 module.exports = function( mod ) {
 
-	mod.controller( "ModulationCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
+	mod.controller( "ModulationCtrl", [ "$scope", "$timeout", "dawEngine", "synth", "patchLibrary", function( $scope, $timeout, dawEngine, synth, patchLibrary ) {
 		var self = this,
 			settingsChangeHandler = function( newValue, oldValue ) {
 				if ( newValue === oldValue ) {
@@ -21,11 +21,18 @@ module.exports = function( mod ) {
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings,
-			pollSettings = function() {
+			pollSettings = function( time ) {
 				settings = synth.modulationSettings;
 
 				self.waveform = settings.waveform;
 				self.portamento = settingsConvertor.transposeParam( settings.portamento, [ 0, 100 ] );
+
+				// fix problem with bad init state
+				$timeout( function() {
+					$knobs.each( function( index, element ) {
+						element.redraw();
+					} );
+				}, time );
 			},
 			watchers = [],
 			registerForChanges = function() {
@@ -41,9 +48,10 @@ module.exports = function( mod ) {
 					unregister();
 				} );
 				watchers = [];
-			};
+			},
+			$knobs = $( ".modulation webaudio-knob" );
 
-		pollSettings();
+		pollSettings( 300 );
 
 		registerForChanges();
 
@@ -54,7 +62,7 @@ module.exports = function( mod ) {
 		} );
 
 		// fix the lack of attr 'value' update
-		$( ".modulation webaudio-knob" ).on( "change", function( e ) {
+		$knobs.on( "change", function( e ) {
 			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
 				$( e.target ).attr( "value", e.target.value );
 			}

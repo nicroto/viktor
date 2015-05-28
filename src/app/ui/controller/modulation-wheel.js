@@ -33,6 +33,11 @@ module.exports = function( mod ) {
 			}
 		} );
 
+		// fix problem with bad init state
+		$timeout( function() {
+			$modulationWheel[ 0 ].redraw();
+		}, 300 );
+
 		// fix the lack of attr 'value' update
 		$modulationWheel.on( "change", function( e ) {
 			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {

@@ -29,7 +29,6 @@
     "test": "grunt"
   },
   "dependencies": {
-    "angular": "^1.3.15",
     "angular-bootstrap-npm": "^0.13.0",
     "angular-local-storage": "^0.1.5",
     "express": "^4.12.3",
@@ -58,12 +57,16 @@
   "browser": {
     "angular-local-storage": "./node_modules/angular-local-storage/dist/angular-local-storage.js",
     "ng-file-upload": "./node_modules/ng-file-upload/dist/ng-file-upload-all.js",
+    "angular": "./non-npm/angular-1-4-fixed.js",
     "angular-bind-polymer": "./non-npm/angular-bind-polymer.js",
     "tuna": "./non-npm/tuna/tuna.js",
     "file-saver": "./non-npm/file-saver/FileSaver.js",
     "settings-convertor": "./non-npm/viktor/settings-convertor.js"
   },
   "browserify-shim": {
+    "angular": {
+      "exports": "angular"
+    },
     "angular-local-storage": {
       "depends": "angular",
       "exports": "angular.module('LocalStorageModule')"

@@ -30,7 +30,7 @@ module.exports = function( mod ) {
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings,
-			pollSettings = function() {
+			pollSettings = function( time ) {
 				settings = synth.mixerSettings;
 
 				self.volume1 = {
@@ -48,10 +48,13 @@ module.exports = function( mod ) {
 
 				// fix problem with bad init state
 				$timeout( function() {
-					$( ".mixer .oscillator-switch webaudio-switch" ).each( function( index, element ) {
+					$switches.each( function( index, element ) {
 						element.setValue( self[ "volume" + ( index + 1 ) ].enabled.value );
 					} );
-				}, 300 );
+					$knobs.each( function( index, element ) {
+						element.redraw();
+					} );
+				}, time );
 			},
 			watchers = [],
 			registerForChanges = function() {
@@ -71,9 +74,11 @@ module.exports = function( mod ) {
 					unregister();
 				} );
 				watchers = [];
-			};
+			},
+			$switches = $( ".mixer webaudio-switch" ),
+			$knobs = $( ".mixer webaudio-knob" );
 
-		pollSettings();
+		pollSettings( 300 );
 
 		registerForChanges();
 
@@ -84,10 +89,7 @@ module.exports = function( mod ) {
 		} );
 
 		// fix the lack of attr 'value' update
-		$( ".mixer webaudio-switch" )
-			.add( ".mixer webaudio-knob" )
-			.add( ".mixer webaudio-slider" )
-		.on( "change", function( e ) {
+		$switches.add( $knobs ).on( "change", function( e ) {
 			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
 				$( e.target ).attr( "value", e.target.value );
 			}

@@ -1,0 +1,16 @@
+{
+  "name": "webaudio-controls",
+  "version": "1.0.0",
+  "description": "GUI parts library for Web application using [Polymer] WebComponents",
+  "license": "Apache2",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^0.8.0-rc.7"
+  }
+}

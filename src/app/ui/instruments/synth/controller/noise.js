@@ -30,8 +30,9 @@ module.exports = function( mod ) {
 
 				// fix problem with bad init state
 				$timeout( function() {
-					$( ".noise webaudio-switch" )[ 0 ].setValue( self.enabled.value );
-					$( ".noise webaudio-slider" )[ 0 ].setValue( self.type.value );
+					$switches[ 0 ].setValue( self.enabled.value );
+					$knobs[ 0 ].redraw();
+					$sliders[ 0 ].setValue( self.type.value );
 				}, time );
 			},
 			watchers = [],
@@ -49,7 +50,10 @@ module.exports = function( mod ) {
 					unregister();
 				} );
 				watchers = [];
-			};
+			},
+			$switches = $( ".noise webaudio-switch" ),
+			$knobs = $( ".noise webaudio-knob" ),
+			$sliders = $( ".noise webaudio-slider" );
 
 		pollSettings( 300 );
 
@@ -62,10 +66,7 @@ module.exports = function( mod ) {
 		} );
 
 		// fix the lack of attr 'value' update
-		$( ".noise webaudio-switch" )
-			.add( ".noise webaudio-knob" )
-			.add( ".noise webaudio-slider" )
-		.on( "change", function( e ) {
+		$switches.add( $knobs ).add( $sliders ).on( "change", function( e ) {
 			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
 				$( e.target ).attr( "value", e.target.value );
 			}

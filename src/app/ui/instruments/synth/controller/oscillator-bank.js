@@ -5,7 +5,7 @@ var $ = require( "jquery" ),
 
 module.exports = function( mod ) {
 
-	mod.controller( "OscillatorBankCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
+	mod.controller( "OscillatorBankCtrl", [ "$scope", "$timeout", "dawEngine", "synth", "patchLibrary", function( $scope, $timeout, dawEngine, synth, patchLibrary ) {
 		var self = this,
 			settingsChangeHandler = function( newValue, oldValue ) {
 				if ( newValue === oldValue ) {
@@ -33,7 +33,7 @@ module.exports = function( mod ) {
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings,
-			pollSettings = function() {
+			pollSettings = function( time ) {
 				settings  = synth.oscillatorSettings;
 
 				self.osc1 = {
@@ -51,6 +51,13 @@ module.exports = function( mod ) {
 					fineDetune: settingsConvertor.transposeParam( settings.osc3.fineDetune, [ 0, 16 ] ),
 					waveform: settings.osc3.waveform
 				};
+
+				// fix problem with bad init state
+				$timeout( function() {
+					$knobs.each( function( index, element ) {
+						element.redraw();
+					} );
+				}, time );
 			},
 			watchers = [],
 			registerForChanges = function() {
@@ -72,9 +79,10 @@ module.exports = function( mod ) {
 					unregister();
 				} );
 				watchers = [];
-			};
+			},
+			$knobs = $( ".oscillator webaudio-knob" );
 
-		pollSettings();
+		pollSettings( 300 );
 
 		registerForChanges();
 
@@ -84,7 +92,7 @@ module.exports = function( mod ) {
 			registerForChanges();
 		} );
 
-		$( ".oscillator webaudio-knob" ).on( "change", function( e ) {
+		$knobs.on( "change", function( e ) {
 			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
 				$( e.target ).attr( "value", e.target.value );
 			}

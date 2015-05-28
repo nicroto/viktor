@@ -5,7 +5,7 @@ var $ = require( "jquery" ),
 
 module.exports = function( mod ) {
 
-	mod.controller( "FilterCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
+	mod.controller( "FilterCtrl", [ "$scope", "$timeout", "dawEngine", "synth", "patchLibrary", function( $scope, $timeout, dawEngine, synth, patchLibrary ) {
 		var self = this,
 			settingsChangeHandler = function( newValue, oldValue ) {
 				if ( newValue === oldValue ) {
@@ -21,12 +21,19 @@ module.exports = function( mod ) {
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings,
-			pollSettings = function() {
+			pollSettings = function( time ) {
 				settings = synth.filterSettings;
 
 				self.cutoff = settingsConvertor.transposeParam( settings.cutoff, [ 0, 500 ] );
 				self.emphasis = settingsConvertor.transposeParam( settings.emphasis, [ 1, 100 ] );
 				self.envAmount = settingsConvertor.transposeParam( settings.envAmount, [ 0, 100 ] );
+
+				// fix problem with bad init state
+				$timeout( function() {
+					$knobs.each( function( index, element ) {
+						element.redraw();
+					} );
+				}, time );
 			},
 			watchers = [],
 			registerForChanges = function() {
@@ -43,9 +50,10 @@ module.exports = function( mod ) {
 					unregister();
 				} );
 				watchers = [];
-			};
+			},
+			$knobs = $( ".filter webaudio-knob" );
 
-		pollSettings();
+		pollSettings( 300 );
 
 		registerForChanges();
 
@@ -56,7 +64,7 @@ module.exports = function( mod ) {
 		} );
 
 		// fix the lack of attr 'value' update
-		$( ".filter webaudio-knob" ).on( "change", function( e ) {
+		$knobs.on( "change", function( e ) {
 			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
 				$( e.target ).attr( "value", e.target.value );
 			}
