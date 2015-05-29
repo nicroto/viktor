@@ -4,7 +4,7 @@ var settingsConvertor = require( "settings-convertor" );
 
 module.exports = function( mod ) {
 
-	mod.controller( "LFOCtrl", [ "$scope", "$timeout", "dawEngine", "synth", "patchLibrary", function( $scope, $timeout, dawEngine, synth, patchLibrary ) {
+	mod.controller( "LFOCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
 		var self = this,
 			settingsChangeHandler = function( newValue, oldValue ) {
 				if ( newValue === oldValue ) {
@@ -20,7 +20,7 @@ module.exports = function( mod ) {
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings,
-			pollSettings = function( time ) {
+			pollSettings = function() {
 				settings = synth.lfoSettings;
 
 				self.waveform = settings.waveform;
@@ -44,7 +44,7 @@ module.exports = function( mod ) {
 				watchers = [];
 			};
 
-		pollSettings( 300 );
+		pollSettings();
 
 		registerForChanges();
 

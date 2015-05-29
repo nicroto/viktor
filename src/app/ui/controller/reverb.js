@@ -1,11 +1,10 @@
 'use strict';
 
-var $ = require( "jquery" ),
-	settingsConvertor = require( "settings-convertor" );
+var settingsConvertor = require( "settings-convertor" );
 
 module.exports = function( mod ) {
 
-	mod.controller( "ReverbCtrl", [ "$scope", "$timeout", "dawEngine", "patchLibrary", function( $scope, $timeout, dawEngine, patchLibrary ) {
+	mod.controller( "ReverbCtrl", [ "$scope", "dawEngine", "patchLibrary", function( $scope, dawEngine, patchLibrary ) {
 		var self = this,
 			settingsChangeHandler = function( newValue, oldValue ) {
 				if ( newValue === oldValue ) {
@@ -19,14 +18,9 @@ module.exports = function( mod ) {
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings,
-			pollSettings = function( time ) {
+			pollSettings = function() {
 				settings = dawEngine.reverbSettings;
 				self.level = settingsConvertor.transposeParam( settings.level, [ 0, 100 ] );
-
-				// fix problem with bad init state
-				$timeout( function() {
-					$( ".reverb webaudio-slider" )[ 0 ].setValue( self.level.value );
-				}, time );
 			},
 			watchers = [],
 			registerForChanges = function() {
@@ -43,7 +37,7 @@ module.exports = function( mod ) {
 				watchers = [];
 			};
 
-		pollSettings( 300 );
+		pollSettings();
 
 		registerForChanges();
 

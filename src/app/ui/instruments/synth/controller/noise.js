@@ -1,11 +1,10 @@
 'use strict';
 
-var $ = require( "jquery" ),
-	settingsConvertor = require( "settings-convertor" );
+var settingsConvertor = require( "settings-convertor" );
 
 module.exports = function( mod ) {
 
-	mod.controller( "NoiseCtrl", [ "$scope", "$timeout", "dawEngine", "synth", "patchLibrary", function( $scope, $timeout, dawEngine, synth, patchLibrary ) {
+	mod.controller( "NoiseCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
 		var self = this,
 			settingsChangeHandler = function( newValue, oldValue ) {
 				if ( newValue === oldValue ) {
@@ -21,18 +20,12 @@ module.exports = function( mod ) {
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings,
-			pollSettings = function( time ) {
+			pollSettings = function() {
 				settings = synth.noiseSettings;
 
 				self.enabled = settings.enabled;
 				self.level = settingsConvertor.transposeParam( settings.level, [ 0, 100 ] );
 				self.type = settings.type;
-
-				// fix problem with bad init state
-				$timeout( function() {
-					$switches[ 0 ].setValue( self.enabled.value );
-					$sliders[ 0 ].setValue( self.type.value );
-				}, time );
 			},
 			watchers = [],
 			registerForChanges = function() {
@@ -49,11 +42,9 @@ module.exports = function( mod ) {
 					unregister();
 				} );
 				watchers = [];
-			},
-			$switches = $( ".noise webaudio-switch" ),
-			$sliders = $( ".noise webaudio-slider" );
+			};
 
-		pollSettings( 300 );
+		pollSettings();
 
 		registerForChanges();
 

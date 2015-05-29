@@ -2,6 +2,7 @@
 	<div class="row">
 		<webaudio-switch src="images/switch.png" width="40" height="40"
 			bind-polymer
+			update-control-value
 			update-number-value
 			value="{{noise.enabled.value}}"></webaudio-switch>
 	</div>
@@ -16,6 +17,7 @@
 		<webaudio-slider direction="horz" value="{{noise.type.value}}"
 			min="{{noise.type.range[ 0 ]}}" max="{{noise.type.range[ 1 ]}}" step="1"
 			bind-polymer
+			update-control-value
 			update-number-value
 			src="images/noise-slider-base.png" knobsrc="images/slider-knob.png"
 			height="45" width="90" ditchlength="40" knobwidth="20" knobheight="20"></webaudio-slider>

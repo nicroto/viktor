@@ -43,4 +43,27 @@ mod.directive( "knobRedraw", [ "$document", function( $document ) {
 
 } ] );
 
+mod.directive( "updateControlValue", [ "$document", function( $document ) {
+
+	return {
+		restrict: "A",
+		link: function( scope, $element, attrs ) {
+			var trySet = function( $element, newValue ) {
+				var control = $element.length && $element[ 0 ];
+				if ( control && control.setValue && "function" === typeof( control.setValue ) ) {
+					control.setValue( newValue );
+				}
+			};
+
+			$document.bind( "WebComponentsReady", function() {
+				trySet( $element, parseFloat( $element.attr( "value" ) ) );
+			} );
+			attrs.$observe( "value", function( newValueStr ) {
+				trySet( $element, parseFloat( newValueStr ) );
+			} );
+		}
+	};
+
+} ] );
+
 module.exports = mod;

@@ -1,11 +1,10 @@
 'use strict';
 
-var $ = require( "jquery" ),
-	settingsConvertor = require( "settings-convertor" );
+var settingsConvertor = require( "settings-convertor" );
 
 module.exports = function( mod ) {
 
-	mod.controller( "MixerCtrl", [ "$scope", "$timeout", "dawEngine", "synth", "patchLibrary", function( $scope, $timeout, dawEngine, synth, patchLibrary ) {
+	mod.controller( "MixerCtrl", [ "$scope", "dawEngine", "synth", "patchLibrary", function( $scope, dawEngine, synth, patchLibrary ) {
 		var self = this,
 			settingsChangeHandler = function( newValue, oldValue ) {
 				if ( newValue === oldValue ) {
@@ -30,7 +29,7 @@ module.exports = function( mod ) {
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings,
-			pollSettings = function( time ) {
+			pollSettings = function() {
 				settings = synth.mixerSettings;
 
 				self.volume1 = {
@@ -45,13 +44,6 @@ module.exports = function( mod ) {
 					enabled: settings.volume3.enabled,
 					level: settingsConvertor.transposeParam( settings.volume3.level, [ 0, 100 ] )
 				};
-
-				// fix problem with bad init state
-				$timeout( function() {
-					$switches.each( function( index, element ) {
-						element.setValue( self[ "volume" + ( index + 1 ) ].enabled.value );
-					} );
-				}, time );
 			},
 			watchers = [],
 			registerForChanges = function() {
@@ -71,10 +63,9 @@ module.exports = function( mod ) {
 					unregister();
 				} );
 				watchers = [];
-			},
-			$switches = $( ".mixer webaudio-switch" );
+			};
 
-		pollSettings( 300 );
+		pollSettings();
 
 		registerForChanges();
 
