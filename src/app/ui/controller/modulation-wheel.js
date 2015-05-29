@@ -7,21 +7,46 @@ module.exports = function( mod ) {
 
 	mod.controller( "ModulationWheelCtrl", [ "$scope", "$timeout", "dawEngine", function( $scope, $timeout, dawEngine ) {
 		var self = this,
-			settingsChangeHandler = function() {
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
 				var modulationSettings = dawEngine.modulationSettings;
 
 				modulationSettings.rate = settingsConvertor.transposeParam( self.modulation, settings.rate.range );
 
 				dawEngine.modulationSettings = modulationSettings;
 			},
-			settings = dawEngine.modulationSettings;
+			settings,
+			pollSettings = function() {
+				settings = dawEngine.modulationSettings;
 
-		self.modulation = settingsConvertor.transposeParam( settings.rate, RATE_RANGE );
+				self.modulation = settingsConvertor.transposeParam( settings.rate, RATE_RANGE );
+			},
+			watchers = [],
+			registerForChanges = function() {
+				[
+					"modulationWheel.modulation.value"
+				].forEach( function( path ) {
+					watchers.push( $scope.$watch( path, settingsChangeHandler ) );
+				} );
+			},
+			unregisterFromChanges = function() {
+				watchers.forEach( function( unregister ) {
+					unregister();
+				} );
+				watchers = [];
+			};
 
-		[
-			"modulationWheel.modulation.value"
-		].forEach( function( path ) {
-			$scope.$watch( path, settingsChangeHandler );
+		pollSettings();
+
+		registerForChanges();
+
+		dawEngine.onPatchChange( function() {
+			unregisterFromChanges();
+			pollSettings();
+			registerForChanges();
 		} );
 	} ] );
 
