@@ -4,18 +4,21 @@
 			<div class="row">
 				<webaudio-switch src="images/switch.png" width="40" height="40"
 					bind-polymer
+					knob-redraw
 					update-number-value
 					value="{{mixer.volume1.enabled.value}}"></webaudio-switch>
 			</div>
 			<div class="row">
 				<webaudio-switch src="images/switch.png" width="40" height="40"
 					bind-polymer
+					knob-redraw
 					update-number-value
 					value="{{mixer.volume2.enabled.value}}"></webaudio-switch>
 			</div>
 			<div class="row">
 				<webaudio-switch src="images/switch.png" width="40" height="40"
 					bind-polymer
+					knob-redraw
 					update-number-value
 					value="{{mixer.volume3.enabled.value}}"></webaudio-switch>
 			</div>
@@ -24,18 +27,21 @@
 			<div class="row">
 				<webaudio-knob src="images/0-100-knob.png"
 					bind-polymer
+					knob-redraw
 					update-number-value
 					value="{{mixer.volume1.level.value}}" min="{{mixer.volume1.level.range[ 0 ]}}" max="{{mixer.volume1.level.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60"></webaudio-knob>
 			</div>
 			<div class="row">
 				<webaudio-knob src="images/0-100-knob.png"
 					bind-polymer
+					knob-redraw
 					update-number-value
 					value="{{mixer.volume2.level.value}}" min="{{mixer.volume2.level.range[ 0 ]}}" max="{{mixer.volume2.level.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60"></webaudio-knob>
 			</div>
 			<div class="row">
 				<webaudio-knob src="images/0-100-knob.png"
 					bind-polymer
+					knob-redraw
 					update-number-value
 					value="{{mixer.volume3.level.value}}" min="{{mixer.volume3.level.range[ 0 ]}}" max="{{mixer.volume3.level.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60"></webaudio-knob>
 			</div>

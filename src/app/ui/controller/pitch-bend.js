@@ -31,11 +31,6 @@ module.exports = function( mod ) {
 			}
 		} );
 
-		// fix problem with bad init state
-		$timeout( function() {
-			$pitchBend[ 0 ].redraw();
-		}, 300 );
-
 		// handle pitch return to center
 		var isPitchBending = false;
 		$( document ).on( "mouseup", function() {

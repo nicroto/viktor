@@ -19,4 +19,28 @@ mod.directive( "updateNumberValue", function() {
 
 } );
 
+mod.directive( "knobRedraw", [ "$document", function( $document ) {
+
+	return {
+		restrict: "A",
+		link: function( scope, $element, attrs ) {
+			var tryRedraw = function( $element ) {
+				var element = $element[ 0 ];
+				if ( element.redraw && "function" === typeof( element.redraw ) ) {
+					element.redraw();
+				}
+			};
+
+			$document.bind( "WebComponentsReady", function() {
+				tryRedraw( $element );
+			} );
+			attrs.$observe( "value", function() {
+				tryRedraw( $element );
+			} );
+
+		}
+	};
+
+} ] );
+
 module.exports = mod;

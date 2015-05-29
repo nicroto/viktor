@@ -3,6 +3,7 @@
 		<h5>Form</h5>
 		<webaudio-knob src="images/range-knob.png"
 			bind-polymer
+			knob-redraw
 			update-number-value
 			value="{{lfo.waveform.value}}" min="{{lfo.waveform.range[ 0 ]}}" max="{{lfo.waveform.range[ 1 ]}}" step="1" diameter="240" sprites="5" width="60" height="60"></webaudio-knob>
 	</div>
@@ -10,6 +11,7 @@
 		<h5>Rate</h5>
 		<webaudio-knob src="images/0-100-knob.png"
 			bind-polymer
+			knob-redraw
 			update-number-value
 			value="{{lfo.rate.value}}" min="{{lfo.rate.range[ 0 ]}}" max="{{lfo.rate.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60"></webaudio-knob>
 	</div>
@@ -17,6 +19,7 @@
 		<h5>Clean/LFO</h5>
 		<webaudio-knob src="images/0-100-knob.png"
 			bind-polymer
+			knob-redraw
 			update-number-value
 			value="{{lfo.amount.value}}" min="{{lfo.amount.range[ 0 ]}}" max="{{lfo.amount.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60"></webaudio-knob>
 	</div>

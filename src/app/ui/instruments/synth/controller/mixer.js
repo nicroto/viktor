@@ -51,9 +51,6 @@ module.exports = function( mod ) {
 					$switches.each( function( index, element ) {
 						element.setValue( self[ "volume" + ( index + 1 ) ].enabled.value );
 					} );
-					$knobs.each( function( index, element ) {
-						element.redraw();
-					} );
 				}, time );
 			},
 			watchers = [],
@@ -75,8 +72,7 @@ module.exports = function( mod ) {
 				} );
 				watchers = [];
 			},
-			$switches = $( ".mixer webaudio-switch" ),
-			$knobs = $( ".mixer webaudio-knob" );
+			$switches = $( ".mixer webaudio-switch" );
 
 		pollSettings( 300 );
 

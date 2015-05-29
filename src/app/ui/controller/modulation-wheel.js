@@ -32,11 +32,6 @@ module.exports = function( mod ) {
 				);
 			}
 		} );
-
-		// fix problem with bad init state
-		$timeout( function() {
-			$modulationWheel[ 0 ].redraw();
-		}, 300 );
 	} ] );
 
 	mod.directive( "modulationWheel", [ "$templateCache", function( $templateCache ) {

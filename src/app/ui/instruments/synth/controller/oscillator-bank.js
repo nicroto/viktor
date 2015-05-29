@@ -1,7 +1,6 @@
 'use strict';
 
-var $ = require( "jquery" ),
-	settingsConvertor = require( "settings-convertor" );
+var settingsConvertor = require( "settings-convertor" );
 
 module.exports = function( mod ) {
 
@@ -33,7 +32,7 @@ module.exports = function( mod ) {
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings,
-			pollSettings = function( time ) {
+			pollSettings = function() {
 				settings  = synth.oscillatorSettings;
 
 				self.osc1 = {
@@ -51,13 +50,6 @@ module.exports = function( mod ) {
 					fineDetune: settingsConvertor.transposeParam( settings.osc3.fineDetune, [ 0, 16 ] ),
 					waveform: settings.osc3.waveform
 				};
-
-				// fix problem with bad init state
-				$timeout( function() {
-					$knobs.each( function( index, element ) {
-						element.redraw();
-					} );
-				}, time );
 			},
 			watchers = [],
 			registerForChanges = function() {
@@ -79,10 +71,9 @@ module.exports = function( mod ) {
 					unregister();
 				} );
 				watchers = [];
-			},
-			$knobs = $( ".oscillator webaudio-knob" );
+			};
 
-		pollSettings( 300 );
+		pollSettings();
 
 		registerForChanges();
 

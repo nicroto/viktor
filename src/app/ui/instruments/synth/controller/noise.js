@@ -31,7 +31,6 @@ module.exports = function( mod ) {
 				// fix problem with bad init state
 				$timeout( function() {
 					$switches[ 0 ].setValue( self.enabled.value );
-					$knobs[ 0 ].redraw();
 					$sliders[ 0 ].setValue( self.type.value );
 				}, time );
 			},
@@ -52,7 +51,6 @@ module.exports = function( mod ) {
 				watchers = [];
 			},
 			$switches = $( ".noise webaudio-switch" ),
-			$knobs = $( ".noise webaudio-knob" ),
 			$sliders = $( ".noise webaudio-slider" );
 
 		pollSettings( 300 );

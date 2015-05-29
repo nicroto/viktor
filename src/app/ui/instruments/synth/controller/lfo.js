@@ -1,7 +1,6 @@
 'use strict';
 
-var $ = require( "jquery" ),
-	settingsConvertor = require( "settings-convertor" );
+var settingsConvertor = require( "settings-convertor" );
 
 module.exports = function( mod ) {
 
@@ -27,13 +26,6 @@ module.exports = function( mod ) {
 				self.waveform = settings.waveform;
 				self.rate = settings.rate;
 				self.amount = settingsConvertor.transposeParam( settings.amount, [ 0, 100 ] );
-
-				// fix problem with bad init state
-				$timeout( function() {
-					$knobs.each( function( index, element ) {
-						element.redraw();
-					} );
-				}, time );
 			},
 			watchers = [],
 			registerForChanges = function() {
@@ -50,8 +42,7 @@ module.exports = function( mod ) {
 					unregister();
 				} );
 				watchers = [];
-			},
-			$knobs = $( ".lfo webaudio-knob" );
+			};
 
 		pollSettings( 300 );
 

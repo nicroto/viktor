@@ -1,7 +1,6 @@
 'use strict';
 
-var $ = require( "jquery" ),
-	settingsConvertor = require( "settings-convertor" );
+var settingsConvertor = require( "settings-convertor" );
 
 module.exports = function( mod ) {
 
@@ -19,14 +18,9 @@ module.exports = function( mod ) {
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings,
-			pollSettings = function( time ) {
+			pollSettings = function() {
 				settings = dawEngine.masterVolumeSettings;
 				self.level = settingsConvertor.transposeParam( settings.level, [ 0, 100 ] );
-
-				// fix problem with bad init state
-				$timeout( function() {
-					$volume[ 0 ].redraw();
-				}, time );
 			},
 			watchers = [],
 			registerForChanges = function() {
@@ -41,10 +35,9 @@ module.exports = function( mod ) {
 					unregister();
 				} );
 				watchers = [];
-			},
-			$volume = $( ".master-volume webaudio-knob" );
+			};
 
-		pollSettings( 300 );
+		pollSettings();
 
 		registerForChanges();
 

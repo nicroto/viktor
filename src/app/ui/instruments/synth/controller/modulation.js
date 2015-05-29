@@ -1,7 +1,6 @@
 'use strict';
 
-var $ = require( "jquery" ),
-	settingsConvertor = require( "settings-convertor" );
+var settingsConvertor = require( "settings-convertor" );
 
 module.exports = function( mod ) {
 
@@ -21,18 +20,11 @@ module.exports = function( mod ) {
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
 			},
 			settings,
-			pollSettings = function( time ) {
+			pollSettings = function() {
 				settings = synth.modulationSettings;
 
 				self.waveform = settings.waveform;
 				self.portamento = settingsConvertor.transposeParam( settings.portamento, [ 0, 100 ] );
-
-				// fix problem with bad init state
-				$timeout( function() {
-					$knobs.each( function( index, element ) {
-						element.redraw();
-					} );
-				}, time );
 			},
 			watchers = [],
 			registerForChanges = function() {
@@ -48,10 +40,9 @@ module.exports = function( mod ) {
 					unregister();
 				} );
 				watchers = [];
-			},
-			$knobs = $( ".modulation webaudio-knob" );
+			};
 
-		pollSettings( 300 );
+		pollSettings();
 
 		registerForChanges();
 
