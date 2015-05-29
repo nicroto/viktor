@@ -91,13 +91,6 @@ module.exports = function( mod ) {
 			pollSettings();
 			registerForChanges();
 		} );
-
-		$knobs.on( "change", function( e ) {
-			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
-				$( e.target ).attr( "value", e.target.value );
-			}
-		} );
-
 	} ] );
 
 	mod.directive( "oscillatorBank", [ "$templateCache", function( $templateCache ) {

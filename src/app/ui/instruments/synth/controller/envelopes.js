@@ -94,14 +94,6 @@ module.exports = function( mod ) {
 			pollSettings();
 			registerForChanges();
 		} );
-
-		// fix the lack of attr 'value' update
-		$( ".envelopes webaudio-slider" ).on( "change", function( e ) {
-			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
-				$( e.target ).attr( "value", e.target.value );
-			}
-		} );
-
 	} ] );
 
 	mod.directive( "envelopes", [ "$templateCache", function( $templateCache ) {

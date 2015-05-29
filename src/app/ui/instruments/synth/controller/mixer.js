@@ -87,14 +87,6 @@ module.exports = function( mod ) {
 			pollSettings();
 			registerForChanges();
 		} );
-
-		// fix the lack of attr 'value' update
-		$switches.add( $knobs ).on( "change", function( e ) {
-			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
-				$( e.target ).attr( "value", e.target.value );
-			}
-		} );
-
 	} ] );
 
 	mod.directive( "mixer", [ "$templateCache", function( $templateCache ) {

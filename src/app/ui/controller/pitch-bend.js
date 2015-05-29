@@ -36,13 +36,6 @@ module.exports = function( mod ) {
 			$pitchBend[ 0 ].redraw();
 		}, 300 );
 
-		// fix the lack of attr 'value' update
-		$pitchBend.on( "change", function( e ) {
-			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
-				$( e.target ).attr( "value", e.target.value );
-			}
-		} );
-
 		// handle pitch return to center
 		var isPitchBending = false;
 		$( document ).on( "mouseup", function() {

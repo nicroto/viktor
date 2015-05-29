@@ -66,14 +66,6 @@ module.exports = function( mod ) {
 			pollSettings();
 			registerForChanges();
 		} );
-
-		// fix the lack of attr 'value' update
-		$( ".delay webaudio-slider" ).on( "change", function( e ) {
-			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
-				$( e.target ).attr( "value", e.target.value );
-			}
-		} );
-
 	} ] );
 
 	mod.directive( "delay", [ "$templateCache", function( $templateCache ) {

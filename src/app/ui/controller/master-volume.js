@@ -53,14 +53,6 @@ module.exports = function( mod ) {
 			pollSettings();
 			registerForChanges();
 		} );
-
-		// fix the lack of attr 'value' update
-		$volume.on( "change", function( e ) {
-			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
-				$( e.target ).attr( "value", e.target.value );
-			}
-		} );
-
 	} ] );
 
 	mod.directive( "masterVolume", [ "$templateCache", function( $templateCache ) {

@@ -6,6 +6,7 @@ var angular = require( "angular" ),
 		require( "angular-bootstrap-npm" ),
 		require( "ng-file-upload" ).name,
 		require( "angular-bind-polymer" ).name,
+		require( "./ui/fixes" ).name,
 		require( "./ui/module" ).name
 	] ),
 	DAW = require( "./daw/daw" ),

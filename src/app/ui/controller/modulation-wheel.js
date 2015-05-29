@@ -37,14 +37,6 @@ module.exports = function( mod ) {
 		$timeout( function() {
 			$modulationWheel[ 0 ].redraw();
 		}, 300 );
-
-		// fix the lack of attr 'value' update
-		$modulationWheel.on( "change", function( e ) {
-			if ( parseFloat( $( e.target ).attr( "value" ) ) !== e.target.value ) {
-				$( e.target ).attr( "value", e.target.value );
-			}
-		} );
-
 	} ] );
 
 	mod.directive( "modulationWheel", [ "$templateCache", function( $templateCache ) {

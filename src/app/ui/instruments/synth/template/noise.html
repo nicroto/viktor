@@ -1,17 +1,21 @@
 <div class="col-xs-1 noise control-bank text-center" ng-controller="NoiseCtrl as noise">
 	<div class="row">
 		<webaudio-switch src="images/switch.png" width="40" height="40"
-			bind-polymer value="{{noise.enabled.value}}"></webaudio-switch>
+			bind-polymer
+			update-number-value
+			value="{{noise.enabled.value}}"></webaudio-switch>
 	</div>
 	<div class="row">
 		<webaudio-knob src="images/0-100-knob.png"
 			bind-polymer
+			update-number-value
 			value="{{noise.level.value}}" min="{{noise.level.range[ 0 ]}}" max="{{noise.level.range[ 1 ]}}" step="1" diameter="240" sprites="44" width="60" height="60"></webaudio-knob>
 	</div>
 	<div class="row">
 		<webaudio-slider direction="horz" value="{{noise.type.value}}"
 			min="{{noise.type.range[ 0 ]}}" max="{{noise.type.range[ 1 ]}}" step="1"
 			bind-polymer
+			update-number-value
 			src="images/noise-slider-base.png" knobsrc="images/slider-knob.png"
 			height="45" width="90" ditchlength="40" knobwidth="20" knobheight="20"></webaudio-slider>
 	</div>
