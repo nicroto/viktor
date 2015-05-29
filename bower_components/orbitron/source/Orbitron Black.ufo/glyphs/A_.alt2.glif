@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="A.alt2" format="1">
+  <advance width="774"/>
+  <outline>
+    <contour>
+      <point x="54" y="720" type="line"/>
+      <point x="54" y="0" type="line"/>
+      <point x="207" y="0" type="line"/>
+      <point x="207" y="174" type="line"/>
+      <point x="457" y="174" type="line"/>
+      <point x="604" y="0" type="line"/>
+      <point x="761" y="0" type="line"/>
+      <point x="761" y="50" type="line"/>
+      <point x="211" y="720" type="line"/>
+    </contour>
+    <contour>
+      <point x="207" y="471" type="line"/>
+      <point x="329" y="327" type="line"/>
+      <point x="207" y="327" type="line"/>
+    </contour>
+  </outline>
+</glyph>

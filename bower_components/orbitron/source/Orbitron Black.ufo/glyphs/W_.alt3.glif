@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="W.alt3" format="1">
+  <advance width="1028"/>
+  <outline>
+    <contour>
+      <point x="506" y="349" type="line"/>
+      <point x="799" y="0" type="line"/>
+      <point x="958" y="0" type="line"/>
+      <point x="958" y="720" type="line"/>
+      <point x="802" y="720" type="line"/>
+      <point x="802" y="240" type="line"/>
+      <point x="507" y="591" type="line"/>
+      <point x="209" y="239" type="line"/>
+      <point x="209" y="720" type="line"/>
+      <point x="54" y="720" type="line"/>
+      <point x="54" y="0" type="line"/>
+      <point x="213" y="0" type="line"/>
+    </contour>
+  </outline>
+</glyph>

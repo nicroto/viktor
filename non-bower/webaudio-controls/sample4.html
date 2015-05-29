@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>[Polymer] WebAudio-Keyboard Test</title>
+<script src="./bower_components/webcomponentsjs/webcomponents.js"></script>
+<link rel="import" href="./bower_components/polymer/polymer.html">
+<link rel="import" href="./webcomponents/webaudio-controls.min.html">
+<!--<script type="text/javascript" src="https://rawgithub.com/cwilso/WebMIDIAPIShim/gh-pages/WebMIDIAPI.js"></script>-->
+<script type="text/javascript">
+var midioutputs=[];
+var midiout=null;
+function Init() {
+	navigator.requestMIDIAccess({sysex:false}).then(scb,ecb);
+	document.getElementById("midiout").addEventListener("change",function(e) {
+		midiout=midioutputs[document.getElementById("midiout").selectedIndex];
+	});
+	document.getElementById("keyboard").addEventListener("change",function(e) {
+		midiout.send([0x90,e.note[1],e.note[0]?100:0]);
+	});
+	document.getElementById("prog").addEventListener("change",function(e) {
+		midiout.send([0xc0,e.target.value]);
+	});
+	document.getElementById("volume").addEventListener("change",function(e) {
+		midiout.send([0xb0,7,e.target.value]);
+	});
+}
+function ecb(e) { console.log(e); }
+function scb(midiaccess) {
+    function createOptions(outputs) {
+        var i=0;
+        var outputIterator=outputs.values();
+        for(var o=outputIterator.next(); !o.done; o=outputIterator.next()) {
+            midioutputs[i]=o.value;
+	          document.getElementById("midiout").options[i]=new Option(o.value.name);
+            i++;
+        }
+	      midiout=midioutputs[0];
+    }
+    createOptions(midiaccess.outputs);
+}
+</script>
+</head>
+<body onload="Init()">
+	MidiOut : <select id="midiout"></select><br/><br/>
+	Program : <webaudio-slider id="prog" min="0" max="127" direction="horz" valuetip="0"></webaudio-slider>
+	 <webaudio-param link="prog"></webaudio-param><br/><br/>
+	Volume : <webaudio-knob id="volume" min="0" max="127" value="100" diameter="40"></webaudio-knob><br/><br/>
+	<webaudio-keyboard id="keyboard" min="36" keys="61" width="600" height="50"></webaudio-keyboard>
+</body>
+</html>

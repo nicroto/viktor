@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="V.alt" format="1">
+  <advance width="774"/>
+  <outline>
+    <contour>
+      <point x="54" y="721" type="line"/>
+      <point x="54" y="0" type="line"/>
+      <point x="166" y="0" type="line"/>
+      <point x="777" y="721" type="line"/>
+      <point x="670" y="721" type="line"/>
+      <point x="502" y="519"/>
+      <point x="304" y="293"/>
+      <point x="137" y="93" type="curve"/>
+      <point x="137" y="721" type="line"/>
+    </contour>
+  </outline>
+</glyph>

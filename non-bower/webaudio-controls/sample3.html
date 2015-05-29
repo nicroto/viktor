@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>[Polymer] WebAudio-Controls Live Demo</title>
+        <script src="./bower_components/webcomponentsjs/webcomponents.js"></script>
+        <link rel="import" href="./bower_components/polymer/polymer.html">
+        <link rel="import" href="./webcomponents/webaudio-controls.min.html">
+        <style>
+            #base {
+                color:#027;
+                position:relative;
+                background:#888;
+                background: linear-gradient(top, #444 0%, #aaa 3%,#888 97%,#444 100%);
+                background: -webkit-linear-gradient(top, #444 0%, #aaa 3%,#888 97%,#444 100%);
+                background: -moz-linear-gradient(top, #444 0%, #aaa 3%,#888 97%,#444 100%);
+                background: -ms-linear-gradient(top, #444 0%, #aaa 3%,#888 97%,#444 100%);
+                width:500px;
+                height:300px;
+                margin:30px 40px;
+                padding:0px;
+            }
+        </style>
+    </head>
+<body style="background-color:#eee;font-family:sans-serif;position:relative">
+    <h1>WebAudio-Controls Live Demo</h1>
+    <div id="base">
+        <webaudio-knob id="knob1" diameter="48" style="position:absolute;left:50px;top:20px"></webaudio-knob>
+        <webaudio-knob id="knob2" diameter="48" style="position:absolute;left:120px;top:20px"></webaudio-knob>
+        <webaudio-param link="knob1" style="position:absolute;left:60px;top:75px"></webaudio-param>
+        <webaudio-param link="knob2" style="position:absolute;left:130px;top:75px"></webaudio-param>
+        <webaudio-slider id="slider1" width="16" height="80" style="position:absolute;left:380px;top:50px"></webaudio-slider>
+        <webaudio-slider id="slider2" direction="horz" style="position:absolute;left:240px;top:50px"></webaudio-slider>
+        <webaudio-switch id="switch1" style="position:absolute;left:220px;top:90px"></webaudio-switch>
+        <webaudio-switch id="switch2" style="position:absolute;left:260px;top:90px"></webaudio-switch>
+        <webaudio-keyboard id="key" width="400" height="100" min="48" keys="25" style="position:absolute;left:48px;top:160px"></webaudio-keyboard>
+        <webaudio-keyboard id="key2" width="160" height="20" min="36" keys="61" enable="0" colors="#000;#ccf;;#000;;#0fc;;#0fc" style="position:absolute;left:48px;top:270px"></webaudio-keyboard>
+        <span style="position:absolute;left:60px;top:100px">&lt;webaudio-knob&gt;</span>
+        <span style="position:absolute;left:60px;top:120px">&lt;webaudio-param&gt;</span>
+        <span style="position:absolute;left:270px;top:20px">&lt;webaudio-slider&gt;</span>
+        <span style="position:absolute;left:220px;top:120px">&lt;webaudio-switch&gt;</span>
+        <span style="position:absolute;left:320px;top:265px">&lt;webaudio-keyboard&gt;</span>
+	</div>
+    <div id="events" style="position:absolute;right:0;top:0;background:rgba(128,128,255,0.5);padding:10px;color:#000;text-align:left;width:300px;height:300px;overflow:scroll"></div>
+
+<script type="text/javascript">
+    var message="";
+    var log=[];
+    var knobs = document.getElementsByTagName('webaudio-knob');
+    for(var i = 0; i < knobs.length; i++)
+        knobs[i].addEventListener("change",Dump,false);
+    var sliders = document.getElementsByTagName('webaudio-slider');
+    for(var i = 0; i < sliders.length; i++)
+        sliders[i].addEventListener("change",Dump,false);
+    var switches = document.getElementsByTagName('webaudio-switch');
+    for(var i = 0; i < switches.length; i++) {
+        switches[i].addEventListener("change",Dump,false);
+    }
+    var key=document.getElementById("key");
+    key.addEventListener('change',Dump,false);
+    key.addEventListener('note',Dump,false);
+    var key2=document.getElementById("key2");
+
+    function Dump(e) {
+        var str="";
+        if(e.target.id=="key") {
+            key2.setNote(e.note[0],e.note[1]);
+            str=e.type + " : " + e.target.id + " : [" + e.note + "] ";
+        }
+        else
+            str=e.type + " : " + e.target.id + " : " + e.target.value + " ";
+        console.log(str);
+        log.unshift(str);
+        log.length=20;
+        str="";
+        for(var i=19;i>=0;--i) {
+            if(log[i])
+                str+=log[i]+"<br/>";
+        }
+        var evview=document.getElementById("events");
+        evview.innerHTML=str;
+        evview.scrollTop=evview.scrollHeight;
+    }
+</script>
+</body>
+</html>

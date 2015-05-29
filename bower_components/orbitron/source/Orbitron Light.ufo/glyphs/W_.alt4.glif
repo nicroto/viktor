@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="W.alt4" format="1">
+  <advance width="1155"/>
+  <outline>
+    <contour>
+      <point x="1116" y="0" type="line"/>
+      <point x="1116" y="720" type="line"/>
+      <point x="1034" y="720" type="line"/>
+      <point x="1034" y="81" type="line"/>
+      <point x="676" y="81" type="line" smooth="yes"/>
+      <point x="655" y="81"/>
+      <point x="638" y="99"/>
+      <point x="638" y="120" type="curve" smooth="yes"/>
+      <point x="638" y="720" type="line"/>
+      <point x="556" y="720" type="line"/>
+      <point x="556" y="81" type="line"/>
+      <point x="173" y="81" type="line" smooth="yes"/>
+      <point x="153" y="81"/>
+      <point x="135" y="99"/>
+      <point x="135" y="120" type="curve" smooth="yes"/>
+      <point x="135" y="720" type="line"/>
+      <point x="53" y="720" type="line"/>
+      <point x="53" y="120" type="line" smooth="yes"/>
+      <point x="53" y="53"/>
+      <point x="107" y="0"/>
+      <point x="173" y="0" type="curve" smooth="yes"/>
+    </contour>
+  </outline>
+</glyph>

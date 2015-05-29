@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>[Polymer] WebAudio Controls Test page</title>
+    <script src="./bower_components/webcomponentsjs/webcomponents.js"></script>
+    <link rel="import" href="./bower_components/polymer/polymer.html">
+    <link rel="import" href="./webcomponents/webaudio-controls.min.html">
+    <style>
+    body {
+      font-family: sans-serif;
+    }
+    code {
+      color:#4c4;
+      font-family: sans-serif;
+      font-size:small;
+      font-weight:bold;
+    }
+    </style>
+    <script type="text/javascript">
+
+function Init() {
+  var knobs = document.getElementsByTagName('webaudio-knob');
+  for(var i = 0; i < knobs.length; ++i)
+    knobs[i].addEventListener('change', LogChange);
+  var sliders = document.getElementsByTagName('webaudio-slider');
+  for(var i = 0; i < sliders.length; ++i)
+    sliders[i].addEventListener('change', LogChange);
+  var switches = document.getElementsByTagName('webaudio-switch');
+  for(var i = 0; i < switches.length; ++i)
+    switches[i].addEventListener('change', LogChange);
+  for(var i=0;i<switches.length;++i)
+    switches[i].addEventListener("click",LogClick);
+  window.addEventListener('scroll',Scroll);
+}
+function LogChange(e) {
+  var str="change: id="+e.target.id+" value:"+e.target.value;
+  document.getElementById("cons").innerHTML += (str+"<br/>");
+  console.log(str);
+}
+function LogClick(e) {
+  var str="click:"+e.target.id;
+  document.getElementById("cons").innerHTML += (str+"<br/>");
+  console.log(str);
+}
+function Scroll() {
+  document.getElementById("consframe").style.top=window.scrollY+"px";
+}
+function Clear() {
+  document.getElementById("cons").innerHTML="--- Events ---<br/>";
+}
+
+    </script>
+  </head>
+  <body style="background-color:#eee;" onload="Init()">
+
+<div id="consframe" style="position:absolute;right:0;bottom:0;width:250px;height:100%;background:#ccc;overflow:scroll;margin:0;padding:0px 10px">
+  <button onclick="Clear()">Clear</button>
+  <div id="cons">--- Events ---<br/></div>
+</div>
+
+  <h1>WebAudio-Controls Test Page</h1>
+    <div style="background-color:#444;color:#eee;width:640px;margin:30px auto;padding:20px;overflow:hidden">
+      <h2>WebAudio-Knobs</h2>
+      <webaudio-knob id="knob1"></webaudio-knob><br/>
+      <code>&lt;webaudio-knob id="knob1"&gt;&lt;/webaudio-knob&gt;</code>
+      <div>Default webaudio-knob. If no knob-image is specified, simple embedded image resource is used.</div><br/><br/>
+
+      <webaudio-knob id="knob2" src="img/LittlePhatty.png" sprites="100" value="60" min="-100" max="100" step="20" diameter="64"></webaudio-knob><br/>
+      <code>&lt;webaudio-knob id="knob2" src="img/LittlePhatty.png" sprites="100" value="60" min="-100" max="100" step="20" diameter="64"&gt;&lt;webaudio-knob&gt;</code>
+      <div>Knob image file is assigned. Value range can be specified by min/max. The initial value is "60". The value is changed in step of "20".</div><br/><br/>
+
+      <webaudio-knob id="knob3" src="img/LittlePhatty.png" sprites="100" diameter="32"></webaudio-knob><br/>
+      <code>&lt;webaudio-knob id="knob3" src="img/LittlePhatty.png" sprites="100" diameter="32"&gt;&lt;webaudio-knob&gt;</code>
+      <div>The knob image will be resized to specified size (even recommended to prepare required size image for clear display)</div><br/><br/>
+
+      <webaudio-knob id="knob4" src="img/hsw5.png" sprites="4" value="2" min="0" max="4" width="128" height="32"></webaudio-knob><br/>
+      <code>&lt;webaudio-knob id="knob4" src="img/hsw5.png" sprites="4" value="2" min="0" max="4" width="128" height="32"&gt;&lt;webaudio-knob&gt;</code>
+      <div>non-square image is used with specifying width/height instead of diameter.</div><br/><br/>
+
+      <webaudio-knob id="knob5" src="img/LittlePhatty.png" sprites="100" diameter="64" valuetip="0" tooltip="Knob Test"></webaudio-knob>
+      <webaudio-param link="knob5"></webaudio-param><br/>
+      <code>&lt;webaudio-knob id="knob5" src="img/LittlePhatty.png" sprites="100" diameter="64" valuetip="0" tooltip="Knob Test"&gt;&lt;/webaudio-knob&gt;<br/>
+      &lt;webaudio-param link="knob5"&gt;&lt;/webaudio-param&gt;
+      </code>
+      <div>webaudio-knob can has tooltip-text and editable parameter display field with webaudio-param</div><br/><br/>
+
+      <hr/>
+
+      <h2>WebAudio-Sliders</h2>
+      <webaudio-slider id="slider1"></webaudio-slider>
+      <webaudio-slider id="slider2" direction="horz"></webaudio-slider><br/>
+      <code>&lt;webaudio-slider id="slider1"&gt;&lt;/webaudio-slider&gt;<br/>
+        &lt;webaudio-slider id="slider2" direction="horz"&gt;&lt;/webaudio-slider&gt;</code>
+      <div>Default webaudio-slider. If no slider-image is specified, simple embedded image resource is used.
+        The slider direction is specified by "direction" attribute.
+      </div><br/><br/>
+
+      <webaudio-slider id="slider3" direction="horz" src="img/hsliderbody.png" knobsrc="img/hsliderknob.png"></webaudio-slider><br/>
+      <code>&lt;webaudio-slider id="slider3" direction="horz" src="img/hsliderbody.png" knobsrc="img/hsliderknob.png"&gt;&lt;/webaudi-slider&gt;<br/></code>
+      <div>Specifying the sliderbase and sliderknob images.
+      </div><br/><br/>
+
+      <webaudio-slider id="slider4" direction="horz" src="img/hsliderbody.png" knobsrc="img/hsliderknob.png" min="0" max="1" step="0.1" width="60" height="20" valuetip="0" tooltip="Slider Test"></webaudio-slider>
+      <webaudio-param link="slider4"></webaudio-param><br/>
+      <code>&lt;webaudio-slider id="slider4" direction="horz" src="img/hsliderbody.png" knobsrc="img/hsliderknob.png" min="0" max="1" step="0.1" width="60" height="20" valuetip="0" tooltip="Slider Test"&gt;&lt;/webaudio-slider&gt;<br/>
+      &lt;webaudio-param link="slider4"&gt;&lt;/webaudio-param&gt;</code>
+      <div>Value step is specified, resized,  tooltip-text and webaudio-param is added.
+      </div><br/><br/>
+
+      <hr/>
+
+      <h2>WebAudio-Switches</h2>
+      <webaudio-switch id="toggle1"></webaudio-switch><br/>
+      <code>&lt;webaudio-switch id="toggle1"&gt;&lt;/webaudio-switch&gt;</code>
+      <div>Default webaudio-switch. If no switch-image is specified, simple embedded image resource is used.</div><br/><br/>
+
+      <webaudio-switch id="toggle2" src="img/switch_toggle.png" width="32" height="32"></webaudio-switch>
+      <webaudio-switch id="toggle3" src="img/switch_toggle.png" width="54" height="54"></webaudio-switch><br/>
+      <code>&lt;webaudio-switch id="toggle2" src="img/switch_toggle.png" width="32" height="32"&gt;&lt;/webaudio-switch&gt;<br/>
+       &lt;webaudio-switch id="toggle3" src="img/switch_toggle.png" width="54" height="54"&gt;&lt;/webaudio-switch&gt;</code>
+      <div>Image file is specified. Images are resized to specified size.</div><br/><br/>
+
+      <webaudio-switch id="kick1" src="img/switch_toggle.png" type="kick" width="54" height="54"></webaudio-switch><br/>
+      <code>&lt;webaudio-switch id="kick1" src="img/switch_toggle.png" type="kick" width="54" height="54"&gt;&lt;/webaudio-switch&gt;</code>
+      <div>Kick type switch. In this mode, this switch is on only while pressing.</div><br/><br/>
+
+      <webaudio-switch id="radioA" src="img/switch_toggle.png" type="radio" group="radio1" width="54" height="54" value="1" tooltip="Radio-A"></webaudio-switch>
+      <webaudio-switch id="radioB" src="img/switch_toggle.png" type="radio" group="radio1" width="54" height="54" tooltip="Radio-B"></webaudio-switch>
+      <webaudio-switch id="radioC" src="img/switch_toggle.png" type="radio" group="radio1" width="54" height="54" tooltip="Radio-C"></webaudio-switch><br/>
+      <code>
+        &lt;webaudio-switch id="radioA" src="img/switch_toggle.png" type="radio" group="radio1" width="54" height="54" value="1" tooltip="Radio-A"&gt;&lt;/webaudio-switch&gt;<br/>
+        &lt;webaudio-switch id="radioB" src="img/switch_toggle.png" type="radio" group="radio1" width="54" height="54" tooltip="Radio-B"&gt;&lt;/webaudio-switch&bt;<br/>
+        &lt;webaudio-switch id="radioC" src="img/switch_toggle.png" type="radio" group="radio1" width="54" height="54" tooltip="Radio-C"&gt;&lt;/webaudio-switch&gt;<br/>
+      </code>
+      <div>Radio type switch. In this mode, only one switch is on in the group.</div><br/><br/>
+  </div>
+
+
+<div>
+  <h2>Specification</h2>
+  <p>Refer the following page for detail specifications</p>
+  <b><a href="https://github.com/g200kg/webaudio-controls">https://github.com/g200kg/webaudio-controls</a></b>
+</div>
+
+<div>
+  <h2>License</h2>
+  WebAudio-Controls is based on <br/>
+    <a href="https://github.com/agektmr/webaudio-knob" target="_blank">WebAudio-Knob</a> by <a href="http://google.com/+agektmr" target="_blank">Eiji Kitamura</a><br/>
+    <a href="https://github.com/ryoyakawai/webaudio-slider" target="_blank">WebAudio-Slider</a> by <a href="https://plus.google.com/108242669191458983485/posts" target="_blank">Ryoya Kawai</a><br/>
+    <a href="http://aikelab.net/switch/" target="_blank">WebAudio-Switch</a> by <a href="http://d.hatena.ne.jp/aike/" target="_blank">Keisuke Ai</a><br/>
+   Integrated and enhanced by <a href="http://www.g200kg.com/" target="_blank">g200kg</a><br/><br/>
+
+	Using <a href="http://polymer-project.org/" target="_blank">Polymer</a> and <a href="http://www.w3.org/TR/components-intro/" target="_blank">WebComponents</a><br/><br/>
+
+<p>Copyright (c) 2013 Eiji Kitamura / Ryoya KAWAI / Keisuke Ai / g200kg (Tatsuya Shinyagaito)<br/>
+webaudio-controls is licensed under the Apache License, Version 2.0</p>
+
+	Knob/Switch images are from <a href="http://www.g200kg.com/en/webknobman/gallery.php" target="_blank">Knob Gallery</a><br/>
+	<a href="http://www.g200kg.com/en/webknobman/gallery.php?m=p&p=58" target="_blank">switch_toggle.knob</a> by <a href="http://bji.yukihotaru.com/" target="_blank">az</a> Copyright (c) 2011 <a href="http://creativecommons.org/licenses/by/3.0/" target="_blank">CC-BY</a>
+	</div>
+  </body>
+</html>

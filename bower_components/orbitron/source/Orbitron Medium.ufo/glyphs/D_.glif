@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="D" format="1">
+  <advance width="834"/>
+  <unicode hex="0044"/>
+  <outline>
+    <contour>
+      <point x="58" y="720" type="line"/>
+      <point x="58" y="0" type="line"/>
+      <point x="648" y="0" type="line" smooth="yes"/>
+      <point x="720" y="0"/>
+      <point x="778" y="58"/>
+      <point x="778" y="130" type="curve" smooth="yes"/>
+      <point x="778" y="590" type="line" smooth="yes"/>
+      <point x="778" y="662"/>
+      <point x="720" y="720"/>
+      <point x="648" y="720" type="curve" smooth="yes"/>
+    </contour>
+    <contour>
+      <point x="670" y="130" type="line" smooth="yes"/>
+      <point x="670" y="118"/>
+      <point x="660" y="108"/>
+      <point x="648" y="108" type="curve" smooth="yes"/>
+      <point x="188" y="108" type="line" smooth="yes"/>
+      <point x="176" y="108"/>
+      <point x="166" y="118"/>
+      <point x="166" y="130" type="curve" smooth="yes"/>
+      <point x="166" y="590" type="line" smooth="yes"/>
+      <point x="166" y="602"/>
+      <point x="176" y="612"/>
+      <point x="188" y="612" type="curve" smooth="yes"/>
+      <point x="648" y="612" type="line" smooth="yes"/>
+      <point x="660" y="612"/>
+      <point x="670" y="602"/>
+      <point x="670" y="590" type="curve" smooth="yes"/>
+    </contour>
+  </outline>
+</glyph>

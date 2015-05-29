@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="zcaron" format="1">
+  <advance width="698"/>
+  <unicode hex="017E"/>
+  <outline>
+    <contour>
+      <point x="54" y="449" type="line"/>
+      <point x="450" y="449" type="line"/>
+      <point x="54" y="143" type="line"/>
+      <point x="54" y="0" type="line"/>
+      <point x="643" y="0" type="line"/>
+      <point x="643" y="131" type="line"/>
+      <point x="247" y="131" type="line"/>
+      <point x="643" y="437" type="line"/>
+      <point x="643" y="580" type="line"/>
+      <point x="54" y="580" type="line"/>
+    </contour>
+    <contour>
+      <point x="227" y="843" type="line"/>
+      <point x="325" y="680" type="line"/>
+      <point x="412" y="680" type="line"/>
+      <point x="510" y="843" type="line"/>
+      <point x="404" y="843" type="line"/>
+      <point x="367" y="784" type="line"/>
+      <point x="330" y="843" type="line"/>
+    </contour>
+  </outline>
+</glyph>
