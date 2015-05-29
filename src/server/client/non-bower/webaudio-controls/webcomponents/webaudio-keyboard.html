@@ -67,12 +67,26 @@ Polymer( (function() {
         },
 			  ready: function() {
 				    this.cv = document.createElement("canvas");
-				    this.cv.width = this.width;
-				    this.cv.height = this.height;
+				    var context = this.ctx = this.cv.getContext('2d'),
+				    	devicePixelRatio = window.devicePixelRatio || 1,
+				        backingStoreRatio = context.webkitBackingStorePixelRatio ||
+				                            context.mozBackingStorePixelRatio ||
+				                            context.msBackingStorePixelRatio ||
+				                            context.oBackingStorePixelRatio ||
+				                            context.backingStorePixelRatio || 1,
+				        ratio = devicePixelRatio / backingStoreRatio;
+
+				    this.ratio = ratio;
+
+				    this.cv.width = this.width * ratio;
+				    this.cv.height = this.height * ratio;
 				    this.cv.style.width = this.width+'px';
 				    this.cv.style.height = this.height+'px';
+
+				    context.scale(ratio, ratio);
+
 				    this.$['wac-body'].appendChild(this.cv);
-				    this.ctx = this.cv.getContext('2d');
+
 				    this.ctx.fillStyle = "#a22";
 				    this.ctx.fillRect(0,0,this.width,this.height);
 				    this.bheight = this.height * 0.55;
