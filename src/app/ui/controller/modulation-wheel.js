@@ -1,7 +1,7 @@
 'use strict';
 
-var $ = require( "jquery" ),
-	settingsConvertor = require( "settings-convertor" );
+var settingsConvertor = require( "settings-convertor" ),
+	RATE_RANGE = [ 0, 128 ];
 
 module.exports = function( mod ) {
 
@@ -14,23 +14,14 @@ module.exports = function( mod ) {
 
 				dawEngine.modulationSettings = modulationSettings;
 			},
-			settings = dawEngine.modulationSettings,
-			$modulationWheel = $( ".modulation-wheel webaudio-knob" );
+			settings = dawEngine.modulationSettings;
 
-		self.modulation = settingsConvertor.transposeParam( settings.rate, [ 0, 128 ] );
+		self.modulation = settingsConvertor.transposeParam( settings.rate, RATE_RANGE );
 
 		[
 			"modulationWheel.modulation.value"
 		].forEach( function( path ) {
 			$scope.$watch( path, settingsChangeHandler );
-		} );
-
-		dawEngine.addExternalMidiMessageHandler( function( type, parsed ) {
-			if ( type === "modulationWheel" ) {
-				$modulationWheel[ 0 ].setValue(
-					settingsConvertor.transposeParam( parsed.modulation, self.modulation.range ).value
-				);
-			}
 		} );
 	} ] );
 
@@ -40,6 +31,23 @@ module.exports = function( mod ) {
 			replace: true,
 			template: $templateCache.get( "modulation-wheel.html" )
 		};
+	} ] );
+
+	mod.directive( "modWheelValue", [ "dawEngine", function( dawEngine ) {
+
+		return {
+			restrict: "A",
+			link: function( scope, $element, attrs ) {
+				dawEngine.addExternalMidiMessageHandler( function( type, parsed ) {
+					if ( type === "modulationWheel" ) {
+						$element[ 0 ].setValue(
+							settingsConvertor.transposeParam( parsed.modulation, RATE_RANGE ).value
+						);
+					}
+				} );
+			}
+		};
+
 	} ] );
 
 };
