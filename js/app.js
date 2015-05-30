@@ -36327,7 +36327,7 @@ angular.element( document ).ready( function() {
 	var $button = angular.element( document.querySelector( "#loadSynthButton" ) );
 
 	if ( is_iOS ) {
-		$button.removeclass( "hide" );
+		$button.removeClass( "hide" );
 		$button.one( "click", function() {
 			$button.remove();
 
