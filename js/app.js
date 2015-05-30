@@ -44512,7 +44512,7 @@ ngModule.run(['$templateCache', function($templateCache) {
     '			</form>\n' +
     '		</div>\n' +
     '		<div class="modal-footer">\n' +
-    '			<button type="button" class="btn btn-primary"\n' +
+    '			<button type="button" class="viktor btn btn-primary"\n' +
     '				ng-click="savePatchModal.savePatch()">Save</button>\n' +
     '		</div>\n' +
     '	</script>\n' +
@@ -44526,9 +44526,9 @@ ngModule.run(['$templateCache', function($templateCache) {
     '			<h5 class="modal-title">{{confirmationModal.message}}</h5>\n' +
     '		</div>\n' +
     '		<div class="modal-footer">\n' +
-    '			<button type="button" class="btn btn-primary"\n' +
+    '			<button type="button" class="viktor btn btn-primary"\n' +
     '				ng-click="confirmationModal.confirm()">Yes</button>\n' +
-    '			<button type="button" class="btn btn-primary"\n' +
+    '			<button type="button" class="viktor btn btn-primary"\n' +
     '				ng-click="confirmationModal.dismiss()">Cancel</button>\n' +
     '		</div>\n' +
     '	</script>\n' +
