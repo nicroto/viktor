@@ -36293,7 +36293,24 @@ var angular = require( "angular" ),
 	AudioContext = global.AudioContext || global.webkitAudioContext,
 	PatchLibrary = require( "./patches/library" ),
 	patchLibrary = new PatchLibrary( "VIKTOR_SYNTH", require( "./patches/defaults" ), store ),
-	dawEngine;
+	is_iOS = /(iPad|iPhone|iPod)/g.test( navigator.userAgent ),
+	dawEngine,
+	bootstrap = function() {
+		dawEngine = new DAW(
+			AudioContext,
+			[
+				require( "./instruments/synth/instrument" )
+			],
+			patchLibrary.getSelected().patch
+		);
+
+		dawEngine.init( function() {
+
+			// !!! BOOTSTRAP !!!
+			angular.resumeBootstrap();
+
+		} );
+	};
 
 // !!! DEFFERS THE BOOTSTRAP !!!
 global.name = "NG_DEFER_BOOTSTRAP!";
@@ -36309,25 +36326,17 @@ app.factory( "patchLibrary", function() {
 angular.element( document ).ready( function() {
 	var $button = angular.element( document.querySelector( "#loadSynthButton" ) );
 
-	$button.one( "click", function() {
+	if ( is_iOS ) {
+		$buttom.show();
+		$button.one( "click", function() {
+			$button.remove();
+
+			bootstrap();
+		} );		
+	} else {
 		$button.remove();
-
-		dawEngine = new DAW(
-			AudioContext,
-			[
-				require( "./instruments/synth/instrument" )
-			],
-			patchLibrary.getSelected().patch
-		);
-
-		dawEngine.init( function() {
-
-			// !!! BOOTSTRAP !!!
-			angular.resumeBootstrap();
-
-		} );
-
-	} );
+		bootstrap();
+	}
 
 } );
 
