@@ -36293,13 +36293,7 @@ var angular = require( "angular" ),
 	AudioContext = global.AudioContext || global.webkitAudioContext,
 	PatchLibrary = require( "./patches/library" ),
 	patchLibrary = new PatchLibrary( "VIKTOR_SYNTH", require( "./patches/defaults" ), store ),
-	dawEngine = new DAW(
-		AudioContext,
-		[
-			require( "./instruments/synth/instrument" )
-		],
-		patchLibrary.getSelected().patch
-	);
+	dawEngine;
 
 // !!! DEFFERS THE BOOTSTRAP !!!
 global.name = "NG_DEFER_BOOTSTRAP!";
@@ -36313,11 +36307,25 @@ app.factory( "patchLibrary", function() {
 } );
 
 angular.element( document ).ready( function() {
+	var $button = angular.element( document.querySelector( "#loadSynthButton" ) );
 
-	dawEngine.init( function() {
+	$button.one( "click", function() {
+		$button.remove();
 
-		// !!! BOOTSTRAP !!!
-		angular.resumeBootstrap();
+		dawEngine = new DAW(
+			AudioContext,
+			[
+				require( "./instruments/synth/instrument" )
+			],
+			patchLibrary.getSelected().patch
+		);
+
+		dawEngine.init( function() {
+
+			// !!! BOOTSTRAP !!!
+			angular.resumeBootstrap();
+
+		} );
 
 	} );
 
