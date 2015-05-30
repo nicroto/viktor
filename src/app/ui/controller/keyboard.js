@@ -16,7 +16,7 @@ module.exports = function( mod ) {
 
 		return {
 			restrict: "A",
-			link: function( scope, $element, attrs ) {
+			link: function( scope, $element ) {
 
 				dawEngine.addExternalMidiMessageHandler( function( type, parsed, rawEvent ) {
 					if ( type === "notePress" ) {

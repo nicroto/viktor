@@ -15,7 +15,7 @@ var angular = require( "angular" ),
 	patchLibrary = new PatchLibrary( "VIKTOR_SYNTH", require( "./patches/defaults" ), store ),
 	is_iOS = /(iPad|iPhone|iPod)/g.test( navigator.userAgent ),
 	dawEngine,
-	bootstrap = function( $button ) {
+	bootstrap = function() {
 		dawEngine = new DAW(
 			AudioContext,
 			[

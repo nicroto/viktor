@@ -37,7 +37,7 @@ module.exports = function( mod ) {
 
 		return {
 			restrict: "A",
-			link: function( scope, $element, attrs ) {
+			link: function( scope, $element ) {
 				dawEngine.addExternalMidiMessageHandler( function( type, parsed ) {
 					if ( type === "pitchBend" ) {
 						$element[ 0 ].setValue(
