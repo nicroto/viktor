@@ -4,8 +4,10 @@ var angular = require( "angular" ),
 	template = require( "./template/daw.html" ),
 	mod = angular.module( "dawModule", [
 		template.name,
-		require( "./patch-library/module" ).name,
-		require( "./instruments/synth/module" ).name,
+		require( "./module/patch-library/module" ).name,
+		require( "./module/instruments/synth/module" ).name,
+		require( "./module/footer/module" ).name,
+
 		require( "./template/master-controls.html" ).name,
 		require( "./template/delay.html" ).name,
 		require( "./template/reverb.html" ).name,
