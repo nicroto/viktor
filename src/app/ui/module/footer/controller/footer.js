@@ -6,7 +6,7 @@ module.exports = function( mod ) {
 		var self = this;
 
 		self.openPrivacyPolicyModal = function() {
-			var modalInstance = $modal.open( {
+			$modal.open( {
 				animation: $scope.animationsEnabled,
 				templateUrl: 'privacyPolicyModal.html',
 				controller: 'FooterModalCtrl',
@@ -17,7 +17,7 @@ module.exports = function( mod ) {
 		};
 
 		self.openAboutModal = function() {
-			var modalInstance = $modal.open( {
+			$modal.open( {
 				animation: $scope.animationsEnabled,
 				templateUrl: 'aboutModal.html',
 				controller: 'FooterModalCtrl',
