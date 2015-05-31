@@ -44,6 +44,7 @@ module.exports = function(grunt) {
 				dest: 'src/server/client/js/app.js',
 				options: {
 					transform: [],
+					plugin: [ [ 'minifyify', { map: false } ] ],
 					debug: false
 				}
 			}
