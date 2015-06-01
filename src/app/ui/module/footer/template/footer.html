@@ -67,6 +67,12 @@
 			<p>Viktor produces sound in a pathway of oscillators and noise generators (as raw source of sound and timbre), envelopes (this one is a bit trickier to explain, you should research it), Low Pass filters and effects (Delay and Reverb).</p>
 			<p>This combines the 2 major ways of creating sound electronically - Additive (oscillators and noise) and Subtractive Sound Synthesis.</p>
 			<p>Viktor also makes use of the emerging Web MIDI API (just landed without a flag in Chrome 43). So you can play using your MIDI keyboard - plug it in, turn it on and restart the browser (not just the tab) and it should work.</p>
+			<h3>Isn't this a monosynth?</h3>
+			<p>Yes. But probably not for long. This (polyphony) is Next! on my vNext list. Still monosynth will remain an option, because it sounds absolutely amazing and feels so to play, too.</p>
+			<h3>What browsers are supported?</h3>
+			<p>Sound-wise: Latest and gratest of Chrome and Safari. Firefox is only partially supported.</p>
+			<p>Mobile (iOS and Android) Chrome and Safari sound great, but there needs to be an optimized rendering, which isn't in-place, yet.</p>
+			<p>Midi: only Chrome and Mobile Chrome (Android).</p>
 			<h3>Can I save my own patches/presets?</h3>
 			<p>Yes. The top row of the synth (with the green display in the middle) is called Patch Library. You can save your patches (they are not stored on the server - I use localStorage to persist your settings).</p>
 			<p>Even if you accidentally refresh the page, the settings should be intact. To backup the presets you have built - Export them (on Safari copy the text and save it to a file with extension .json, everywhere else it will let you download the file).</p>
@@ -77,7 +83,7 @@
 			<p>Instead of using Angular alone, for dependency management, I use Browserify, which provides the nice CommonJS format/style of module creation and requiring.</p>
 			<p>Angular isn't very Browserify-friendly so I had to do some stitching in my initial setup (browserify-shim, browserify-ng-html2js etc.) but once the setup was ready development really felt a breeze.</p>
 			<p>Grunt and multiple grunt-contrib-'s are used for the build (and development rebuild).</p>
-			<p>I drew all images on Pixelmator.</p>
+			<p>I drew the images on Pixelmator.</p>
 			<h3>So how can I get the code? It's all minified... :(</h3>
 			<p>This is only for performance/load-time reasons. Viktor is completely open-source and is licensed under the MIT license.</p>
 			<p>Fork <a target="_blank" href="https://github.com/nicroto/viktor/">the repo</a> and go NUTS! :)</p>
