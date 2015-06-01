@@ -35,6 +35,9 @@
 	<link rel="import" href="non-bower/webaudio-controls/bower_components/polymer/polymer.html">
 	<link rel="import" href="non-bower/webaudio-controls/webcomponents/webaudio-controls.html">
 
+	<!-- Fonts -->
+	<link href="bower_components/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
 	<!-- Custom CSS -->
 	<link href="css/main.css" rel="stylesheet">
 
@@ -51,9 +54,32 @@
 
 </head><body ng-app="app" polymer-ready>
 
+	<!-- Social Buttons part1 -->
+	<div id="fb-root"></div>
+	<script>(function(d, s, id) {
+		var js, fjs = d.getElementsByTagName(s)[0];
+		if (d.getElementById(id)) return;
+		js = d.createElement(s); js.id = id;
+		js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.3&appId=1435210983455180";
+		fjs.parentNode.insertBefore(js, fjs);
+		}(document, 'script', 'facebook-jssdk'));
+	</script>
+
 	<button id="loadSynthButton" class="hide centered viktor btn">Load Synth</button>
 
 	<daw-container></daw-container>
+
+	<!-- Social Buttons part2 -->
+	<div id="socialButtons">
+		<!-- Twitter -->
+		<a href="https://twitter.com/share" class="twitter-share-button" data-url="http://nicroto.github.io/viktor/" data-text="Viktor NV-1 Synthesizer. Built on #WebAudio and #WebMIDI API's, #AngularJS, #Stylus, #Browserify." data-via="NikolayTsenkov">Tweet</a>
+		<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+
+		<!-- Facebook -->
+		<div class="fb-like" data-href="https://www.facebook.com/viktorsynth" data-layout="box_count" data-action="like" data-show-faces="false" data-share="true"></div>
+	</div>
+
+	<footer-directive></footer-directive>
 
 <!-- App's script -->
 <script src="js/app.js"></script>
