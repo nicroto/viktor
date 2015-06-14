@@ -133,10 +133,21 @@ Instrument.prototype = {
 			filterEnvelope = self.filterEnvelope,
 			activeNotes = self.activeNotes,
 			portamento = self.settings.modulation.portamento.value,
-			hasANoteDown = activeNotes.length > 0;
+			notesCount = activeNotes.length,
+			hasANoteDown = notesCount > 0,
+			position = activeNotes.indexOf( noteFrequency );
 
 		if ( !hasANoteDown ) {
 			self._pitchDetuneOscillatorBank( oscillatorBank, self.pitchSettings.bend.value );
+		}
+
+		if ( notesCount && position === ( notesCount - 1 ) ) {
+			// no need to restart sound if the same note is somehow input again
+			return;
+		}
+
+		if ( position !== -1 ) {
+			activeNotes.splice( position, 1 );
 		}
 
 		activeNotes.push( noteFrequency );
