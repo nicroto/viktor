@@ -9,22 +9,16 @@ var angular = require( "angular" ),
 		require( "./ui/fixes" ).name,
 		require( "./ui/module" ).name
 	] ),
-	DAW = require( "./daw/daw" ),
+	NV1Engine = require( "viktor-nv1-engine" ),
 	AudioContext = global.AudioContext || global.webkitAudioContext,
-	PatchLibrary = require( "./patches/library" ),
-	patchLibrary = new PatchLibrary( "VIKTOR_SYNTH", require( "./patches/defaults" ), store ),
 	is_iOS = /(iPad|iPhone|iPod)/g.test( navigator.userAgent ),
 	dawEngine,
+	patchLibrary,
 	bootstrap = function() {
-		dawEngine = new DAW(
-			AudioContext,
-			[
-				require( "./instruments/synth/instrument" )
-			],
-			patchLibrary.getSelected().patch
-		);
+		NV1Engine.create( AudioContext, store, function( dEngine, pLibrary ) {
 
-		dawEngine.init( function() {
+			dawEngine = dEngine;
+			patchLibrary = pLibrary;
 
 			// !!! BOOTSTRAP !!!
 			angular.resumeBootstrap();

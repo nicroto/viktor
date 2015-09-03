@@ -77,7 +77,7 @@ module.exports = function(grunt) {
 					},
 /* Tuna resources */{
 						expand: true,
-						cwd: "non-npm/tuna/impulses/",
+						cwd: "node_modules/viktor-nv1-engine/src/daw/non-npm/tuna/impulses/",
 						src: "**",
 						dest: "src/server/client/impulses/"
 					}

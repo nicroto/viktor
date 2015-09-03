@@ -16,7 +16,7 @@ var angular = require( "angular" ),
 		require( "./template/modulation-wheel.html" ).name,
 		require( "./template/keyboard.html" ).name
 	] ),
-	Synth = require( "../instruments/synth/instrument" ),
+	Synth = require( "viktor-nv1-engine" ).Synth,
 	synth;
 
 mod.provider( "dawEngine", function dawEngineProvider() {

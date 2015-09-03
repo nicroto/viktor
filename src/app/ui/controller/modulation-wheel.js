@@ -1,6 +1,6 @@
 'use strict';
 
-var settingsConvertor = require( "settings-convertor" ),
+var settingsConvertor = require( "viktor-nv1-settings-convertor" ),
 	RATE_RANGE = [ 0, 128 ];
 
 module.exports = function( mod ) {

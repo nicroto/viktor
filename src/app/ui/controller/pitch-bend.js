@@ -1,6 +1,6 @@
 'use strict';
 
-var settingsConvertor = require( "settings-convertor" ),
+var settingsConvertor = require( "viktor-nv1-settings-convertor" ),
 	BEND_RANGE = [ 0, 128 ],
 	RANGE_CENTER = settingsConvertor.getRangeCenter( BEND_RANGE );
 

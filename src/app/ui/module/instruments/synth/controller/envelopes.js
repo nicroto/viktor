@@ -1,6 +1,6 @@
 'use strict';
 
-var settingsConvertor = require( "settings-convertor" );
+var settingsConvertor = require( "viktor-nv1-settings-convertor" );
 
 module.exports = function( mod ) {
 

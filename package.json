@@ -1,7 +1,7 @@
 {
   "name": "Viktor",
   "description": "Synthesizer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "homepage": "https://github.com/nicroto/viktor",
   "author": {
     "name": "nicroto",
@@ -33,7 +33,9 @@
     "angular-local-storage": "^0.1.5",
     "express": "^4.12.3",
     "ng-file-upload": "^4.2.1",
-    "store": "^1.3.17"
+    "store": "^1.3.17",
+    "viktor-nv1-engine": "^1.0.2",
+    "viktor-nv1-settings-convertor": "^1.0.1"
   },
   "devDependencies": {
     "browserify": "^9.0.8",
@@ -59,9 +61,7 @@
     "ng-file-upload": "./node_modules/ng-file-upload/dist/ng-file-upload-all.js",
     "angular": "./non-npm/angular-1-4-fixed.js",
     "angular-bind-polymer": "./non-npm/angular-bind-polymer.js",
-    "tuna": "./non-npm/tuna/tuna.js",
-    "file-saver": "./non-npm/file-saver/FileSaver.js",
-    "settings-convertor": "./non-npm/viktor/settings-convertor.js"
+    "file-saver": "./non-npm/file-saver/FileSaver.js"
   },
   "browserify-shim": {
     "angular": {
