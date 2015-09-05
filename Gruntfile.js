@@ -134,7 +134,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-shell');
 
 	// run lint and tests
-	grunt.registerTask('default', ['c', 'jshint:all', 'simplemocha']);
+	grunt.registerTask('default', ['c', 'simplemocha', 'jshint:all']);
 
 	// start develop
 	grunt.registerTask('devRebuild', ['clean:dev', 'browserify:app_debug', 'stylus', 'copy']);

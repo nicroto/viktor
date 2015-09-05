@@ -10,8 +10,10 @@ var angular = require( "angular" ),
 		require( "./ui/module" ).name
 	] ),
 	NV1Engine = require( "viktor-nv1-engine" ),
+	patchSharing = require( "non-npm-patch-sharing" ),
 	AudioContext = global.AudioContext || global.webkitAudioContext,
 	is_iOS = /(iPad|iPhone|iPod)/g.test( navigator.userAgent ),
+	queryString = window.location.search.substr( 1 ),
 	dawEngine,
 	patchLibrary,
 	bootstrap = function() {
@@ -19,6 +21,10 @@ var angular = require( "angular" ),
 
 			dawEngine = dEngine;
 			patchLibrary = pLibrary;
+
+			patchSharing.resolvePatchSelection( queryString, patchLibrary );
+
+			dawEngine.loadPatch( patchLibrary.getSelected().patch );
 
 			// !!! BOOTSTRAP !!!
 			angular.resumeBootstrap();
