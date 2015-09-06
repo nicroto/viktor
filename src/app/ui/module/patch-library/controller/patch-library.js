@@ -4,10 +4,30 @@ var saveFile = require( "file-saver" ).saveAs;
 
 module.exports = function( mod ) {
 
-	mod.controller( "PatchLibraryCtrl", [ "$scope", "$modal", "dawEngine", "patchLibrary", function( $scope, $modal, dawEngine, patchLibrary ) {
+	mod.controller( "PatchLibraryCtrl", [ "$scope", "$modal", "dawEngine", "patchLibrary",
+	function( $scope, $modal, dawEngine, patchLibrary ) {
 		var self = this,
 			selectedPatch = patchLibrary.getSelected(),
 			customPatchNames = patchLibrary.getCustomNames();
+
+		self.openSharePatchModal = function() {
+			var modalInstance = $modal.open( {
+				animation: $scope.animationsEnabled,
+				templateUrl: 'sharePatchModal.html',
+				controller: 'SharePatchModalCtrl',
+				controllerAs: 'sharePatchModal',
+				size: null,
+				resolve: {
+					selectedPatch: function() {
+						return selectedPatch;
+					}
+				}
+			} );
+
+			modalInstance.result.then( function( name ) {
+				patchLibrary.saveCustom( name, patchLibrary.getSelected().patch );
+			}, function() {} );
+		};
 
 		self.isSavePatchVisible = function() {
 			return selectedPatch.isUnsaved ? true : false;
@@ -123,6 +143,36 @@ module.exports = function( mod ) {
 			customPatchNames = patchLibrary.getCustomNames();
 
 			dawEngine.loadPatch( selectedPatch.patch );
+		} );
+	} ] );
+
+	mod.controller( "SharePatchModalCtrl", [ "$modalInstance", "$window", "patchLibrary", "patchSharing", "selectedPatch", "googleApi",
+	function( $modalInstance, $window, patchLibrary, patchSharing, selectedPatch, googleApi ) {
+		var self = this,
+			patchName = selectedPatch.name,
+			tweetText = "I made a new sound with the Viktor NV-1 Synthesizer - " + patchName + ".",
+			loc = $window.location,
+			baseUrl = loc.origin + loc.pathname;
+
+		self.urlToShare = null;
+
+		self.isLoading = function() {
+			return !self.urlToShare;
+		};
+
+		self.close = function() {
+			$modalInstance.dismiss();
+		};
+
+		self.patchName = patchName;
+
+		self.twitterUrl = null;
+
+		patchSharing.getUrlToShare( selectedPatch, baseUrl, googleApi, function( url ) {
+			self.twitterUrl = patchSharing.getTwitterUrl( tweetText, url );
+			self.facebookUrl = patchSharing.getFacebookUrl( url );
+
+			self.urlToShare = url;
 		} );
 	} ] );
 

@@ -7,7 +7,8 @@ var angular = require( "angular" ),
 		require( "ng-file-upload" ).name,
 		require( "angular-bind-polymer" ).name,
 		require( "./ui/fixes" ).name,
-		require( "./ui/module" ).name
+		require( "./ui/module" ).name,
+		require( "./3rd-party/google-api/module" ).name
 	] ),
 	NV1Engine = require( "viktor-nv1-engine" ),
 	patchSharing = require( "non-npm-patch-sharing" ),
@@ -38,6 +39,10 @@ global.name = "NG_DEFER_BOOTSTRAP!";
 app.config( [ "dawEngineProvider", function( dawEngineProvider ) {
 	dawEngineProvider.dawEngine = dawEngine;
 } ] );
+
+app.factory( "patchSharing", function() {
+	return patchSharing;
+} );
 
 app.factory( "patchLibrary", function() {
 	return patchLibrary;

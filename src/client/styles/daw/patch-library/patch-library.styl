@@ -2,37 +2,26 @@
 	height: 60px
 	color: black
 
-	.lib-button
-		background: -webkit-gradient(linear, left top, left bottom, color-stop(0.05, rgba(150, 150, 150, 0.19)), color-stop(1, rgba(230, 230, 230, 0)))
-		background: -moz-linear-gradient(top, rgba(150, 150, 150, 0.19) 5%, rgba(230, 230, 230, 0) 100%)
-		background: -webkit-linear-gradient(top, rgba(150, 150, 150, 0.19) 5%, rgba(230, 230, 230, 0) 100%)
-		background: -o-linear-gradient(top, rgba(150, 150, 150, 0.19) 5%, rgba(230, 230, 230, 0) 100%)
-		background: -ms-linear-gradient(top, rgba(150, 150, 150, 0.19) 5%, rgba(230, 230, 230, 0) 100%)
-		background: linear-gradient(to bottom, rgba(150, 150, 150, 0.19) 5%, rgba(230, 230, 230, 0) 100%)
-		-moz-border-radius: 37px
-		-webkit-border-radius: 37px
-		border-radius: 37px
-		border: 1px solid #0f0f0f
-		display: inline-block
-		cursor: pointer
-		padding: 12px 12px
-		text-decoration: none
+	#patchActions
 		margin-top: 15px
-		&:active
-			background: -webkit-gradient(linear, left top, left bottom, color-stop(0.05, rgba(230, 230, 230, 0)), color-stop(1, rgba(150, 150, 150, 0.19)))
-			background: -moz-linear-gradient(top, rgba(230, 230, 230, 0) 5%, rgba(150, 150, 150, 0.19) 100%)
-			background: -webkit-linear-gradient(top, rgba(230, 230, 230, 0) 5%, rgba(150, 150, 150, 0.19) 100%)
-			background: -o-linear-gradient(top, rgba(230, 230, 230, 0) 5%, rgba(150, 150, 150, 0.19) 100%)
-			background: -ms-linear-gradient(top, rgba(230, 230, 230, 0) 5%, rgba(150, 150, 150, 0.19) 100%)
-			background: linear-gradient(to bottom, rgba(230, 230, 230, 0) 5%, rgba(150, 150, 150, 0.19) 100%)
-
-	.patch-button
-		position: absolute
 		margin-left: 10px
-		margin-top: 15px
+		position: absolute
+		display: inline-block
+		width: 150px
+		text-align: left
 
 	#libActions
+		margin-top: 15px
 		display: inline-block
 		position: absolute
+		top: 0px
 		right: 45px
 		width: 200px
+
+.share-patch-body
+	text-align: center
+	
+	#urlField
+		width: 50%
+		margin: auto
+		text-align: center

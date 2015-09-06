@@ -1,20 +1,64 @@
 <div id="patchLibrary" ng-controller="PatchLibraryCtrl as library">
 	<div class="row text-center">
 		<drop-down></drop-down>
-		<a class="lib-button patch-button glyphicon glyphicon-floppy-disk"
-			ng-show="library.isSavePatchVisible()"
-			ng-click="library.openSavePatchModal()"
-			tooltip="Save Patch"></a>
-		<a class="lib-button patch-button glyphicon glyphicon-remove-circle"
-			ng-show="library.isDeletePatchVisible()"
-			ng-click="library.openDeletePatchModal()"
-			tooltip="Delete Patch"></a>
+		<div id="patchActions">
+			<a class="viktor-round-button patch-button glyphicon glyphicon-floppy-disk"
+				ng-show="library.isSavePatchVisible()"
+				ng-click="library.openSavePatchModal()"
+				tooltip="Save Patch"></a>
+			<a class="viktor-round-button patch-button glyphicon glyphicon-remove-circle"
+				ng-show="library.isDeletePatchVisible()"
+				ng-click="library.openDeletePatchModal()"
+				tooltip="Delete Patch"></a>
+			<a class="viktor-round-button patch-button fa"
+				ng-class="{ true: 'move-pixel-up', false: '' }[library.isSavePatchVisible() || library.isDeletePatchVisible()]"
+				ng-click="library.openSharePatchModal()"
+				tooltip="Share Patch"><i class="fa fa-share-alt"></i></a>
+		</div>
 		<div id="libActions">
-			<a class="lib-button glyphicon glyphicon-import" ngf-select ngf-change="library.import($files)" tooltip="Import library"></a>
-			<a class="lib-button glyphicon glyphicon-export" ng-show="library.isExportVisible()" ng-click="library.export()" tooltip="Export library"></a>
-			<a class="lib-button glyphicon glyphicon-trash" ng-show="library.isExportVisible()" ng-click="library.openClearLibraryModal()" tooltip="Reset to Defaults"></a>
+			<a class="viktor-round-button glyphicon glyphicon-import" ngf-select ngf-change="library.import($files)" tooltip="Import library"></a>
+			<a class="viktor-round-button glyphicon glyphicon-export" ng-show="library.isExportVisible()" ng-click="library.export()" tooltip="Export library"></a>
+			<a class="viktor-round-button glyphicon glyphicon-trash" ng-show="library.isExportVisible()" ng-click="library.openClearLibraryModal()" tooltip="Reset to Defaults"></a>
 		</div>
 	</div>
+
+	<script type="text/ng-template" id="sharePatchModal.html">
+		<div class="modal-header">
+			<button type="button" class="close" ng-click="sharePatchModal.close()"><span>&times;</span></button>
+			<h4 class="modal-title">Share {{sharePatchModal.patchName}}</h4>
+		</div>
+		<div class="modal-body">
+			<div class="share-patch-body">
+				<div ng-show="sharePatchModal.isLoading()">
+					<i class="fa fa-3x fa-circle-o-notch fa-spin"></i>
+				</div>
+				<div ng-hide="sharePatchModal.isLoading()">
+					<div class="patch-share-buttons">
+						<a href="{{sharePatchModal.twitterUrl}}"
+							ng-show="sharePatchModal.twitterUrl"
+							class="viktor-round-button patch-button fa"
+							tooltip="Tweet"><i class="fa fa-twitter"></i></a>
+						<a href="{{sharePatchModal.facebookUrl}}"
+							ng-show="sharePatchModal.facebookUrl"
+							class="viktor-round-button patch-button fa"
+							tooltip="Post"><i class="fa fa-facebook"></i></a>
+					</div>
+					<form>
+						<div class="form-group">
+							<label for="urlField" class="control-label">Url to share:</label>
+							<input type="text" class="form-control" id="urlField"
+								ng-model="sharePatchModal.urlToShare"
+								autofocus>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+		<div class="modal-footer">
+			<button type="button" class="viktor btn btn-primary"
+				ng-click="sharePatchModal.close()">Close</button>
+		</div>
+	</script>
 
 	<script type="text/ng-template" id="savePatchModal.html">
 		<div class="modal-header">

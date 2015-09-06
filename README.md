@@ -88,6 +88,10 @@ $ for i in *.png; do ffmpeg -i $i -vframes 1 -compression_level 100 $i-1.png; do
 
 ## Release History
 
+ * 0.3 (6th of September, 2015)
+   * Add: sharing a patch through url;
+   * Add: creating a custom patch from url params;
+   * Add: selecting patch by url param.
  * 0.2 (4th of September, 2015)
    * Extract: viktor-nv1-engine npm package;
    * Extract: viktor-nv1-settings-convertor npm package.
