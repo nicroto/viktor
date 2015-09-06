@@ -107,8 +107,11 @@ var patchSharing = {
 		return [
 			"https://www.facebook.com/dialog/share?app_id=1435210983455180",
 				"display=popup",
-				"href={{href}}"
-		].join( "&" ).replace( "{{href}}", encodeURIComponent( url ) );
+				"href={{href}}",
+				"redirect_uri={{redirectUrl}}",
+		].join( "&" )
+			.replace( "{{href}}", encodeURIComponent( url ) )
+			.replace( "{{redirectUrl}}", encodeURIComponent( url ) );
 	}
 
 };
