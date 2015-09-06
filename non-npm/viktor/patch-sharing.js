@@ -87,12 +87,13 @@ var patchSharing = {
 				urlToShorten = urlTemplate.replace( QUERY_STRING, queryString );
 
 			self._shortenUrl( urlToShorten, googleApi, function( shortUrl ) {
-				callback( shortUrl );
+				callback( shortUrl, urlToShorten );
 			} );
 		} else {
-			var queryString = queryStringUtils.stringify( { name: name } );
+			var queryString = queryStringUtils.stringify( { name: name } ),
+				url = urlTemplate.replace( QUERY_STRING, queryString );
 
-			callback( urlTemplate.replace( QUERY_STRING, queryString ) );
+			callback( url, url );
 		}
 	},
 
@@ -103,7 +104,7 @@ var patchSharing = {
 		return baseUrl + "?" + queryString;
 	},
 
-	getFacebookUrl: function( url ) {
+	getFacebookUrl: function( url, redirectUrl ) {
 		return [
 			"https://www.facebook.com/dialog/share?app_id=1435210983455180",
 				"display=popup",
@@ -111,7 +112,7 @@ var patchSharing = {
 				"redirect_uri={{redirectUrl}}",
 		].join( "&" )
 			.replace( "{{href}}", encodeURIComponent( url ) )
-			.replace( "{{redirectUrl}}", encodeURIComponent( url ) );
+			.replace( "{{redirectUrl}}", encodeURIComponent( redirectUrl ) );
 	}
 
 };

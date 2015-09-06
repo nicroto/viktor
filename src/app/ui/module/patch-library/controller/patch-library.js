@@ -168,9 +168,9 @@ module.exports = function( mod ) {
 
 		self.twitterUrl = null;
 
-		patchSharing.getUrlToShare( selectedPatch, baseUrl, googleApi, function( url ) {
+		patchSharing.getUrlToShare( selectedPatch, baseUrl, googleApi, function( url, largeUrl ) {
 			self.twitterUrl = patchSharing.getTwitterUrl( tweetText, url );
-			self.facebookUrl = patchSharing.getFacebookUrl( url );
+			self.facebookUrl = patchSharing.getFacebookUrl( largeUrl, baseUrl );
 
 			self.urlToShare = url;
 		} );
