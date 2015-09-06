@@ -79,7 +79,7 @@ var patchSharing = {
 			urlTemplate = baseUrl + "?" + QUERY_STRING,
 			name = patch.name;
 
-		if ( patch.isCustom ) {
+		if ( patch.isCustom || patch.isUnsaved ) {
 			var queryString = queryStringUtils.stringify( {
 					name: name,
 					patch: ( new Buffer( JSON.stringify( patch.patch ) ).toString( "base64" ) )
