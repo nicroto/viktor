@@ -63,7 +63,8 @@
     "angular": "./non-npm/angular-1-4-fixed.js",
     "angular-bind-polymer": "./non-npm/angular-bind-polymer.js",
     "file-saver": "./non-npm/file-saver/FileSaver.js",
-    "non-npm-patch-sharing": "./non-npm/viktor/patch-sharing.js"
+    "non-npm-patch-sharing": "./non-npm/viktor/patch-sharing.js",
+    "globals": "./non-npm/viktor/globals.js"
   },
   "browserify-shim": {
     "angular": {

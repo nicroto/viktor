@@ -1,7 +1,8 @@
 'use strict';
 
 var queryStringUtils = require( "querystring" ),
-	deepEqual = require( "deep-equal" );
+	deepEqual = require( "deep-equal" ),
+	GLOBALS = require( "./globals" );
 
 var patchSharing = {
 
@@ -53,7 +54,7 @@ var patchSharing = {
 		return params;
 	},
 
-	_shortenUrl: function( url, googleApi, callback ) {
+	shortenUrl: function( url, googleApi, callback ) {
 		if ( googleApi.loaded ) {
 			var request = googleApi.api.client.urlshortener.url.insert( {
 				"longUrl": url
@@ -86,7 +87,7 @@ var patchSharing = {
 				} ),
 				urlToShorten = urlTemplate.replace( QUERY_STRING, queryString );
 
-			self._shortenUrl( urlToShorten, googleApi, function( shortUrl ) {
+			self.shortenUrl( urlToShorten, googleApi, function( shortUrl ) {
 				callback( shortUrl, urlToShorten );
 			} );
 		} else {
@@ -106,10 +107,10 @@ var patchSharing = {
 
 	getFacebookUrl: function( url, redirectUrl ) {
 		return [
-			"https://www.facebook.com/dialog/share?app_id=1435210983455180",
+			"https://www.facebook.com/dialog/share?app_id=" + GLOBALS.FACEBOOK_APP_ID,
 				"display=popup",
 				"href={{href}}",
-				"redirect_uri={{redirectUrl}}",
+				"redirect_uri={{redirectUrl}}"
 		].join( "&" )
 			.replace( "{{href}}", encodeURIComponent( url ) )
 			.replace( "{{redirectUrl}}", encodeURIComponent( redirectUrl ) );

@@ -133,6 +133,25 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-express-server');
 	grunt.loadNpmTasks('grunt-shell');
 
+	// grunt.registerTask('register-non-npm', 'load all non-npm modules as globally requestable modules', function() {
+	// 	// if async
+	// 	// var done = this.async();
+	// 	debugger;
+	// 	var packageJson = grunt.config.get( "pkg" ),
+	// 		nonNpm = packageJson.browser,
+	// 		names = Object.keys( packageJson.browser );
+
+	// 	grunt.log.writeln( names.length + " non-npm modules were found:\n" + names.join( "\n" ) );
+
+	// 	names.forEach( function( moduleName ) {
+	// 		var modulePath = pathUtils.resolve( nonNpm[ moduleName ] );
+
+	// 		mockery.registerSubstitute( moduleName, modulePath );
+
+	// 		grunt.verbose.writeln( "\"" + moduleName + "\"" + " was replaced with \"" + modulePath + "\"" );
+	// 	} );
+	// } );
+
 	// run lint and tests
 	grunt.registerTask('default', ['c', 'simplemocha', 'jshint:all']);
 

@@ -4,6 +4,7 @@
 
 var should = require( "should" ),
 	queryStringUtils = require( "querystring" ),
+	GLOBALS = require( "../non-npm/viktor/globals" ),
 	patchSharing = require( "../non-npm/viktor/patch-sharing" ),
 	PatchLibrary = require( "viktor-nv1-engine" ).PatchLibrary,
 	data = require( "./data/patch-sharing" );
@@ -163,6 +164,198 @@ describe( "patchSharing", function() {
 				} ),
 				patchLibrary
 			);
+		} );
+
+	} );
+
+	describe( "getTwitterUrl( tweetText, url )", function() {
+
+		it( "generates a correct twitter web intent url", function() {
+			var url = encodeURIComponent( "http://example.com/?name=test&patch=askjfffnajksg==" ),
+				text = "text",
+				queryString = queryStringUtils.stringify( { text: text, url: url } );
+
+			patchSharing.getTwitterUrl( text, url ).should.equal( "https://twitter.com/intent/tweet?" + queryString );
+		} );
+
+	} );
+
+	describe( "getFacebookUrl( url, redirectUrl )", function() {
+
+		it( "generates a correct facebook share url", function() {
+			var url = "http://example.com/?name=test&patch=askjfffnajksg==",
+				redirectUrl = "http://example.com/?name=test&patch=askjfffnajksg==",
+				queryString = queryStringUtils.stringify( {
+					app_id: GLOBALS.FACEBOOK_APP_ID,
+					display: "popup",
+					href: url,
+					redirect_uri: redirectUrl
+				} );
+
+			patchSharing.getFacebookUrl( url, redirectUrl ).should.equal( "https://www.facebook.com/dialog/share?" + queryString );
+		} );
+
+	} );
+
+	describe( "shortenUrl( url, googleApi, callback )", function() {
+
+		it( "returns the initial url if the googleApi hasn't loaded, yet", function( done ) {
+			var url = "http://example.com/",
+				mockGoogleApi = {
+					loaded: false
+				};
+
+			patchSharing.shortenUrl( url, mockGoogleApi, function( newUrl ) {
+				newUrl.should.equal( url );
+				done();
+			} );
+		} );
+
+		it( "returns the initial url if googleApi responds with error", function( done ) {
+			var url = "http://example.com/",
+				mockGoogleApi = {
+					loaded: true,
+					api: {
+						client: {
+							urlshortener: {
+								url: {
+									insert: function() {
+										return {
+											then: function( successCallback, errorCallback ) {
+												errorCallback( { result: { error: { message: "ver bad error, good luck!" } } } );
+											}
+										};
+									}
+								}
+							}
+						}
+					}
+				};
+
+			patchSharing.shortenUrl( url, mockGoogleApi, function( newUrl ) {
+				newUrl.should.equal( url );
+				done();
+			} );
+		} );
+
+		it( "returns the shortened url", function( done ) {
+			var url = "http://example.com/",
+				shortUrl = "http://e.c",
+				mockGoogleApi = {
+					loaded: true,
+					api: {
+						client: {
+							urlshortener: {
+								url: {
+									insert: function() {
+										return {
+											then: function( successCallback ) {
+												successCallback( { result: { id: shortUrl } } );
+											}
+										};
+									}
+								}
+							}
+						}
+					}
+				};
+
+			patchSharing.shortenUrl( url, mockGoogleApi, function( newUrl ) {
+				newUrl.should.equal( shortUrl );
+				done();
+			} );
+		} );
+
+	} );
+
+	describe( "getUrlToShare( patch, baseUrl, googleApi, callback )", function() {
+
+		var originalShortenUrl,
+			shortUrl = "http://e.c";
+
+		before( function() {
+			originalShortenUrl = patchSharing.shortenUrl;
+			patchSharing.shortenUrl = function( url, googleApi, callback ) {
+				callback( shortUrl );
+			};
+		} );
+
+
+		it( "returns a shortened url if patch is custom", function( done ) {
+			var baseUrl = "http://example.com/",
+				patch = {
+					name: "Patch Name",
+					patch: {},
+					isCustom: true
+				},
+				mockGoogleApi = {},
+				expectedLongUrl = baseUrl + "?" + queryStringUtils.stringify( {
+					name: patch.name,
+					patch: ( new Buffer( JSON.stringify( patch.patch ) ).toString( "base64" ) )
+				} );
+
+			patchSharing.getUrlToShare( patch, baseUrl, mockGoogleApi, function( shortenedUrl, longUrl ) {
+				shortenedUrl.should.equal( shortUrl );
+				longUrl.should.equal( expectedLongUrl );
+				done();
+			} );
+		} );
+
+		it( "returns a shortened url if patch is unsaved", function( done ) {
+			var baseUrl = "http://example.com/",
+				patch = {
+					name: "Patch Name",
+					patch: {},
+					isUnsaved: true
+				},
+				mockGoogleApi = {},
+				expectedLongUrl = baseUrl + "?" + queryStringUtils.stringify( {
+					name: patch.name,
+					patch: ( new Buffer( JSON.stringify( patch.patch ) ).toString( "base64" ) )
+				} );
+
+			patchSharing.getUrlToShare( patch, baseUrl, mockGoogleApi, function( shortenedUrl, longUrl ) {
+				shortenedUrl.should.equal( shortUrl );
+				longUrl.should.equal( expectedLongUrl );
+				done();
+			} );
+		} );
+
+		it( "returns only long url if patch is from default library", function( done ) {
+			var baseUrl = "http://example.com/",
+				patch = {
+					name: "Patch Name",
+					patch: {}
+				},
+				mockGoogleApi = {};
+
+			patchSharing.getUrlToShare( patch, baseUrl, mockGoogleApi, function( shortenedUrl, longUrl ) {
+				shortenedUrl.should.not.equal( shortUrl );
+				shortenedUrl.should.equal( longUrl );
+				done();
+			} );
+		} );
+
+		it( "returns url without patch queryString param, if patch is from default library", function( done ) {
+			var baseUrl = "http://example.com/",
+				patch = {
+					name: "Patch Name",
+					patch: {}
+				},
+				mockGoogleApi = {},
+				expectedLongUrl = baseUrl + "?" + queryStringUtils.stringify( {
+					name: patch.name
+				} );
+
+			patchSharing.getUrlToShare( patch, baseUrl, mockGoogleApi, function( shortenedUrl, longUrl ) {
+				longUrl.should.equal( expectedLongUrl );
+				done();
+			} );
+		} );
+
+
+		after( function() {
+			patchSharing.shortenUrl = originalShortenUrl;
 		} );
 
 	} );
