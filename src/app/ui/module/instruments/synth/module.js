@@ -4,7 +4,7 @@ var angular = require( "angular" ),
 	template = require( "./template/synth.html" ),
 	mod = angular.module( "synth", [
 		template.name,
-		require( "./template/modulation.html" ).name,
+		require( "./template/modulation+polyphony.html" ).name,
 		require( "./template/oscillator-bank.html" ).name,
 		require( "./template/mixer.html" ).name,
 		require( "./template/noise.html" ).name,
@@ -22,6 +22,7 @@ mod.directive( "synth", [ "$templateCache", function( $templateCache ) {
 } ] );
 
 // Controllers
+require( "./controller/polyphony" )( mod );
 require( "./controller/modulation" )( mod );
 require( "./controller/oscillator-bank" )( mod );
 require( "./controller/mixer" )( mod );

@@ -53,11 +53,11 @@ module.exports = function( mod ) {
 		} );
 	} ] );
 
-	mod.directive( "modulation", [ "$templateCache", function( $templateCache ) {
+	mod.directive( "modulationPlusPolyphony", [ "$templateCache", function( $templateCache ) {
 		return {
 			restrict: "E",
 			replace: true,
-			template: $templateCache.get( "modulation.html" )
+			template: $templateCache.get( "modulation+polyphony.html" )
 		};
 	} ] );
 
