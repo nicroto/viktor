@@ -68,16 +68,16 @@
 			<p>Viktor produces sound in a pathway of oscillators and noise generators (as raw source of sound and timbre), envelopes (this one is a bit trickier to explain, you should research it), Low Pass filters and effects (Delay and Reverb).</p>
 			<p>This combines the 2 major ways of creating sound electronically - Additive (oscillators and noise) and Subtractive Sound Synthesis.</p>
 			<p>Viktor also makes use of the emerging Web MIDI API (just landed without a flag in Chrome 43). So you can play using your MIDI keyboard - plug it in, turn it on and restart the browser (not just the tab) and it should work.</p>
-			<h3>Isn't this a monosynth?</h3>
-			<p>Yes. But probably not for long. This (polyphony) is Next! on my vNext list. Still monosynth will remain an option, because it sounds absolutely amazing and feels so to play, too.</p>
 			<h3>What browsers are supported?</h3>
-			<p>Sound-wise: Latest and gratest of Chrome and Safari. Firefox is only partially supported.</p>
+			<p>Sound-wise: Latest and gratest of Chrome and Safari. Firefox is not yet supported.</p>
 			<p>Mobile (iOS and Android) Chrome and Safari sound great, but there needs to be an optimized rendering, which isn't in-place, yet.</p>
-			<p>Midi: only Chrome and Mobile Chrome (Android).</p>
+			<p>Midi: only desktop Chrome.</p>
 			<h3>Can I save my own patches/presets?</h3>
 			<p>Yes. The top row of the synth (with the green display in the middle) is called Patch Library. You can save your patches (they are not stored on the server - I use localStorage to persist your settings).</p>
 			<p>Even if you accidentally refresh the page, the settings should be intact. To backup the presets you have built - Export them (on Safari copy the text and save it to a file with extension .json, everywhere else it will let you download the file).</p>
 			<p>To get them on another computer or get someone else's library - simply use the import button.</p>
+			<h3>How do I share patches? Just files?</h3>
+			<p>You can share a full library of patches in a single file. Still, I acknowledge the fact this isn't the most convinient of ways. That's why I've added sharing patches through url! On the right-hand side of the PatchLibrary display, look for a button with the popular share icon <i class="fa fa-2x fa-share-alt"></i>.</p>
 			<h3>What technologies did you use?</h3>
 			<p>Web Audio API, Web MIDI API, Local Storage (through npm module "store"). For the effects section I used Tuna.js.</p>
 			<p>AngularJS, webaudio-controls (I am regretting this decision, since these controls are full of bugs and had to fix several of them before releasing), Bootstrap, Font Awesome, Font Orbitron and Stylus is what I used for the UI.</p>
@@ -97,7 +97,7 @@
 			<p>My name is Nikolay Tsenkov. I am a Software Engineer from Bulgaria.</p>
 			<p>Before building Viktor, I've built an app for OSX called <a target="_blank" href="https://pagehopapp.com/">Pagehop</a>. And before that I've worked for companies like vmware and telerik, here in Bulgaria.</p>
 			<p>You can follow me on <a target="_blank" href="https://twitter.com/nikolaytsenkov">Twitter</a> or find more about me on some of the pages listed <a target="_blank" href="https://about.me/tsenkov">here</a>.</p>
-			<p>I am searching for my next challenge, right now, so if you have an interesting project and you think I would be right for the job - <a href="mailto:nikolay@tsenkov.net">this</a> is my e-mail.</p>
+			<p>I am always looking for a good challenge, so if you have an interesting project (and you think I would be right for the job) - <a href="mailto:nikolay@tsenkov.net">this</a> is my e-mail.</p>
 		</div>
 		<div class="modal-footer">
 			<div class="text-center">
