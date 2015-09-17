@@ -88,6 +88,10 @@ $ for i in *.png; do ffmpeg -i $i -vframes 1 -compression_level 100 $i-1.png; do
 
 ## Release History
 
+ * 0.5 (17th of September, 2015)
+   * Add: MIDI: Sustain pedal support;
+   * Add: MIDI: Volume knob/slider support;
+   * Add: Patch: Underwater Bass Lead.
  * 0.4.1 (11th of September, 2015)
    * Add: Velocity Sensitivity.
  * 0.4 (10th of September, 2015)

@@ -9,8 +9,11 @@ module.exports = function( mod ) {
 					return;
 				}
 
+				settings = synth.polyphonySettings;
+
 				synth.polyphonySettings = {
-					voiceCount: self.voiceCount
+					voiceCount: self.voiceCount,
+					sustain: settings.sustain
 				};
 
 				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
