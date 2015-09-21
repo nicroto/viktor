@@ -37,17 +37,17 @@ module.exports = function( mod ) {
 
 				self.osc1 = {
 					range: settingsConvertor.transposeParam( settings.osc1.range, [ 0, 6 ] ),
-					fineDetune: settingsConvertor.transposeParam( settings.osc1.fineDetune, [ 0, 16 ] ),
+					fineDetune: settingsConvertor.transposeParam( settings.osc1.fineDetune, [ 1, 1600 ] ),
 					waveform: settings.osc1.waveform
 				};
 				self.osc2 = {
 					range: settingsConvertor.transposeParam( settings.osc2.range, [ 0, 6 ] ),
-					fineDetune: settingsConvertor.transposeParam( settings.osc2.fineDetune, [ 0, 16 ] ),
+					fineDetune: settingsConvertor.transposeParam( settings.osc2.fineDetune, [ 1, 1600 ] ),
 					waveform: settings.osc2.waveform
 				};
 				self.osc3 = {
 					range: settingsConvertor.transposeParam( settings.osc3.range, [ 0, 6 ] ),
-					fineDetune: settingsConvertor.transposeParam( settings.osc3.fineDetune, [ 0, 16 ] ),
+					fineDetune: settingsConvertor.transposeParam( settings.osc3.fineDetune, [ 1, 1600 ] ),
 					waveform: settings.osc3.waveform
 				};
 			},

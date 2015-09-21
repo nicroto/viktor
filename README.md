@@ -88,6 +88,8 @@ $ for i in *.png; do ffmpeg -i $i -vframes 1 -compression_level 100 $i-1.png; do
 
 ## Release History
 
+ * 0.5.2 (21th of September, 2015)
+   * Add: FineDetune of oscillators.
  * 0.5.1 (18th of September, 2015)
    * FineTune: ModWheel.
  * 0.5 (17th of September, 2015)
