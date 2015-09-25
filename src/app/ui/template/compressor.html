@@ -1,0 +1,72 @@
+<div class="col-xs-12 compressor master-control-bank text-center" ng-controller="CompressorCtrl as compressor">
+	<h4>Compressor</h4>
+	<div class="row">
+		<div class="on-off-switch no-padding">
+			<webaudio-switch src="images/switch.png" width="20" height="20"
+				bind-polymer
+				update-control-value
+				update-number-value
+				value="{{compressor.enabled.value}}"></webaudio-switch>
+		</div>
+		<div class="col-xs-2 no-padding">
+			<webaudio-knob src="images/0-100-knob.png"
+				bind-polymer
+				update-number-value
+				knob-redraw
+				value="{{compressor.threshold.value}}" min="{{compressor.threshold.range[ 0 ]}}" max="{{compressor.threshold.range[ 1 ]}}"
+				step="0.5"
+				sprites="44" width="45" height="45"></webaudio-knob>
+			<h6>Threshold</h6>
+		</div>
+		<div class="col-xs-2 no-padding">
+			<webaudio-knob src="images/0-100-knob.png"
+				bind-polymer
+				update-number-value
+				knob-redraw
+				value="{{compressor.ratio.value}}" min="{{compressor.ratio.range[ 0 ]}}" max="{{compressor.ratio.range[ 1 ]}}"
+				step="0.1"
+				sprites="44" width="45" height="45"></webaudio-knob>
+			<h6>Ratio</h6>
+		</div>
+		<div class="col-xs-2 no-padding">
+			<webaudio-knob src="images/0-100-knob.png"
+				bind-polymer
+				update-number-value
+				knob-redraw
+				value="{{compressor.knee.value}}" min="{{compressor.knee.range[ 0 ]}}" max="{{compressor.knee.range[ 1 ]}}"
+				step="0.1"
+				sprites="44" width="45" height="45"></webaudio-knob>
+			<h6>Knee</h6>
+		</div>
+		<div class="col-xs-2 no-padding">
+			<webaudio-knob src="images/0-100-knob.png"
+				bind-polymer
+				update-number-value
+				knob-redraw
+				value="{{compressor.attack.value}}" min="{{compressor.attack.range[ 0 ]}}" max="{{compressor.attack.range[ 1 ]}}"
+				step="0.1"
+				sprites="44" width="45" height="45"></webaudio-knob>
+			<h6>Attack</h6>
+		</div>
+		<div class="col-xs-2 no-padding">
+			<webaudio-knob src="images/0-100-knob.png"
+				bind-polymer
+				update-number-value
+				knob-redraw
+				value="{{compressor.release.value}}" min="{{compressor.release.range[ 0 ]}}" max="{{compressor.release.range[ 1 ]}}"
+				step="1"
+				sprites="44" width="45" height="45"></webaudio-knob>
+			<h6>Release</h6>
+		</div>
+		<div class="col-xs-2 no-padding">
+			<webaudio-knob src="images/0-100-knob.png"
+				bind-polymer
+				update-number-value
+				knob-redraw
+				value="{{compressor.makeupGain.value}}" min="{{compressor.makeupGain.range[ 0 ]}}" max="{{compressor.makeupGain.range[ 1 ]}}"
+				step="0.1"
+				sprites="44" width="45" height="45"></webaudio-knob>
+			<h6>Gain</h6>
+		</div>
+	</div>
+</div>

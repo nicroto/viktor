@@ -9,6 +9,7 @@ var angular = require( "angular" ),
 		require( "./module/footer/module" ).name,
 
 		require( "./template/master-controls.html" ).name,
+		require( "./template/compressor.html" ).name,
 		require( "./template/delay.html" ).name,
 		require( "./template/reverb.html" ).name,
 		require( "./template/master-volume.html" ).name,
@@ -56,6 +57,7 @@ mod.directive( "dawContainer", [ "$templateCache", function($templateCache) {
 require( "./controller/master-controls" )( mod );
 
 // Controllers
+require( "./controller/compressor" )( mod );
 require( "./controller/delay" )( mod );
 require( "./controller/reverb" )( mod );
 require( "./controller/master-volume" )( mod );
