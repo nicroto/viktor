@@ -1,87 +1,125 @@
-<div class="col-xs-2 envelopes control-bank text-center" ng-controller="EnvelopesCtrl as envs">
+<div class="col-xs-2 envelopes control-bank text-center no-padding" ng-controller="EnvelopesCtrl as envs">
 	<div class="envelope row">
 		<h5>Primary</h5>
-		<div class="col-xs-3">	
+		<div class="col-xs-2">	
+			<webaudio-slider direction="vert" value="{{envs.primary.reset.value}}"
+				min="{{envs.primary.reset.range[ 0 ]}}" max="{{envs.primary.reset.range[ 1 ]}}" step="0.1"
+				bind-polymer
+				update-control-value
+				update-number-value
+				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
+				height="90" width="30" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
+		</div>
+		<div class="col-xs-2">
+			<webaudio-slider direction="vert"
+				value="{{envs.primary.start.value}}" min="{{envs.primary.start.range[ 0 ]}}" max="{{envs.primary.start.range[ 1 ]}}" step="0.1"
+				bind-polymer
+				update-control-value
+				update-number-value
+				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
+				height="90" width="30" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
+		</div>
+		<div class="col-xs-2">	
 			<webaudio-slider direction="vert" value="{{envs.primary.attack.value}}"
-				min="{{envs.primary.attack.range[ 0 ]}}" max="{{envs.primary.attack.range[ 1 ]}}" step="1"
+				min="{{envs.primary.attack.range[ 0 ]}}" max="{{envs.primary.attack.range[ 1 ]}}" step="0.1"
 				bind-polymer
 				update-control-value
 				update-number-value
 				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
-				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
+				height="90" width="30" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
 		</div>
-		<div class="col-xs-3">
+		<div class="col-xs-2">
 			<webaudio-slider direction="vert"
-				value="{{envs.primary.decay.value}}" min="{{envs.primary.decay.range[ 0 ]}}" max="{{envs.primary.decay.range[ 1 ]}}" step="1"
+				value="{{envs.primary.decay.value}}" min="{{envs.primary.decay.range[ 0 ]}}" max="{{envs.primary.decay.range[ 1 ]}}" step="0.1"
 				bind-polymer
 				update-control-value
 				update-number-value
 				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
-				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
+				height="90" width="30" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
 		</div>
-		<div class="col-xs-3">
+		<div class="col-xs-2">
 			<webaudio-slider direction="vert"
-				value="{{envs.primary.sustain.value}}" min="{{envs.primary.sustain.range[ 0 ]}}" max="{{envs.primary.sustain.range[ 1 ]}}" step="1"
+				value="{{envs.primary.sustain.value}}" min="{{envs.primary.sustain.range[ 0 ]}}" max="{{envs.primary.sustain.range[ 1 ]}}" step="0.1"
 				bind-polymer
 				update-control-value
 				update-number-value
 				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
-				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
+				height="90" width="30" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
 		</div>
-		<div class="col-xs-3">
+		<div class="col-xs-2">
 			<webaudio-slider direction="vert"
-				value="{{envs.primary.release.value}}" min="{{envs.primary.release.range[ 0 ]}}" max="{{envs.primary.release.range[ 1 ]}}" step="1"
+				value="{{envs.primary.release.value}}" min="{{envs.primary.release.range[ 0 ]}}" max="{{envs.primary.release.range[ 1 ]}}" step="0.1"
 				bind-polymer
 				update-control-value
 				update-number-value
 				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
-				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
+				height="90" width="30" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
 		</div>
 	</div>
 	<div class="envelope row">
 		<h5>Filter</h5>
-		<div class="col-xs-3">
+		<div class="col-xs-2">
 			<webaudio-slider direction="vert"
-				value="{{envs.filter.attack.value}}" min="{{envs.filter.attack.range[ 0 ]}}" max="{{envs.filter.attack.range[ 1 ]}}" step="1"
+				value="{{envs.filter.reset.value}}" min="{{envs.filter.reset.range[ 0 ]}}" max="{{envs.filter.reset.range[ 1 ]}}" step="0.1"
 				bind-polymer
 				update-control-value
 				update-number-value
 				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
-				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
+				height="90" width="30" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
 		</div>
-		<div class="col-xs-3">
+		<div class="col-xs-2">
 			<webaudio-slider direction="vert"
-				value="{{envs.filter.decay.value}}" min="{{envs.filter.decay.range[ 0 ]}}" max="{{envs.filter.decay.range[ 1 ]}}" step="1"
+				value="{{envs.filter.start.value}}" min="{{envs.filter.start.range[ 0 ]}}" max="{{envs.filter.start.range[ 1 ]}}" step="0.1"
 				bind-polymer
 				update-control-value
 				update-number-value
 				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
-				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
+				height="90" width="30" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
 		</div>
-		<div class="col-xs-3">
+		<div class="col-xs-2">
 			<webaudio-slider direction="vert"
-				value="{{envs.filter.sustain.value}}" min="{{envs.filter.sustain.range[ 0 ]}}" max="{{envs.filter.sustain.range[ 1 ]}}" step="1"
+				value="{{envs.filter.attack.value}}" min="{{envs.filter.attack.range[ 0 ]}}" max="{{envs.filter.attack.range[ 1 ]}}" step="0.1"
 				bind-polymer
 				update-control-value
 				update-number-value
 				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
-				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
+				height="90" width="30" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
 		</div>
-		<div class="col-xs-3">
+		<div class="col-xs-2">
 			<webaudio-slider direction="vert"
-				value="{{envs.filter.release.value}}" min="{{envs.filter.release.range[ 0 ]}}" max="{{envs.filter.release.range[ 1 ]}}" step="1"
+				value="{{envs.filter.decay.value}}" min="{{envs.filter.decay.range[ 0 ]}}" max="{{envs.filter.decay.range[ 1 ]}}" step="0.1"
 				bind-polymer
 				update-control-value
 				update-number-value
 				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
-				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
+				height="90" width="30" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
+		</div>
+		<div class="col-xs-2">
+			<webaudio-slider direction="vert"
+				value="{{envs.filter.sustain.value}}" min="{{envs.filter.sustain.range[ 0 ]}}" max="{{envs.filter.sustain.range[ 1 ]}}" step="0.1"
+				bind-polymer
+				update-control-value
+				update-number-value
+				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
+				height="90" width="30" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
+		</div>
+		<div class="col-xs-2">
+			<webaudio-slider direction="vert"
+				value="{{envs.filter.release.value}}" min="{{envs.filter.release.range[ 0 ]}}" max="{{envs.filter.release.range[ 1 ]}}" step="0.1"
+				bind-polymer
+				update-control-value
+				update-number-value
+				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"
+				height="90" width="30" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>
 		</div>
 	</div>
-	<div class="row">
-		<div class="col-xs-3">Attack</div>
-		<div class="col-xs-3">Decay</div>
-		<div class="col-xs-3">Sustain</div>
-		<div class="col-xs-3">Release</div>
+	<div class="row titles">
+		<div class="col-xs-2"><h6>Reset</h6></div>
+		<div class="col-xs-2"><h6>Start</h6></div>
+		<div class="col-xs-2"><h6>Attack</h6></div>
+		<div class="col-xs-2"><h6>Decay</h6></div>
+		<div class="col-xs-2"><h6>Sustain</h6></div>
+		<div class="col-xs-2"><h6>Release</h6></div>
 	</div>
 	<h4>Envelopes</h4>
 </div>

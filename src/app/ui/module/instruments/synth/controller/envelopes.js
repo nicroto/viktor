@@ -13,12 +13,16 @@ module.exports = function( mod ) {
 
 				synth.envelopesSettings = {
 					primary: {
+						reset: settingsConvertor.transposeParam( self.primary.reset, primary.reset.range ),
+						start: settingsConvertor.transposeParam( self.primary.start, primary.start.range ),
 						attack: settingsConvertor.transposeParam( self.primary.attack, primary.attack.range ),
 						decay: settingsConvertor.transposeParam( self.primary.decay, primary.decay.range ),
 						sustain: settingsConvertor.transposeParam( self.primary.sustain, primary.sustain.range ),
 						release: settingsConvertor.transposeParam( self.primary.release, primary.release.range )
 					},
 					filter: {
+						reset: settingsConvertor.transposeParam( self.filter.reset, filter.reset.range ),
+						start: settingsConvertor.transposeParam( self.filter.start, filter.start.range ),
 						attack: settingsConvertor.transposeParam( self.filter.attack, filter.attack.range ),
 						decay: settingsConvertor.transposeParam( self.filter.decay, filter.decay.range ),
 						sustain: settingsConvertor.transposeParam( self.filter.sustain, filter.sustain.range ),
@@ -37,12 +41,16 @@ module.exports = function( mod ) {
 				filter = settings.filter;
 
 				self.primary = {
+					reset: settingsConvertor.transposeParam( primary.reset, [ 0, 100 ] ),
+					start: settingsConvertor.transposeParam( primary.start, [ 0, 100 ] ),
 					attack: settingsConvertor.transposeParam( primary.attack, [ 0, 100 ] ),
 					decay: settingsConvertor.transposeParam( primary.decay, [ 0, 100 ] ),
 					sustain: settingsConvertor.transposeParam( primary.sustain, [ 0, 100 ] ),
 					release: settingsConvertor.transposeParam( primary.release, [ 0, 100 ] )
 				};
 				self.filter = {
+					reset: settingsConvertor.transposeParam( filter.reset, [ 0, 100 ] ),
+					start: settingsConvertor.transposeParam( filter.start, [ 0, 100 ] ),
 					attack: settingsConvertor.transposeParam( filter.attack, [ 0, 100 ] ),
 					decay: settingsConvertor.transposeParam( filter.decay, [ 0, 100 ] ),
 					sustain: settingsConvertor.transposeParam( filter.sustain, [ 0, 100 ] ),
@@ -52,10 +60,14 @@ module.exports = function( mod ) {
 			watchers = [],
 			registerForChanges = function() {
 				[
+					"envs.primary.reset.value",
+					"envs.primary.start.value",
 					"envs.primary.attack.value",
 					"envs.primary.decay.value",
 					"envs.primary.sustain.value",
 					"envs.primary.release.value",
+					"envs.filter.reset.value",
+					"envs.filter.start.value",
 					"envs.filter.attack.value",
 					"envs.filter.decay.value",
 					"envs.filter.sustain.value",
