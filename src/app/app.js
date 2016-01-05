@@ -18,19 +18,17 @@ var angular = require( "angular" ),
 	dawEngine,
 	patchLibrary,
 	bootstrap = function() {
-		NV1Engine.create( AudioContext, store, function( dEngine, pLibrary ) {
+		var result = NV1Engine.create( AudioContext, store );
 
-			dawEngine = dEngine;
-			patchLibrary = pLibrary;
+		dawEngine = result.dawEngine;
+		patchLibrary = result.patchLibrary;
 
-			patchSharing.resolvePatchSelection( queryString, patchLibrary );
+		patchSharing.resolvePatchSelection( queryString, patchLibrary );
 
-			dawEngine.loadPatch( patchLibrary.getSelected().patch );
+		dawEngine.loadPatch( patchLibrary.getSelected().patch );
 
-			// !!! BOOTSTRAP !!!
-			angular.resumeBootstrap();
-
-		} );
+		// !!! BOOTSTRAP !!!
+		angular.resumeBootstrap();
 	};
 
 // !!! DEFFERS THE BOOTSTRAP !!!

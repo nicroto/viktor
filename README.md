@@ -88,6 +88,8 @@ $ for i in *.png; do ffmpeg -i $i -vframes 1 -compression_level 100 $i-1.png; do
 
 ## Release History
 
+ * 0.7 (5th of January, 2016)
+   * Improve: Remove the need for async init of Viktor.
  * 0.6 (26th of September, 2015)
    * Add: Effect: Compressor.
  * 0.5.3 (21th of September, 2015)
