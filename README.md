@@ -88,6 +88,38 @@ $ for i in *.png; do ffmpeg -i $i -vframes 1 -compression_level 100 $i-1.png; do
 
 ## Release History
 
+ * 0.8 (12th of March, 2016)
+   * Fix: patches with Envelope set to Release:0 stop system sound in Chrome.
+   * Add: Patch: "EQUIVALENT-BASS-1".
+   * Add: Patch: "BRAINPAIN Mod Wheel Frenzy".
+   * Add: Patch: "Pumped Bass".
+   * Add: Patch: "Cooh bass 1".
+   * Add: Patch: "Timmo^Bass01".
+   * Add: Patch: "Freqax Bass".
+   * Add: Patch: "Niada's Sap Bass".
+   * Add: Patch: "Eclectic Method Bass".
+   * Add: Patch: "Soft Bass".
+   * Add: Patch: "8 mile Free World Car Bass".
+   * Add: Patch: "Muffled Razr Bass".
+   * Add: Patch: "Da Buzzer".
+   * Add: Patch: "Glass Bell Bass".
+   * Add: Patch: "Turbo Saw Lead".
+   * Add: Patch: "singende Säge Lead".
+   * Add: Patch: "Orchestra Pad".
+   * Add: Patch: "Netjester Kush Pad".
+   * Add: Patch: "Bass Fanfares".
+   * Add: Patch: "suitcase organ pad".
+   * Add: Patch: "Sirens' Awakening".
+   * Add: Patch: "Long Kiss".
+   * Add: Patch: "Danger Bubbles".
+   * Add: Patch: "Syo - demo".
+   * Add: Patch: "Flint Kids Shuttledron".
+   * Add: Patch: "Whale song - Synthakt".
+   * Add: Patch: "AC1".
+   * Add: Patch: "AC2".
+   * Add: Patch: "Ghosts".
+   * Add: Patch: "BB8".
+   * Add: Patch: "Outer Space".
  * 0.7 (5th of January, 2016)
    * Improve: Remove the need for async init of Viktor.
  * 0.6 (26th of September, 2015)
