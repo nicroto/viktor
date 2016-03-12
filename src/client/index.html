@@ -68,7 +68,74 @@
 	<button id="loadSynthButton" class="hide centered viktor btn">Load Synth</button>
 
 	<daw-container></daw-container>
+	<canvas id="canvas" style="display:block;margin:auto;width: 50%;height:350px;"></canvas>
+	<script type="text/javascript">
+		function bugfixBootstrap(){
+			var daw = window.dawEngine,
+				canvas = document.getElementById( "canvas" ),
+				canvasCtx = canvas.getContext( "2d" ),
+				WIDTH = canvas.width,
+				HEIGHT = canvas.height;
 
+			console.log( "canvas is " + ( canvas ? "a go" : "no go..." ) );
+			console.log( "dawEngine is " + ( daw ? "a go" : "no go..." ) );
+
+			var analyser = window.analyser = daw.audioContext.createAnalyser();
+
+			// tap into the synth's output (before effects)
+			daw.instruments[ 0 ].voices[0].gainEnvelope.node.connect( analyser );
+
+			analyser.fftSize = 2048;
+			var bufferLength = analyser.fftSize;
+			console.log( "bufferLength: " + bufferLength );
+			var dataArray = new Uint8Array( bufferLength );
+
+			canvasCtx.clearRect( 0, 0, WIDTH, HEIGHT );
+
+			function draw() {
+
+				drawVisual = requestAnimationFrame( draw );
+
+				analyser.getByteTimeDomainData( dataArray );
+
+				canvasCtx.fillStyle = 'rgb(200, 200, 200)';
+				canvasCtx.fillRect( 0, 0, WIDTH, HEIGHT );
+
+				canvasCtx.lineWidth = 2;
+				canvasCtx.strokeStyle = 'rgb(0, 0, 0)';
+
+				canvasCtx.beginPath();
+
+				var sliceWidth = WIDTH * 1.0 / bufferLength;
+				var x = 0;
+
+				var sum = 0;
+				for( var i = 0; i < bufferLength; i++ ) {
+
+					sum += dataArray[i];
+					var v = dataArray[ i ] / 128.0;
+					var y = v * HEIGHT/2;
+
+					if(i === 0) {
+						canvasCtx.moveTo( x, y );
+					} else {
+						canvasCtx.lineTo( x, y );
+					}
+
+					x += sliceWidth;
+				}
+
+				canvasCtx.lineTo( canvas.width, canvas.height/2 );
+				canvasCtx.stroke();
+
+				canvasCtx.font = "20px Arial";
+				canvasCtx.fillStyle = "rgb(0, 0, 0)";
+				canvasCtx.fillText ("Avg: " + (sum / bufferLength), 10, 50);
+			};
+
+			draw();
+		}
+	</script>
 	<!-- Social Buttons part2 -->
 	<div id="socialButtons">
 		<!-- Twitter -->

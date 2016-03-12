@@ -27,6 +27,11 @@ var angular = require( "angular" ),
 
 		dawEngine.loadPatch( patchLibrary.getSelected().patch );
 
+			// debugger;
+			window.dawEngine = dawEngine;
+
+			bugfixBootstrap();
+
 		// !!! BOOTSTRAP !!!
 		angular.resumeBootstrap();
 	};
