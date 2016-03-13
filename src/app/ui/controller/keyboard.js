@@ -1,6 +1,8 @@
 'use strict';
 
-var KEYCODE_SYMBOL_MAP = {
+var PREVIOUS_PRESET_ACTION = "PREVIOUS_PRESET",
+	NEXT_PRESET_ACTION = "NEXT_PRESET",
+	KEYCODE_SYMBOL_MAP = {
 		90: "Z",
 		83: "S",
 		88: "X",
@@ -37,7 +39,10 @@ var KEYCODE_SYMBOL_MAP = {
 		80: "P",
 		219: "[",
 		174: "+",
-		221: "]"
+		221: "]",
+
+		37: "LeftArrow",
+		39: "RightArrow"
 	},
 	SYMBOL_NOTENUM_MAP = {
 		"Z": 60,
@@ -78,17 +83,22 @@ var KEYCODE_SYMBOL_MAP = {
 		"[": 101,
 			"+": 102,
 		"]": 103
+	},
+	SYMBOL_CONTROL_MAP = {
+		"LeftArrow": PREVIOUS_PRESET_ACTION,
+		"RightArrow": NEXT_PRESET_ACTION
 	};
 
 var produceMidiMessage = function( firstByte, secondByte, thirdByte ) {
 	return { data: [ firstByte, secondByte, thirdByte ] };
 };
 
-var keyboardToDawHandler = function( dawEngine, isNoteOn, eventObject ) {
+var keyboardToDawHandler = function( dawEngine, patchLibrary, $scope, isNoteOn, eventObject ) {
 	var symbol = KEYCODE_SYMBOL_MAP[ eventObject.keyCode ];
 
 	if ( symbol !== undefined ) {
-		var noteNumber = SYMBOL_NOTENUM_MAP[ symbol ];
+		var noteNumber = SYMBOL_NOTENUM_MAP[ symbol ],
+			controlAction = SYMBOL_CONTROL_MAP[ symbol ];
 
 		if ( noteNumber !== undefined ) {
 			var midiMessage = produceMidiMessage(
@@ -98,6 +108,28 @@ var keyboardToDawHandler = function( dawEngine, isNoteOn, eventObject ) {
 			);
 
 			dawEngine.externalMidiMessage( midiMessage );
+		} else if ( controlAction !== undefined && !isNoteOn ) {
+			var defaultPatches = patchLibrary.getDefaultNames(),
+				selectedName = patchLibrary.getSelected().name;
+
+			switch ( controlAction ) {
+
+				case PREVIOUS_PRESET_ACTION:
+					var previousName = patchLibrary.getPreviousName( selectedName );
+
+					patchLibrary.selectPatch( previousName ? previousName : defaultPatches[ 0 ] );
+
+					break;
+				case NEXT_PRESET_ACTION:
+					var nextName = patchLibrary.getNextName( selectedName );
+
+					patchLibrary.selectPatch( nextName ? nextName : defaultPatches[ 0 ] );
+
+					break;
+
+			}
+
+			$scope.$apply();
 		}
 	}
 };
@@ -114,11 +146,11 @@ module.exports = function( mod ) {
 		};
 	} ] );
 
-	mod.directive( "keyboardValue", [ "$document", "dawEngine", function( $document, dawEngine ) {
+	mod.directive( "keyboardValue", [ "$document", "dawEngine", "patchLibrary", function( $document, dawEngine, patchLibrary ) {
 
 		return {
 			restrict: "A",
-			link: function( scope, $element ) {
+			link: function( $scope, $element ) {
 
 				dawEngine.addExternalMidiMessageHandler( function( type, parsed, rawEvent ) {
 					if ( type === "notePress" ) {
@@ -136,8 +168,8 @@ module.exports = function( mod ) {
 					dawEngine.externalMidiMessage( midiMessage );
 				} );
 
-				$document.on( "keydown", keyboardToDawHandler.bind( null, dawEngine, true ) );
-				$document.on( "keyup", keyboardToDawHandler.bind( null, dawEngine, false ) );
+				$document.on( "keydown", keyboardToDawHandler.bind( null, dawEngine, patchLibrary, $scope, true ) );
+				$document.on( "keyup", keyboardToDawHandler.bind( null, dawEngine, patchLibrary, $scope, false ) );
 
 			}
 		};

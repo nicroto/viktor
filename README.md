@@ -90,6 +90,7 @@ $ for i in *.png; do ffmpeg -i $i -vframes 1 -compression_level 100 $i-1.png; do
 
  * 0.8.1 (13th of March, 2016)
    * Add: Settings: MIDI Input.
+   * Add: change patch selection with Left & RightArrow keys.
  * 0.8 (12th of March, 2016)
    * Fix: patches with Envelope set to Release:0 stop system sound in Chrome.
    * Add: Patch: "EQUIVALENT-BASS-1".
