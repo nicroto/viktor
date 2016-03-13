@@ -88,6 +88,8 @@ $ for i in *.png; do ffmpeg -i $i -vframes 1 -compression_level 100 $i-1.png; do
 
 ## Release History
 
+ * 0.8.1 (13th of March, 2016)
+   * Add: Settings: MIDI Input.
  * 0.8 (12th of March, 2016)
    * Fix: patches with Envelope set to Release:0 stop system sound in Chrome.
    * Add: Patch: "EQUIVALENT-BASS-1".

@@ -1,7 +1,7 @@
 <div id="patchLibrary" ng-controller="PatchLibraryCtrl as library">
-	<div class="row text-center">
+	<div class="row">
 		<drop-down></drop-down>
-		<div id="patchActions">
+		<div id="patchActions" class="text-center top-row-item">
 			<a class="viktor-round-button patch-button glyphicon glyphicon-floppy-disk"
 				ng-show="library.isSavePatchVisible()"
 				ng-click="library.openSavePatchModal()"
@@ -15,7 +15,7 @@
 				ng-click="library.openSharePatchModal()"
 				tooltip="Share Patch"><i class="fa fa-share-alt"></i></a>
 		</div>
-		<div id="libActions">
+		<div id="libActions" class="text-center top-row-item">
 			<a class="viktor-round-button glyphicon glyphicon-import" ngf-select ngf-change="library.import($files)" tooltip="Import library"></a>
 			<a class="viktor-round-button glyphicon glyphicon-export" ng-show="library.isExportVisible()" ng-click="library.export()" tooltip="Export library"></a>
 			<a class="viktor-round-button glyphicon glyphicon-trash" ng-show="library.isExportVisible()" ng-click="library.openClearLibraryModal()" tooltip="Reset to Defaults"></a>
