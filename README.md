@@ -88,6 +88,8 @@ $ for i in *.png; do ffmpeg -i $i -vframes 1 -compression_level 100 $i-1.png; do
 
 ## Release History
 
+ * 0.8.2 (4th of April, 2016)
+   * DevImprove: Lock npm dependencies.
  * 0.8.1 (13th of March, 2016)
    * Add: Settings: MIDI Input.
    * Add: change patch selection with Left & RightArrow keys.
