@@ -88,6 +88,20 @@ $ for i in *.png; do ffmpeg -i $i -vframes 1 -compression_level 100 $i-1.png; do
 
 ## Release History
 
+ * 0.8.3 (22nd of June, 2016)
+   * Fix: Envelope: too quick release clips.
+   * Fix: changing patches often causes loud glitches.
+   * Fix: Library: error on load when selected patch doesn't exist.
+   * Add: Patch: "EQUIVALENT-CHORD-PAD-1".
+   * Add: Patch: "EQUIVALENT-CHORD-PAD-2".
+   * Add: Patch: "Gryphon 1977".
+   * Add: Patch: "Gryphon 1979".
+   * Add: Patch: "Wow - Cats".
+   * TemporaryFix: Chrome's newest Web Audio breaks patches:
+     * TemporaryRemove: Patch: "Danger Bubbles".
+     * TemporaryRemove: Patch: "Sirens' Awakening".
+     * TemporaryRemove: Patch: "Cooh bass 1".
+     * TemporaryRemove: Patch: "BRAINPAIN Mod Wheel Frenzy".
  * 0.8.2 (4th of April, 2016)
    * DevImprove: Lock npm dependencies.
  * 0.8.1 (13th of March, 2016)
