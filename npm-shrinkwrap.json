@@ -3754,9 +3754,9 @@
       }
     },
     "viktor-nv1-engine": {
-      "version": "1.7.1",
+      "version": "1.7.2",
       "from": "viktor-nv1-engine@latest",
-      "resolved": "https://registry.npmjs.org/viktor-nv1-engine/-/viktor-nv1-engine-1.7.1.tgz"
+      "resolved": "https://registry.npmjs.org/viktor-nv1-engine/-/viktor-nv1-engine-1.7.2.tgz"
     },
     "viktor-nv1-settings-convertor": {
       "version": "1.0.1",

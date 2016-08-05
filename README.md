@@ -88,6 +88,10 @@ $ for i in *.png; do ffmpeg -i $i -vframes 1 -compression_level 100 $i-1.png; do
 
 ## Release History
 
+ * 0.8.4 (5th of August, 2016)
+   * Fix: ChromeIssue: with latest update AudioParam.setTargetAtTime doesn't accept 0 as last param.
+   * Improve: order of default patches;
+   * TemporaryFix: Chrome's newest Web Audio breaks patches - had to disable a couple of patches.
  * 0.8.3 (22nd of June, 2016)
    * Fix: Envelope: too quick release clips.
    * Fix: changing patches often causes loud glitches.
