@@ -4,6 +4,7 @@ var angular = require( "angular" ),
 	template = require( "./template/daw.html" ),
 	mod = angular.module( "dawModule", [
 		template.name,
+		require( "./module/settings/module" ).name,
 		require( "./module/patch-library/module" ).name,
 		require( "./module/instruments/synth/module" ).name,
 		require( "./module/footer/module" ).name,

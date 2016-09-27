@@ -1,4 +1,7 @@
+.DS_Store
+
 node_modules
+
 src/server/client/bower_components
 src/server/client/impulses
 src/server/client/css

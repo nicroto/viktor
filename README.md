@@ -88,6 +88,61 @@ $ for i in *.png; do ffmpeg -i $i -vframes 1 -compression_level 100 $i-1.png; do
 
 ## Release History
 
+ * 0.8.4 (5th of August, 2016)
+   * Fix: ChromeIssue: with latest update AudioParam.setTargetAtTime doesn't accept 0 as last param.
+   * Improve: order of default patches;
+   * TemporaryFix: Chrome's newest Web Audio breaks patches - had to disable a couple of patches.
+ * 0.8.3 (22nd of June, 2016)
+   * Fix: Envelope: too quick release clips.
+   * Fix: changing patches often causes loud glitches.
+   * Fix: Library: error on load when selected patch doesn't exist.
+   * Add: Patch: "EQUIVALENT-CHORD-PAD-1".
+   * Add: Patch: "EQUIVALENT-CHORD-PAD-2".
+   * Add: Patch: "Gryphon 1977".
+   * Add: Patch: "Gryphon 1979".
+   * Add: Patch: "Wow - Cats".
+   * TemporaryFix: Chrome's newest Web Audio breaks patches:
+     * TemporaryRemove: Patch: "Danger Bubbles".
+     * TemporaryRemove: Patch: "Sirens' Awakening".
+     * TemporaryRemove: Patch: "Cooh bass 1".
+     * TemporaryRemove: Patch: "BRAINPAIN Mod Wheel Frenzy".
+ * 0.8.2 (4th of April, 2016)
+   * DevImprove: Lock npm dependencies.
+ * 0.8.1 (13th of March, 2016)
+   * Add: Settings: MIDI Input.
+   * Add: change patch selection with Left & RightArrow keys.
+ * 0.8 (12th of March, 2016)
+   * Fix: patches with Envelope set to Release:0 stop system sound in Chrome.
+   * Add: Patch: "EQUIVALENT-BASS-1".
+   * Add: Patch: "BRAINPAIN Mod Wheel Frenzy".
+   * Add: Patch: "Pumped Bass".
+   * Add: Patch: "Cooh bass 1".
+   * Add: Patch: "Timmo^Bass01".
+   * Add: Patch: "Freqax Bass".
+   * Add: Patch: "Niada's Sap Bass".
+   * Add: Patch: "Eclectic Method Bass".
+   * Add: Patch: "Soft Bass".
+   * Add: Patch: "8 mile Free World Car Bass".
+   * Add: Patch: "Muffled Razr Bass".
+   * Add: Patch: "Da Buzzer".
+   * Add: Patch: "Glass Bell Bass".
+   * Add: Patch: "Turbo Saw Lead".
+   * Add: Patch: "singende Säge Lead".
+   * Add: Patch: "Orchestra Pad".
+   * Add: Patch: "Netjester Kush Pad".
+   * Add: Patch: "Bass Fanfares".
+   * Add: Patch: "suitcase organ pad".
+   * Add: Patch: "Sirens' Awakening".
+   * Add: Patch: "Long Kiss".
+   * Add: Patch: "Danger Bubbles".
+   * Add: Patch: "Syo - demo".
+   * Add: Patch: "Flint Kids Shuttledron".
+   * Add: Patch: "Whale song - Synthakt".
+   * Add: Patch: "AC1".
+   * Add: Patch: "AC2".
+   * Add: Patch: "Ghosts".
+   * Add: Patch: "BB8".
+   * Add: Patch: "Outer Space".
  * 0.7 (5th of January, 2016)
    * Improve: Remove the need for async init of Viktor.
  * 0.6 (26th of September, 2015)
