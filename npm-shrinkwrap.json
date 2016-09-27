@@ -1,6 +1,6 @@
 {
   "name": "Viktor",
-  "version": "0.7.0",
+  "version": "0.8.5",
   "dependencies": {
     "angular-bootstrap-npm": {
       "version": "0.13.0",
@@ -3754,9 +3754,9 @@
       }
     },
     "viktor-nv1-engine": {
-      "version": "1.7.2",
+      "version": "1.7.3",
       "from": "viktor-nv1-engine@latest",
-      "resolved": "https://registry.npmjs.org/viktor-nv1-engine/-/viktor-nv1-engine-1.7.2.tgz"
+      "resolved": "https://registry.npmjs.org/viktor-nv1-engine/-/viktor-nv1-engine-1.7.3.tgz"
     },
     "viktor-nv1-settings-convertor": {
       "version": "1.0.1",

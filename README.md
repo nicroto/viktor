@@ -88,6 +88,8 @@ $ for i in *.png; do ffmpeg -i $i -vframes 1 -compression_level 100 $i-1.png; do
 
 ## Release History
 
+ * 0.8.5 (27th of September, 2016)
+   * Fix: breaking change in Chrome (53...), AudioParam.setValueAtTime doesn't accept 0 for time (only a value relative to context.currentTime).
  * 0.8.4 (5th of August, 2016)
    * Fix: ChromeIssue: with latest update AudioParam.setTargetAtTime doesn't accept 0 as last param.
    * Improve: order of default patches;
