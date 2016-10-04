@@ -88,6 +88,11 @@ $ for i in *.png; do ffmpeg -i $i -vframes 1 -compression_level 100 $i-1.png; do
 
 ## Release History
 
+ * 1.9.0 (4th of October, 2016)
+   * Add: Envelope: lower boundary;
+   * Fix: Filter Envelope: frequency shouldn’t go down under 1Hz;
+   * Fix: Filter LFO: shouldn’t get filter frequency to anything lower than 1Hz;
+   * Reenable: all disabled patches.
  * 0.8.5 (27th of September, 2016)
    * Fix: breaking change in Chrome (53...), AudioParam.setValueAtTime doesn't accept 0 for time (only a value relative to context.currentTime).
  * 0.8.4 (5th of August, 2016)
