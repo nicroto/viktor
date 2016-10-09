@@ -8,6 +8,7 @@ var angular = require( "angular" ),
 		require( "./module/patch-library/module" ).name,
 		require( "./module/instruments/synth/module" ).name,
 		require( "./module/footer/module" ).name,
+		require( "./module/t-shirts/module" ).name,
 
 		require( "./template/master-controls.html" ).name,
 		require( "./template/compressor.html" ).name,

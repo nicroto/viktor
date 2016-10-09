@@ -1,0 +1,121 @@
+<div id="tShirtsSection" ng-controller="TShirtsCtrl as tShirts">
+	<div class="row">
+		<a  ng-click="tShirts.openTShirtsModal()"
+			class="t-shirts-button"
+			tooltip="T-Shirts!">
+			<img class="left-t-shirt" src="images/t-shirts/button-dark.png" alt="">
+			<img class="right-t-shirt" src="images/t-shirts/button-light.png" alt="">
+		</a>
+	</div>
+
+
+	<script type="text/ng-template" id="tShirtsModal.html">
+		<div class="modal-header">
+			<button type="button" class="close" ng-click="tShirtsModal.close()"><span>&times;</span></button>
+			<h4 class="modal-title">Viktor NV-1 T-Shirts.</h4>
+		</div>
+		<div class="modal-body">
+
+			<div class="t-shirt-container text-center" t-shirts-stats>
+				<div class="row">
+					<div class="col-xs-6">
+						<div class="t-shirt">
+							<img src="images/t-shirts/mono.png">
+							<div class="row">
+								Mono
+							</div>
+							<div class="row">
+								<a href="https://www.amazon.com/dp/B01M1D5XO9" class="t-shirt-link" target="_blank">US</a>
+								<span class="horizontal-divider">|</span>
+								<a href="https://teespring.com/viktor-nv-1-mono" class="t-shirt-link" target="_blank">EU</a>
+							</div>
+						</div>
+					</div>
+					<div class="col-xs-6">
+						<div class="t-shirt">
+							<img src="images/t-shirts/ghost-jam.png">
+							<div class="row">
+								Ghost Jam
+							</div>
+							<div class="row">
+								<a href="https://www.amazon.com/dp/B01LYFJUJD" class="t-shirt-link" target="_blank">US</a>
+								<span class="horizontal-divider">|</span>
+								<a href="https://teespring.com/viktor-nv-1-ghost-jam" class="t-shirt-link" target="_blank">EU</a>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-xs-4">
+						<div class="t-shirt">
+							<img src="images/t-shirts/sketch.png">
+							<div class="row">
+								Sketch
+							</div>
+							<div class="row">
+								<a href="https://www.amazon.com/dp/B01LXS4HAJ" class="t-shirt-link" target="_blank">US</a>
+								<span class="horizontal-divider">|</span>
+								<a href="https://teespring.com/viktor-nv-1-sketch" class="t-shirt-link" target="_blank">EU</a>
+							</div>
+						</div>
+					</div>
+					<div class="col-xs-4">
+						<div class="t-shirt">
+							<img src="images/t-shirts/true-color.png">
+							<div class="row">
+								True-color
+							</div>
+							<div class="row">
+								<a href="https://www.amazon.com/dp/B01LYFKFNO" class="t-shirt-link" target="_blank">US</a>
+								<span class="horizontal-divider">|</span>
+								<a href="https://teespring.com/viktor-nv-1-true-color" class="t-shirt-link" target="_blank">EU</a>
+							</div>
+						</div>
+					</div>
+					<div class="col-xs-4">
+						<div class="t-shirt">
+							<img src="images/t-shirts/sketch-light.png">
+							<div class="row">
+								Sketch (Light)
+							</div>
+							<div class="row">
+								<a href="https://www.amazon.com/dp/B01LZQG7ZW" class="t-shirt-link" target="_blank">US</a>
+								<span class="horizontal-divider">|</span>
+								<a href="https://teespring.com/viktor-nv-1-sketch-light" class="t-shirt-link" target="_blank">EU</a>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-xs-6">
+						<div class="t-shirt">
+							<img src="images/t-shirts/metalic.png">
+							<div class="row">
+								Metalic
+							</div>
+							<div class="row">
+								<a href="https://www.amazon.com/dp/B01LZ31K0E" class="t-shirt-link" target="_blank">US</a>
+								<span class="horizontal-divider">|</span>
+								EU (N/A)
+							</div>
+						</div>
+					</div>
+					<div class="col-xs-6">
+						<div class="t-shirt">
+							<img src="images/t-shirts/metalic2.png">
+							<div class="row">
+								Metalic 2
+							</div>
+							<div class="row">
+								<a href="https://www.amazon.com/dp/B01LZEO3TU" class="t-shirt-link" target="_blank">US</a>
+								<span class="horizontal-divider">|</span>
+								EU (N/A)
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</div>
+	</script>
+</div>

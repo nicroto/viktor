@@ -1,0 +1,62 @@
+#tShirtsSection
+
+    // variables
+    $negative-angle = 30deg
+    $angle = -30deg
+
+    a.t-shirts-button
+        display: block
+        width: 90px
+
+        & > img
+            position: absolute
+            width: 50px
+            -webkit-transition: -webkit-transform .2s ease-in-out
+            transition: transform .2s ease-in-out
+
+            &.left-t-shirt
+                left: 0
+                -webkit-filter: drop-shadow(-6px 5px 5px #222)
+                filter: drop-shadow(-6px 5px 5px #222)
+
+            &.right-t-shirt
+                right: 0
+                -webkit-filter: drop-shadow(5px 5px 5px #222)
+                filter: drop-shadow(5px 5px 5px #222)
+
+        &:hover,
+        &.animate-button
+            text-decoration: none
+
+            & > img
+
+                &.left-t-shirt
+                    -webkit-transform: rotate($angle)
+                    transform: rotate($angle)
+
+                &.right-t-shirt
+                    -webkit-transform: rotate($negative-angle)
+                    transform: rotate($negative-angle)
+
+        &:active
+            text-decoration: none
+
+            & > img
+                margin-top: 5px
+
+.t-shirt-container
+
+    & > .row:nth-child(2)
+        margin-top: 20px
+        margin-bottom: 20px
+
+    .t-shirt
+
+        & > img
+            width: 100%
+            max-width: 170px
+
+        @media (min-width: 768px)
+
+            & > img
+                width: 170px
