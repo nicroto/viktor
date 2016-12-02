@@ -1,5 +1,23 @@
 .oscillator
 	&>h5
-		margin-top: 5px
+		margin-top 25px
+		margin-bottom 0px
+	&.row:first-of-type
+		&>h5
+			margin-top 5px
+			margin-bottom 5px
+		.knob-small #wac-knob
+			margin-top auto
 	&>.col-xs-4
-		padding: 0
+		padding 0
+	.knob-small #wac-knob
+		margin-bottom -10px
+		margin-top 10px
+.oscillator.row+.row:last-of-type
+		margin-top 9px
+		border-top 1px solid rgb(142,142,142)
+		margin-left -11px
+		margin-right -11px
+.oscillator.row+.row:last-of-type+h4
+	margin-top 5px
+	margin-bottom 5px
