@@ -2,7 +2,7 @@
 
 mkdir build && cd build/
 
-git clone https://github.com/nicroto/viktor.git
+git clone https://github.com/taylorstutts/viktor.git
 
 cd viktor
 
