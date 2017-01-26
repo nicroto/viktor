@@ -6,6 +6,8 @@
 				bind-polymer
 				knob-redraw
 				update-number-value
+                update-control-value
+                class="knob-small"
 				value="{{modulation.waveform.value}}" min="{{modulation.waveform.range[ 0 ]}}" max="{{modulation.waveform.range[ 1 ]}}" step="1" diameter="240" sprites="5" width="60" height="60"></webaudio-knob>
 		</div>
 		<div class="row">
@@ -14,6 +16,7 @@
 				bind-polymer
 				knob-redraw
 				update-number-value
+                update-control-value
 				value="{{modulation.portamento.value}}" min="{{modulation.portamento.range[ 0 ]}}" max="{{modulation.portamento.range[ 1 ]}}" step="1" diameter="120" sprites="44" width="60" height="60"></webaudio-knob>
 		</div>
 		<h4>Modulation</h4>
@@ -24,6 +27,7 @@
 				bind-polymer
 				knob-redraw
 				update-number-value
+                update-control-value
 				value="{{polyphony.voiceCount.value}}" min="{{polyphony.voiceCount.range[ 0 ]}}" max="{{polyphony.voiceCount.range[ 1 ]}}" step="1" diameter="120" sprites="44" width="60" height="60"></webaudio-knob>
 			<h5>Voices</h5>
 		</div>

@@ -3,6 +3,7 @@
  *
  *  webaudio-knob by Eiji Kitamura http://google.com/+agektmr
  *    Integrated and enhanced by g200kg http://www.g200kg.com/
+ *    Text input controls added by Taylor Stutts tay.stutts@gmail.com
  *
  *	 Licensed under the Apache License, Version 2.0 (the "License");
  *	 you may not use this file except in compliance with the License.
@@ -38,20 +39,100 @@
     background-position: 0px 0px;
     margin: auto;
   }
-  #wac-value-tip {
-    position: absolute;
-    top: -20px;
-    right: 0;
-    z-index: 10;
-    display: none;
-    opacity: 0;
-    border: solid 1px #666;
-    background-color: #fff;
-    color: #000;
-    border-radius: 4px;
-    padding: 3px 8px;
-    transition: opacity 0.3s;
+  
+  #wac-knob {
+    background-size: cover;
   }
+  
+  #wac-value-up {
+    border-top-left-radius: 0px;
+    border-bottom-width: 0px;
+    border-left-width :0px;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+  }
+  
+  #wac-value-down {
+    border-bottom-left-radius: 0px;
+    border-left-width: 0px;
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+  }
+  
+  .value-button {
+    padding: 0px;
+    height: 50%;
+    line-height: 0px;
+    
+    color: rgb(139, 234, 71);
+    background-color: rgb(33, 33, 33);
+    border: 1px solid;
+  }
+    
+  .wac-value-tip {
+    width: 3em;
+	color: black;
+    border-top-right-radius: 0px;
+    border-bottom-right-radius: 0px;
+    height: 22px;
+    padding-left: 2px;
+    padding-right: 2px;
+    text-align: right;
+    color: rgb(139, 234, 71);
+    background-color: rgb(33, 33, 33);
+    border: 1px solid;
+  }
+  
+  .wac-value-tip.places-1 {
+    width: 1em;
+  }  
+  .wac-value-tip.places-1.precis-1 {
+    width: 2.5em;
+  }
+  
+  .wac-value-tip.places-2 {
+    width: 1.73em;
+  }
+  .wac-value-tip.places-2.precis-1 {
+    width: 2.56em;
+  }
+  .wac-value-tip.places-2.precis-1.neg {
+    width: 2.9em;
+  }
+  
+  .wac-value-tip.places-3 {
+    width: 2.39em;
+  }
+    
+  .wac-value-tip.places-4 {
+    width: 2.8em;
+  }
+  .wac-value-tip.places-4.precis-1 {
+    width: 3.7em;
+  }
+  
+  #wac-value-unit {
+    height: 22px;
+    padding-bottom: 0px;
+    padding-top: 0px;
+    padding-left: 0px;
+    padding-right: 0px;
+    width: 1em;
+    border-top-right-radius: 0px;
+    border-bottom-right-radius: 0px;
+  }
+  
+  .value-button-group {
+    border: none;        
+    display:table-cell; 
+    height: 100%; 
+    padding-left: 0px;
+    padding-right: 0px;
+    width: 9px;
+  }
+  
   #wac-tooltip-box {
     position: absolute;
     bottom: -24px;
@@ -62,6 +143,7 @@
     width: 200px;
     transition: opacity 0.5s;
   }
+  
   #wac-tooltip-text {
     display: inline-block;
     border: solid 0px #666;
@@ -70,16 +152,34 @@
     border-radius: 5px;
     padding: 5px;
   }
+        
+  #wac-value-group {
+    display:inline-table;
+  }
+  
   </style>
   <template>
     <div class="wac-body" id="wac-body" touch-action="none">
-      <div id="wac-knob" touch-action="none"></div>
-      <span id="wac-value-tip"><span>{{valuedisp}}</span><span>{{units}}</span></span>
+      
+    <div id="wac-knob" touch-action="none"></div>
+      <div id="wac-value-group">
+        <input id="wac-value-tip" class="wac-value-tip form-control input-sm" type="text" 
+            value="[[valuedisp]]" />
+          <div class="btn-group-vertical form-control value-button-group">
+            <button id="wac-value-up" class="dropup btn btn-default btn-xs value-button">
+              <div class="caret"></div>
+            </button>
+            <button id="wac-value-down" class="btn btn-default btn-xs value-button">
+              <div class="caret" style=""></div>
+            </button>
+          </div>
+      </div>
       <div id="wac-tooltip-box"><span id="wac-tooltip-text">{{tooltip}}</span></div>
     </div>
   </template>
 </dom-module>
 <script>
+
 function log2(num) {
     var log=Math.log(num) / Math.LN2;
     return log;
@@ -100,8 +200,6 @@ Polymer( (function() {
         e.preventDefault();
     };
     var cancel = function(e) {
-        this.press = this.vtflag = 0;
-        this.showtip();
         this.startPosX = this.startPosY = null;
         window.removeEventListener('mousemove', this.boundPointermove, true);
         window.removeEventListener('touchmove', this.boundPointermove, true);
@@ -126,7 +224,7 @@ Polymer( (function() {
             },
             defvalue: {
                 type: Number,
-                value: null
+                value: 0
             },
             min: {
                 type: Number,
@@ -134,7 +232,9 @@ Polymer( (function() {
             }, 
             max: {
                 type: Number,
-                value: 100
+                value: 100,
+                notify: true,
+                observer: "maxChanged"
             },
             step: {
                 type: Number,
@@ -175,8 +275,33 @@ Polymer( (function() {
             enable: {
                 type: Number,
                 value: 1
-            }
+            },
+			valuedisp: {
+                type: String,
+				value: 0
+			}
         },
+		
+		valuedispChanged: function(newValue, oldValue) {
+            //console.log('valuedispChanged() newValue=' + newValue + ', oldValue=' + oldValue + ', external=' + this.valuedispExternalChange);
+            if(this.valuedispExternalChange)
+            {
+                this.setValue(newValue, false);
+                //console.log("valuedispChanged() returned from setValue(), value=" + this.value + ", valuedisp=" + this.valuedisp);
+                this.fire('change');
+            }
+		},
+        
+        valueDispChanged: function(e) {
+            //console.log("valueDispChanged(), targval=" + e.target.value);
+            if(this.setValue(e.target.value, false))
+            {
+                this.fire('change')
+            }
+            e.preventDefault();
+            e.stopPropagation();
+        },
+		
         ready: function() {
             if(this.defvalue === null)
             this.defvalue = this.value;
@@ -184,26 +309,55 @@ Polymer( (function() {
             this.width = this.diameter;
             if(this.height === null)
             this.height = this.diameter;
+			if(this.valuedisp === undefined || this.valuedisp === null) {
+				this.valuedisp = "0";
+			}
+			
             var knb = this.$['wac-knob'];
             knb.addEventListener('DOMMouseScroll',this.wheel.bind(this),false);
             knb.addEventListener('mousewheel',this.wheel.bind(this),false);
-            knb.addEventListener('mouseover',this.pointerover.bind(this),false);
-            knb.addEventListener('mouseout',this.pointerout.bind(this),false);
             knb.addEventListener('mousedown',this.pointerdown.bind(this),false);
             knb.addEventListener('touchstart',this.pointerdown.bind(this),false);
             knb.style.width = this.width+'px';
             knb.style.height = this.height+'px';
-            if(this.src)
-            knb.style.background = 'url('+this.src+')';
-            else {
-                knb.style.background = 'url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAACg0lEQVR42u2bvW7CMBCAwwswMCB14AUQb8BjsHbKUqljngClW16gUxkYeQXmTrRTXqEjTCiiGYJ7iS5SlAZIgu98wbH0CWTxc3ex785n23Ho2wRYAD6wAXbADxABCRJh3w4/4+N3Jk5H2xwIgBBQdxLib82lKz0EPE1KXzOGh/8lSnEfh3FtZcbAMzJubogI/9O4IV6BQ9MnOQW+gWgwyPgCpu1GxAFlYG8zYNt2KL+Bwkd4PSNH7LtjamxRJpbmouduLfAKiAGFxNh3p39IUDbSFuhwZkQGyAmolF/r8uapsr8w5HMDpO9XeqPFWrfyG53h7AMUjgs+IMY+zSFzI+7JV02Bs/4poHUkBARCUfsAbT7BpcroilNA0U2BIm6bOJ9QCVSeAgROsCpENsoTtoTCZE+7HAWIR0CeLNVObxW1ARiiQBU30+Zhm9xecBSoWjtcXUD5DEKod+BUGAEn7HN48K89/YhDiBdgXwiDe+xjMkB0aRR4TAKoJ2AJfCJL7HP48KoMEDIKoEbADBnxKp9Xlv7V8JRlzMlTXuEExoa/EMJi3V5ZSrbvsLDYAAu25EcovvZqT8fIqkY7iw2Q6p5tStpqgFR3nvxfKKnudJWfDpD0BuinQO8E+zBofSJkfSps/WLI+uWw9QWRviTWF0Xtmwah0Y0RAXhGt8YE5P9Do5ujEpIfo9vjBrm5Pc5yQMIgtc8Vbx9Q+dpHZMgPSRmq/DQ+TO0+kAFaH6IOHi3lFXFUlhFth6a7WDXSdli6iyNB+3H5LvkEsgsTxeiQCA115FdminmCpGSJ9dJUOW02uXYwdm2uvIBqfHFSw5JWxMXJsiGsvDpb1ay8PH2pib4+/wcnUdJ/bu6siQAAAABJRU5ErkJggg==)';
+            if(this.src) {
+                knb.style.backgroundImage = 'url('+this.src+')';
+            } else {
+                knb.style.backgroundImage = 'url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAACg0lEQVR42u2bvW7CMBCAwwswMCB14AUQb8BjsHbKUqljngClW16gUxkYeQXmTrRTXqEjTCiiGYJ7iS5SlAZIgu98wbH0CWTxc3ex785n23Ho2wRYAD6wAXbADxABCRJh3w4/4+N3Jk5H2xwIgBBQdxLib82lKz0EPE1KXzOGh/8lSnEfh3FtZcbAMzJubogI/9O4IV6BQ9MnOQW+gWgwyPgCpu1GxAFlYG8zYNt2KL+Bwkd4PSNH7LtjamxRJpbmouduLfAKiAGFxNh3p39IUDbSFuhwZkQGyAmolF/r8uapsr8w5HMDpO9XeqPFWrfyG53h7AMUjgs+IMY+zSFzI+7JV02Bs/4poHUkBARCUfsAbT7BpcroilNA0U2BIm6bOJ9QCVSeAgROsCpENsoTtoTCZE+7HAWIR0CeLNVObxW1ARiiQBU30+Zhm9xecBSoWjtcXUD5DEKod+BUGAEn7HN48K89/YhDiBdgXwiDe+xjMkB0aRR4TAKoJ2AJfCJL7HP48KoMEDIKoEbADBnxKp9Xlv7V8JRlzMlTXuEExoa/EMJi3V5ZSrbvsLDYAAu25EcovvZqT8fIqkY7iw2Q6p5tStpqgFR3nvxfKKnudJWfDpD0BuinQO8E+zBofSJkfSps/WLI+uWw9QWRviTWF0Xtmwah0Y0RAXhGt8YE5P9Do5ujEpIfo9vjBrm5Pc5yQMIgtc8Vbx9Q+dpHZMgPSRmq/DQ+TO0+kAFaH6IOHi3lFXFUlhFth6a7WDXSdli6iyNB+3H5LvkEsgsTxeiQCA115FdminmCpGSJ9dJUOW02uXYwdm2uvIBqfHFSw5JWxMXJsiGsvDpb1ay8PH2pib4+/wcnUdJ/bu6siQAAAABJRU5ErkJggg==)';
                 this.sprites = 0;
             }
-            knb.style.backgroundSize = '100% '+((this.sprites+1)*100)+'%';
+            
             if(this.step && this.step < 1) {
                 for(var n = this.step ; n < 1; n *= 10)
                 ++this.digits;
             }
+			            
+            var valGroupElem = this.$['wac-value-group'];
+            valGroupElem.addEventListener('mousewheel',this.wheel.bind(this),false);
+            
+            var valTextElem = this.$['wac-value-tip'];
+            valTextElem.addEventListener('keydown',this.keydown.bind(this),false);
+            valTextElem.addEventListener('keyup',this.keyup.bind(this),false);
+            valTextElem.addEventListener('change',this.valueDispChanged.bind(this),false);
+            
+            var valUp = this.$['wac-value-up'];
+            if(valUp) {
+                valUp.addEventListener('mousedown',this.valUpMousedown.bind(this),false);
+                valUp.addEventListener('mouseup',this.valUpMouseup.bind(this),false);
+                valUp.addEventListener('mouseout',this.valUpMouseout.bind(this),false);
+                valUp.addEventListener('keydown',this.valUpKeydown.bind(this),false);
+                valUp.addEventListener('keyup',this.valUpKeyup.bind(this),false);
+            }
+            
+            var valDown = this.$['wac-value-down'];
+            if(valDown) {
+                valDown.addEventListener('mousedown',this.valDownMousedown.bind(this),false);
+                valDown.addEventListener('mouseup',this.valDownMouseup.bind(this),false);
+                valDown.addEventListener('mouseout',this.valDownMouseout.bind(this),false);
+                valDown.addEventListener('keydown',this.valDownKeydown.bind(this),false);
+                valDown.addEventListener('keyup',this.valDownKeyup.bind(this),false);
+            }
+            
             this.minval = this.min;
             this.maxval = this.max;
             if (this.log) {
@@ -219,10 +373,37 @@ Polymer( (function() {
                 this.setValue(this.value);
                 this.ctlStep=this.step;
             }
+            
             this.fire('change');
         },
+        maxChanged: function(newval, oldval) {            
+            if(!isNaN(this.max)) {                
+                var valTextElem = this.$['wac-value-tip'];
+                var widthEm = ~~Math.log10(Math.max(Math.abs(this.max), Math.abs(this.min)));
+                if(widthEm == 3) {
+                    angular.element(valTextElem).addClass('places-4');
+                }
+                else if(widthEm == 2) {
+                    angular.element(valTextElem).addClass('places-3');
+                }
+                else if(widthEm == 1) {
+                    angular.element(valTextElem).addClass('places-2');
+                }
+                else if(widthEm == 0) {
+                    angular.element(valTextElem).addClass('places-1');
+                }
+                
+                if(this.digits > 0) {   // ever > 1 ?
+                    angular.element(valTextElem).addClass('precis-1');
+                }
+                
+                if(!isNaN(this.min) && this.min < 0) {
+                    angular.element(valTextElem).addClass('neg');
+                }
+            }
+        },
         valueold:NaN,
-        valuedisp:"0",
+        valuedisp: "0",
         offset:     0,
         minval:     0,
         maxval:     100,
@@ -231,9 +412,9 @@ Polymer( (function() {
         startPosX:  null,
         startPosY:  null,
         startVal:   0,
-        press:0,
-        ttflag:0,
-        vtflag:0,
+        increaseActive: false,
+        decreaseActive: false,
+        valuedispExternalChange: true,  // hack to prevent triggering change events on valuedisp when changed programmatically
         pointerdown: function(e) {
             if(!this.enable)
             return;
@@ -255,49 +436,7 @@ Polymer( (function() {
             window.addEventListener('mouseup', this.boundCancel, true);
             window.addEventListener('touchend', this.boundCancel, true);
             window.addEventListener('touchcancel', this.boundCancel, true);
-            this.press = this.vtflag = 1;
-            this.ttflag = 0;
-            this.showtip();
             e.preventDefault();
-        },
-        pointerover: function(e) {
-            if(typeof(e.buttons)!="undefined")
-            var btn = e.buttons;
-            else
-            var btn = e.which;
-            if(btn==0)
-            this.ttflag = 1;
-            setTimeout(this.showtip.bind(this),700);
-        },
-        pointerout: function(e) {
-            this.ttflag = 0;
-            if(this.press==0)
-            this.vtflag = 0;
-            this.showtip();
-        },
-        showtip: function() {
-            var vs=this.$['wac-value-tip'].style;
-            var ts=this.$['wac-tooltip-box'].style;
-            if(this.valuetip && this.vtflag) {
-                if(this.vtim) {
-                    clearTimeout(this.vtim);
-                    this.vtim = null;
-                }
-                vs.display="block";
-                setTimeout(function(){this.opacity=0.8;}.bind(vs),50);
-            }
-            else if(vs.opacity) {
-                vs.opacity = 0;
-                this.vtim=setTimeout(function(){if(this.vtflag==0) this.$['wac-value-tip'].style.display="none";}.bind(this),500);
-            }
-            if(this.tooltip && this.ttflag) {
-                ts.display="block";
-                setTimeout(function(){this.opacity=0.8;}.bind(ts),100);
-            }
-            else if(ts.opacity) {
-                ts.opacity = 0;
-                setTimeout(function(){this.display="none";}.bind(ts),500);
-            }
         },
         wheel: function(e) {
             var delta = 0;
@@ -312,36 +451,153 @@ Polymer( (function() {
             delta *= (this.max - this.min) * 0.05;
             if(Math.abs(delta) < this.step)
             delta = (delta>0)?this.step:-this.step;
+            //console.log("wheel() about to call setvalue()");
             if(this.setValue(this.value+delta))
-            this.fire('change');
-            this.ttflag = 0;
-            this.vtflag = 1;
-            this.showtip();
+            {
+                //console.log("wheel() firing change");
+                this.fire('change');
+            }
+            else
+            {
+                //console.log("wheel() not firing change\n");
+            }
             e.preventDefault();
         },
+        valUpMousedown: function(e) {
+            this.increaseValue();
+            this.increaseActive = true;
+            this.debounce("increaseValue", function() { this.valUpBounce(); }, 500);
+        },
+        valUpBounce: function() {
+            if(this.increaseActive) {
+                this.increaseValue();
+                this.debounce("increaseValue", function() { this.valUpBounce(); }, 100);
+            }
+        },
+        valUpMouseup: function(e) {
+            this.increaseActive = false;
+        },
+        valUpMouseout: function(e) {
+            this.increaseActive = false;
+        },
+        valUpKeydown: function(e) {
+            if(e.keyCode == 13 || e.keyCode == 32 || e.keyCode == 38) {
+                this.increaseValue();
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            else if(e.keyCode == 39 || e.keyCode == 37) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            else if(e.keyCode == 40) {
+                var valDown = this.$['wac-value-down'];
+                valDown.focus();
+                this.decreaseValue();
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        },
+        valUpKeyup: function(e) {
+            if(e.keyCode == 39 || e.keyCode == 37) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        },
+        increaseValue: function(e) {
+            if(this.value < this.max) {
+                if(this.setValue(this.value + this.step )) {
+                    this.fire('change');
+                }
+            }            
+        },
+        
+        valDownMousedown: function(e) {
+            this.decreaseValue();
+            this.decreaseActive = true;
+            this.debounce("decreaseValue", function() { this.valDownBounce(); }, 500);
+        },
+        valDownBounce: function() {
+            if(this.decreaseActive) {
+                this.decreaseValue();
+                this.debounce("decreaseValue", function() { this.valDownBounce(); }, 100);
+            }
+        },
+        valDownMouseup: function(e) {
+            this.decreaseActive = false;
+        },
+        valDownMouseout: function(e) {
+            this.decreaseActive = false;
+        },
+        valDownKeydown: function(e) {
+            if(e.keyCode == 13 || e.keyCode == 32 || e.keyCode == 40) {
+                this.decreaseValue();
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            else if(e.keyCode == 39 || e.keyCode == 37) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            else if (e.keyCode == 38) {
+                var valUp = this.$['wac-value-up'];
+                valUp.focus();
+                this.increaseValue();
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        },
+        valDownKeyup: function(e) {
+            if(e.keyCode == 39 || e.keyCode == 37) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        },
+        decreaseValue: function(e) {
+            if(this.value > this.min) {
+                if(this.setValue(this.value - this.step )) {
+                    this.fire('change');
+                }
+            }
+        },
+        keyup: function(e) {
+            if(e.keyCode == 27 && e.target.value != this.valueold) {
+                e.target.value = this.valueold;
+            }
+            else if(e.keyCode == 39 || e.keyCode == 37) {
+                e.stopPropagation();
+            }
+        },
+        keydown: function(e) {
+            if(e.keyCode == 38) {
+                this.increaseValue();
+                e.stopPropagation();
+            }
+            else if(e.keyCode == 40) {
+                this.decreaseValue();
+                e.stopPropagation();
+            }
+        },
         setValue: function(value,fire) {
-            value = parseFloat(value);
-            if(!isNaN(value)) {
+			//console.log('webaudio-knob setValue(), value=' + value + ', fire=' + Boolean(fire) + ', valueold=' + this.valueold);
+            value = parseFloat(value);			
+			
+            if(!isNaN(value)) {            
                 this.value = value < this.min ? this.min : value > this.max ? this.max : value;
                 var valueNumber = (this.log) ? Math.pow(2,this.value) : this.value;
+                this.valuedispExternalChange = false;
                 this.valuedisp = valueNumber.toFixed(this.digits);
-                if ((this.digits==0)&&(valueNumber>1000)) {
-                    valueNumber = valueNumber/1000;
-                    // between 1k and 10k - show two digits, else show one
-                    this.valuedisp = valueNumber.toFixed((valueNumber<10)?2:1) + "k";
-                } 
+                this.valuedispExternalChange = true;
             }
             if(fire)
-            this.fire('change');
-            /*if (this.log)
-            console.log("value: " + this.value + " valuedisp: " +
-            this.valuedisp + " min: " + this.min + " minval: " +
-            this.minval + " max: " + this.max + " maxval: " + this.maxval );
-             */if(this.value!=this.valueold) {
+                this.fire('change');
+            if(this.value!=this.valueold) {
                 this.redraw();
                 this.valueold = this.value;
+                //console.log("setValue() returning 1");
                 return 1;
             }
+            //console.log("setValue() returning 0");
             return 0;
         },
         redraw: function() {
