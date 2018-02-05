@@ -7,6 +7,7 @@ var angular = require( "angular" ),
 		require( "./module/settings/module" ).name,
 		require( "./module/patch-library/module" ).name,
 		require( "./module/instruments/synth/module" ).name,
+		require( "./module/maillist/module" ).name,
 		require( "./module/footer/module" ).name,
 		require( "./module/t-shirts/module" ).name,
 

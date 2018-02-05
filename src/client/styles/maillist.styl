@@ -1,0 +1,59 @@
+.email-subscription-panel
+	margin-top: 33px
+	margin-bottom: 23px
+	color: $footer-color
+
+	h3
+		margin-top: 0px
+
+	form
+		padding-top: 10px
+		padding-bottom: 10px
+
+		&>div, &>button
+			display: inline-block
+			margin-top: 0px
+			margin-bottom: 0px
+
+		#email
+			width: 350px
+			height: 45px
+			margin: auto
+			text-align: center
+			font-size: 1.7em
+			transition: all 0.5s ease
+			background-color: $background-color
+			color: $footer-color
+			&::placeholder
+				color: $footer-color
+			&:focus
+				background-color: $highlight-on-dark-background
+				transition: all .5s ease;
+				color: $text-on-highlight-on-dark-background
+				&::placeholder
+					color: $text-dark-background
+					transition: all 1s ease;
+
+		#submit.btn.btn-default
+			height: 45px
+			margin-top: -8px
+			color: $footer-color
+			background-color: $background-color
+			border-color: $footer-color
+			&:hover,
+			&:focus
+				color: $text-dark-background
+				background-color: $background-color
+				border-color: #969696
+				outline: none
+			&:active
+				color: $text-dark-background
+				background-color: $highlight-on-dark-background
+				border-color: #9B9B9B
+				text-decoration: none
+				outline: none
+
+	#successfulSubscribeView
+		.fa-check
+			color: $green-on-dark
+			font-size: 2.8em
