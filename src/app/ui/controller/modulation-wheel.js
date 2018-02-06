@@ -5,7 +5,7 @@ var settingsConvertor = require( "viktor-nv1-settings-convertor" ),
 
 module.exports = function( mod ) {
 
-	mod.controller( "ModulationWheelCtrl", [ "$scope", "$timeout", "dawEngine", function( $scope, $timeout, dawEngine ) {
+	mod.controller( "ModulationWheelCtrl", [ "$scope", "dawEngine", function( $scope, dawEngine ) {
 		var self = this,
 			settingsChangeHandler = function( newValue, oldValue ) {
 				if ( newValue === oldValue ) {

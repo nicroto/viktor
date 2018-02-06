@@ -20,7 +20,13 @@ module.exports = function(grunt) {
 			build: ['build/']
 		},
 		jshint: {
-			all: ['src/**/*.js', 'test/**/*.js', 'Gruntfile.js', '!src/server/client/**/*.js'],
+			all: [
+				'src/**/*.js',
+				'test/**/*.js',
+				'Gruntfile.js',
+				'!src/server/client/**/*.js',
+				'!src/app/ui/module/maillist/controller/midi-data.js'
+			],
 			checkstyle: 'checkstyle.xml',
 			options: {
 				jshintrc: '.jshintrc'

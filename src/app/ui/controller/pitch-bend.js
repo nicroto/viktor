@@ -6,7 +6,7 @@ var settingsConvertor = require( "viktor-nv1-settings-convertor" ),
 
 module.exports = function( mod ) {
 
-	mod.controller( "PitchBendCtrl", [ "$scope", "$timeout", "dawEngine", function( $scope, $timeout, dawEngine ) {
+	mod.controller( "PitchBendCtrl", [ "$scope", "dawEngine", function( $scope, dawEngine ) {
 		var self = this,
 			settingsChangeHandler = function() {
 				dawEngine.pitchSettings = {

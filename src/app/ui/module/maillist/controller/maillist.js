@@ -1,5 +1,15 @@
 'use strict';
 
+
+var midiData = require( "./midi-data" ),
+	selectedSong = midiData[
+		Math.round (Math.random() * (midiData.length - 1))
+	].tracks[ 0 ].notes,
+	lastNote = -1,
+	noteIndex = -1,
+	songResetTimeout = null;
+
+
 module.exports = function( mod ) {
 
 	mod.controller( "EmailSubscriptionController", [ "$scope", function ($scope) {
@@ -59,6 +69,90 @@ module.exports = function( mod ) {
 			replace: true,
 			template: $templateCache.get( "maillist.html" )
 		};
+	} ] );
+
+	mod.directive( "melodicKeyboard", [ "$document", "$timeout", "dawEngine", function( $document, $timeout, dawEngine ) {
+
+		return {
+			restrict: "A",
+			link: function( $scope, $element ) {
+
+				var executeMidiMessage = function ( firstByte, secondByte, thirdByte ) {
+					dawEngine.externalMidiMessage( {
+						data: [
+							firstByte,
+							secondByte,
+							thirdByte
+						]
+					} );
+				};
+
+				var noteOff = function () {
+					if (lastNote !== -1) {
+						executeMidiMessage(
+							128,
+							lastNote,
+							100
+						);
+
+						lastNote = -1;
+					}
+				};
+
+				$element.on( "keydown", function( eventObject ) {
+					if ( $element.val () === "" ) {
+						// if field is empty -> start over the song
+						noteOff();
+						noteIndex = -1;
+					}
+
+					// make sure not to switch patch
+					if (
+						eventObject.keyCode === 37 ||
+						eventObject.keyCode === 39
+					) {
+						eventObject.stopPropagation ();
+						return;
+					}
+
+					// trigger only on letters and nubers
+					if ( eventObject.keyCode < 48 ) {
+						return;
+					}
+
+					noteOff();
+
+					noteIndex++;
+					if ( noteIndex === selectedSong.length ) {
+						noteIndex = 0;
+					}
+
+					lastNote = selectedSong[ noteIndex ].midi;
+
+					eventObject.stopPropagation();
+
+					executeMidiMessage(
+						144,
+						lastNote,
+						100
+					);
+
+					if ( songResetTimeout ) {
+						$timeout.cancel (songResetTimeout);
+					}
+
+					songResetTimeout = $timeout( function () {
+						noteOff();
+					}, 100 );
+				} );
+
+				$element.on( "keyup", function( eventObject ) {
+					eventObject.stopPropagation();
+				} );
+
+			}
+		};
+
 	} ] );
 
 };

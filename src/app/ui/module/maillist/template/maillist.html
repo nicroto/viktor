@@ -1,9 +1,10 @@
 <div ng-controller="EmailSubscriptionController as subscription" class="email-subscription-panel container-fluid text-center">
     <div class="row text-center" ng-hide="subscription.subscribeSuccess == 'true'">
+        <h4>Big news coming soon!</h4>
         <form name="subscriptionForm" accept-charset="utf-8" ng-submit="subscription.tryToSubscribe ()">
             <div class="form-group" ng-class="{ 'has-error' : subscriptionForm.email.$invalid && !subscriptionForm.email.$pristine }">
                 <label class="sr-only" for="email">Email address</label>
-                <input type="email" validate-email name="email" id="email" placeholder="Email Address" class="form-control" ng-model="subscription.email" required>
+                <input melodic-keyboard type="email" validate-email name="email" id="email" placeholder="Email Address" class="form-control" ng-model="subscription.email" required>
             </div>
 
             <div style="display:none;">

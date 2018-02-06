@@ -1,12 +1,18 @@
 .email-subscription-panel
 	margin-top: 33px
 	margin-bottom: 23px
+	margin-left: -92px
 	color: $footer-color
 
-	h3
-		margin-top: 0px
+	h4
+		color: $text-on-highlight-on-dark-background
+		position: relative
+		display: inline
+		margin: auto
+		margin-right: 14px
 
 	form
+		display: inline-block
 		padding-top: 10px
 		padding-bottom: 10px
 
@@ -28,15 +34,16 @@
 				color: $footer-color
 			&:focus
 				background-color: $highlight-on-dark-background
-				transition: all .5s ease;
+				transition: all .5s ease
 				color: $text-on-highlight-on-dark-background
 				&::placeholder
 					color: $text-dark-background
-					transition: all 1s ease;
+					transition: all 1s ease
 
 		#submit.btn.btn-default
 			height: 45px
 			margin-top: -8px
+			margin-left: 17px
 			color: $footer-color
 			background-color: $background-color
 			border-color: $footer-color
