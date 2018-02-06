@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>[Polymer] WebAudio-Controls Live Demo</title>
+    <script src="./bower_components/webcomponentsjs/webcomponents.js"></script>
+    <link rel="import" href="./bower_components/polymer/polymer.html">
+    <link rel="import" href="./webcomponents/webaudio-controls.min.html">
+    <style type="text/css">
+    table {
+      border: 1px solid #666;
+    }
+    table td {
+      border: 1px solid #bbb;
+    }
+    </style>
+</head>
+<body style="background-color:#eee;">
+    <h1>WebAudio-Controls Live Demo</h1>
+    <div style="position:relative;background-image: url('img/bg.png');width:512px;height:240px;margin:30px auto;padding:0px;">
+        <webaudio-knob style="position:absolute;left:48px;top:76px" src="img/LittlePhatty.png" value="0" max="100" step="1" diameter="64" sprites="100" tooltip="Knob1 tooltip abcdefghijklmnopqustuvwxyz"></webaudio-knob>
+        <webaudio-knob units="Hz" log=true style="position:absolute;left:128px;top:76px" src="img/LittlePhatty.png" value="50" min="20" max="20000" diameter="64" sprites="100" tooltip="Knob2 tooltip"></webaudio-knob>
+        <webaudio-knob id="knob3" style="position:absolute;left:232px;top:48px" src="img/vernier.png" value="30" max="100" step="1" diameter="128" sprites="50" valuetip="0" tooltip="Knob3"></webaudio-knob>
+        <webaudio-param style="position:absolute;left:328px;top:162px" link="knob3"></webaudio-param>
+        <webaudio-slider style="position:absolute;left:368px;top:24px" src="img/vsliderbody.png" knobsrc="img/vsliderknob.png" value="0" min="0" max="100" step="1" basewidth="24" baseheight="128" knobwidth="24" knobheight="24" ditchLength="100" tooltip="Slider-L"></webaudio-slider>
+        <webaudio-slider style="position:absolute;left:400px;top:24px" src="img/vsliderbody.png" knobsrc="img/vsliderknob.png" value="0" min="0" max="100" step="1" basewidth="24" baseheight="128" knobwidth="24" knobheight="24" ditchLength="100" units="%" tooltip="Slider-R"></webaudio-slider>
+        <webaudio-switch style="position:absolute;left:440px;top:38px" src="img/switch_toggle.png" value="0" height="56" width="56" tooltip="Switch-A Tooltip text test"></webaudio-switch>
+        <webaudio-switch style="position:absolute;left:440px;top:102px" src="img/switch_toggle.png" value="0" height="56" width="56" tooltip="Switch-B"></webaudio-switch>
+	</div>
+<div>
+<h2>Available At</h2>
+<b><a href="https://github.com/g200kg/webaudio-controls">https://github.com/g200kg/webaudio-controls</a></b>
+<h2>To Operate</h2>
+<table>
+<tr><th>Operation</th><th>Component</th><th>Description</th></tr>
+<tr><td><b>Click</b></td><td>Switch/Param</td><td>toggle / activate the switch or focus the param</td></tr>
+<tr><td><b>Drag</b></td><td>Knob/Slider</td><td>up/right to increase value / down/left to decrease value</td></tr>
+<tr><td><b>Shift+Drag</b></td><td>Knob/Slider</td><td>fine control</td></tr>
+<tr><td><b>Ctrl+Click/Command+Click</b></td><td>Knob/Slider/Switch</td><td>set to default value</td></tr>
+<tr><td><b>Edit with Keyboard</strong></td><td>Param</td><td>edit the value directly</td></tr>
+<tr><td><b>MouseWheel</b></td><td>Knob/Slider</td><td>rotate upward to increase value / downward to decrease value</td></tr>
+<tr><td><b>Shift+MouseWheel</b></td><td>Knob/Slider</td><td>fine control</td></tr>
+</table>
+</div>
+
+<div>
+<h2>License</h2>
+webaudio-controls is based on:
+<ul>
+<li><a href="https://github.com/agektmr/webaudio-knob" target="_blank">WebAudio-Knob</a> by <a href="http://google.com/+agektmr" target="_blank">Eiji Kitamura</a></li>
+<li><a href="https://github.com/ryoyakawai/webaudio-slider" target="_blank">WebAudio-Slider</a> by <a href="https://plus.google.com/108242669191458983485/posts" target="_blank">Ryoya Kawai</a></li>
+<li><a href="http://aikelab.net/switch/" target="_blank">WebAudio-Switch</a> by <a href="http://d.hatena.ne.jp/aike/" target="_blank">Keisuke Ai</a></li>
+<li>Integrated and enhanced by <a href="http://www.g200kg.com/" target="_blank">g200kg</a></li>
+</ul>
+
+<p><b>webaudio-controls</b> is licensed under the Apache License, Version 2.0<br/>
+Copyright (c) 2013 Eiji Kitamura / Ryoya KAWAI / Keisuke Ai / g200kg (Tatsuya Shinyagaito)<br/>
+</p>
+<p>Using <a href="http://polymer-project.org/" target="_blank">Polymer</a> and <a href="http://www.w3.org/TR/components-intro/" target="_blank">WebComponents</a><br/>
+</p>
+<hr/>
+Knob/Switch images are from <a href="http://www.g200kg.com/en/webknobman/gallery.php" target="_blank">Knob Gallery</a><br/>
+<a href="http://www.g200kg.com/en/webknobman/gallery.php?m=p&p=58" target="_blank">switch_toggle.knob</a> by <a href="http://bji.yukihotaru.com/" target="_blank">az</a> Copyright (c) 2011 <a href="http://creativecommons.org/licenses/by/3.0/" target="_blank">CC-BY</a>
+</div>
+<script>
+// live-inserts a knob.
+function test() {
+    var y = document.createElement("webaudio-knob");
+    y.setAttribute("src", "img/LittlePhatty.png");
+    y.sprites=100;
+    y.ready();
+    document.body.appendChild(y);
+    return y;
+}
+</script>
+</body>
+</html>

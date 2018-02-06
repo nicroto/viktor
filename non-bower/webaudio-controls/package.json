@@ -1,0 +1,12 @@
+{
+  "name": "webaudio-controls",
+  "dependencies": {
+    "grunt": "~0.4.1"
+  },
+  "devDependencies": {
+    "grunt-banner": "^0.4.0",
+    "grunt-contrib-clean": "~0.5.0",
+    "grunt-contrib-connect": "^0.10.1",
+    "grunt-vulcanize": "^0.6.4"
+  }
+}
