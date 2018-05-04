@@ -2,6 +2,7 @@
 
 var angular = require( "angular" ),
 	store = require( "store" ),
+	queryStringUtils = require( "querystring" ),
 	app = angular.module( "app", [
 		require( "angular-bootstrap-npm" ),
 		require( "ng-file-upload" ).name,
@@ -46,7 +47,7 @@ app.factory( "patchLibrary", function() {
 	return patchLibrary;
 } );
 
-angular.element( document ).ready( function() {
+angular.element( document ).ready( function () {
 	var $button = angular.element( document.querySelector( "#loadSynthButton" ) );
 
 	if ( is_iOS ) {
@@ -58,6 +59,17 @@ angular.element( document ).ready( function() {
 	} else {
 		$button.remove();
 		bootstrap();
+	}
+
+	// show Privacy Policy
+	var queryParams = queryStringUtils.parse( queryString ),
+		privacyPolicyParam = queryParams.privacy;
+
+	if ( privacyPolicyParam ) {
+		var footerCtrl = angular.element( document.querySelector( "footer" ) ).controller();
+		if ( footerCtrl ) {
+			footerCtrl.openPrivacyPolicyModal();
+		}
 	}
 } );
 
