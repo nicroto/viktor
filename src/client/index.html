@@ -96,7 +96,9 @@
 <!-- Google API (url shortening etc.) -->
 <script>
 	function initGoogleApi () {
-		window.initGoogleApiAngular();
+        if (window.initGoogleApiAngular) {
+    		window.initGoogleApiAngular();
+        }
 	}
 </script>
 <script src="https://apis.google.com/js/client.js?onload=initGoogleApi"></script>

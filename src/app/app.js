@@ -1,3 +1,5 @@
+/* jshint -W117 */
+
 'use strict';
 
 var angular = require( "angular" ),
@@ -56,6 +58,7 @@ angular.element( document ).ready( function () {
 		$button.one( "click", function() {
 			$button.remove();
 			bootstrap();
+			initGoogleApi();
 		} );		
 	} else {
 		$button.remove();
