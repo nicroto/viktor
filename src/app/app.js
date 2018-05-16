@@ -15,6 +15,7 @@ var angular = require( "angular" ),
 	patchSharing = require( "non-npm-patch-sharing" ),
 	AudioContext = global.AudioContext || global.webkitAudioContext,
 	is_iOS = /(iPad|iPhone|iPod)/g.test( navigator.userAgent ),
+	is_chrome = /Chrome/.test( navigator.userAgent ) && /Google Inc/.test( navigator.vendor ),
 	queryString = window.location.search.substr( 1 ),
 	dawEngine,
 	patchLibrary,
@@ -50,7 +51,7 @@ app.factory( "patchLibrary", function() {
 angular.element( document ).ready( function () {
 	var $button = angular.element( document.querySelector( "#loadSynthButton" ) );
 
-	if ( is_iOS ) {
+	if ( is_iOS || is_chrome ) {
 		$button.removeClass( "hide" );
 		$button.one( "click", function() {
 			$button.remove();
