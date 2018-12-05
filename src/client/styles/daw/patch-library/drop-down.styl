@@ -1,3 +1,5 @@
+@import "../../variables"
+
 #patchesDropDown
 	display: inline-block
 	.arrow-button
@@ -8,7 +10,7 @@
 	.display-container
 		display: inline-block
 		border: solid 1px #3D3D3D
-		width: 270px
+		width: $preset-library-width
 		background-color: green
 		-webkit-box-shadow: inset 2px 2px 31px 2px rgba(0,0,0,0.57)
 		-moz-box-shadow: inset 2px 2px 31px 2px rgba(0,0,0,0.57)
@@ -27,13 +29,14 @@
 		font-family: "orbitron_light"
 		text-shadow: 2px 2px rgba(6, 6, 6, 0.13)
 	.dropdown-menu
-		width: 270px
+		width: $preset-library-width
 		background-color: $panel-grey
 		color: $panel-text-grey
 		border: solid 1px #8e8e8e
 		padding: 20px
 		font-size: 1.1em
-		overflow: hidden
+		overflow: scroll
+		height: 346px
 		> li
 			line-height: 1.62857143
 			border-bottom: solid 1px rgba(255,255,255,0.1)

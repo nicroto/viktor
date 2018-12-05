@@ -1,0 +1,56 @@
+
+$horizontal-ad-width = 655px
+$horizontal-ad-height = 81px
+$vertical-ad-width = 250px
+$vertical-ad-height = 250px
+
+body > a
+	position: fixed
+	bottom: 0
+	left: 50%
+	width: $horizontal-ad-width
+	height: $horizontal-ad-height
+
+	& > img
+		position: relative
+		left: -50%
+		width: $horizontal-ad-width
+		height: $horizontal-ad-height
+		margin-top: 0px
+		opacity: 0.2
+		transform: scale(0.5)
+		transition: all 0.2s
+
+		&:hover
+			margin-top: -30px
+			opacity: 1
+			transform: scale(1)
+			transition: all 0.5s
+
+body > div.ad
+	position: absolute
+	top: 187px
+
+	&.ad-left
+		left: 0
+
+		img
+			margin-left: -38px
+
+	&.ad-right
+		right: 0
+
+		img
+			margin-right: -38px
+	
+	img
+		opacity: 0.2
+		transform: scale(0.5)
+		transition: all 0.2s
+
+		&:hover
+			margin-left: 0
+			margin-right: 0
+			opacity: 1
+			transform: scale(1)
+			transition: all 0.5s

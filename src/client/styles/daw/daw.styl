@@ -3,32 +3,43 @@
 @import "patch-library/*"
 @import "t-shirts/*"
 
-body #dawContainer
-	position: relative
-	width: $panel-width
-	height: $panel-height
-	margin-top: 24px
-	margin-left: auto
-	margin-right: auto
-	padding-bottom: 195px
-	border-radius: 14px
-	background-position: 50% 50%
-	background-repeat: none
-	background-image: url("../images/synth-base-panel.jpg")
-	background-size: contain
-	box-shadow: 0px 10px 28px rgba( 0, 0, 0, 0.8 )
-	color: #eee
+body
 
-	#upperRow
-		width: 95.5%
+	.daw-container-outer
+		position: relative
+		width: $panel-width
+		height: $panel-height - 20px
+		margin-top: -20px
+		margin-left: auto
+		margin-right: auto
 
-		>div
-			padding: 0
+		#dawContainer
+			position: relative
+			width: $panel-width
+			height: $panel-height
+			margin-top: 20px
+			margin-left: auto
+			margin-right: auto
+			padding-bottom: 195px
+			border-radius: 14px
+			background-position: 50% 50%
+			background-repeat: none
+			background-image: url("../images/synth-base-panel.jpg")
+			background-size: contain
+			box-shadow: 0px 10px 28px rgba( 0, 0, 0, 0.8 )
+			color: #eee
+			transform: scale(0.9)
 
-		.top-row-item
-			margin-top: 15px
+			#upperRow
+				width: 95.5%
 
-	#bottomRow
-		position: absolute
-		bottom: 0
-		width: 100%
+				>div
+					padding: 0
+
+				.top-row-item
+					margin-top: 15px
+
+			#bottomRow
+				position: absolute
+				bottom: 10px
+				width: 100%

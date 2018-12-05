@@ -21,6 +21,9 @@ var angular = require( "angular" ),
 	queryString = window.location.search.substr( 1 ),
 	dawEngine,
 	patchLibrary,
+	globalVars = {
+		sizeRatio: 1200 / 1200
+	},
 	bootstrap = function() {
 		var result = NV1Engine.create( AudioContext, store );
 
@@ -41,6 +44,10 @@ global.name = "NG_DEFER_BOOTSTRAP!";
 app.config( [ "dawEngineProvider", function( dawEngineProvider ) {
 	dawEngineProvider.dawEngine = dawEngine;
 } ] );
+
+app.factory( "globalVars", function() {
+	return globalVars;
+} );
 
 app.factory( "patchSharing", function() {
 	return patchSharing;

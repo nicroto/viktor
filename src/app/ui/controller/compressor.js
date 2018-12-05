@@ -2,7 +2,7 @@
 
 module.exports = function( mod ) {
 
-	mod.controller( "CompressorCtrl", [ "$scope", "dawEngine", "patchLibrary", function( $scope, dawEngine, patchLibrary ) {
+	mod.controller( "CompressorCtrl", [ "$scope", "globalVars", "dawEngine", "patchLibrary", function( $scope, globalVars, dawEngine, patchLibrary ) {
 		var self = this,
 			settingsChangeHandler = function( newValue, oldValue ) {
 				if ( newValue === oldValue ) {
@@ -53,6 +53,8 @@ module.exports = function( mod ) {
 				} );
 				watchers = [];
 			};
+
+		self.knobWidth = Math.round(45 * globalVars.sizeRatio);
 
 		pollSettings();
 
