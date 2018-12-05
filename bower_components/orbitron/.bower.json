@@ -7,7 +7,7 @@
     "branch": "master",
     "commit": "13e6a5222aa6818d81c9acd27edd701a2d744152"
   },
-  "_source": "git://github.com/theleagueof/orbitron.git",
+  "_source": "https://github.com/theleagueof/orbitron.git",
   "_target": "*",
   "_originalSource": "orbitron"
 }
