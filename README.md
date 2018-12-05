@@ -6,6 +6,8 @@ Synthesizer built on the Web Audio API.
 
 ### Setup
 
+**Node 4.1.1 is the latest supported version for development! Use the n tool (it's a node version manager) to install a specific version of node and to be able to switch.**
+
 Fork and clone the repo. `cd` into it and install npm dependencies:
 
 ```shell
