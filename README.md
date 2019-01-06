@@ -191,5 +191,5 @@ $ for i in *.png; do ffmpeg -i $i -vframes 1 -compression_level 100 $i-1.png; do
  * 0.1 (1st of June, 2015).
 
 ## License
-Copyright (c) 2015-2018 Nikolay Tsenkov  
+Copyright (c) 2015-2019 Nikolay Tsenkov  
 Licensed under the MIT license.
