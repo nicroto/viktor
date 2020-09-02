@@ -1,7 +1,8 @@
 'use strict';
 
 
-var midiData = require( "./midi-data" ),
+var GLOBALS = require( "globals" ),
+	midiData = require( "./midi-data" ),
 	selectedSong = midiData[
 		Math.round (Math.random() * (midiData.length - 1))
 	].tracks[ 0 ].notes,
@@ -33,6 +34,7 @@ module.exports = function( mod ) {
 				"email=" + encodeURIComponent (self.email),
 				"list=" + encodeURIComponent (list),
 				"hp=" + encodeURIComponent (self.hp),
+				"api_key=" + encodeURIComponent (GLOBALS.EMAILLIST_API_KEY),
 				"boolean=true",
 			].join ("&");
 
