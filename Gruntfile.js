@@ -12,10 +12,12 @@ module.exports = function(grunt) {
 		clean: {
 			dev: [
 				'src/server/client/index.html',
-				'src/server/client/css',
 				'src/server/client/images',
 				'src/server/client/impulses',
 				'src/server/client/js/app.js'
+			],
+			devStyles: [
+				'src/server/client/css'
 			],
 			build: ['build/']
 		},
@@ -91,9 +93,13 @@ module.exports = function(grunt) {
 			}
 		},
 		watch: {
-			client: {
-				files: ['src/app/**/*', 'src/client/**/*', 'non-npm/**/*'],
+			clientNonStyles: {
+				files: ['src/app/**/*', 'src/client/images/*', 'src/client/index.html', 'non-npm/**/*'],
 				tasks: ['devRebuild']
+			},
+			clientStyles: {
+				files: ['src/client/styles/*'],
+				tasks: ['devRebuildStyle']
 			},
 			server: {
 				files:  [ 'src/server/**/*', '!src/server/client/**/*' ],
@@ -162,7 +168,9 @@ module.exports = function(grunt) {
 	grunt.registerTask('default', ['c', 'simplemocha', 'jshint:all']);
 
 	// start develop
-	grunt.registerTask('devRebuild', ['clean:dev', 'browserify:app_debug', 'stylus', 'copy']);
+	grunt.registerTask('devRebuildApp', ['clean:dev', 'browserify:app_debug', 'copy']);
+	grunt.registerTask('devRebuildStyle', ['clean:devStyles', 'stylus']);
+	grunt.registerTask('devRebuild', ['devRebuildApp', 'devRebuildStyle']);
 	grunt.registerTask('dev', ['devRebuild', 'express', 'watch']);
 
 	// build for website (output is minified)
