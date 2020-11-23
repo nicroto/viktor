@@ -174,7 +174,7 @@ module.exports = function(grunt) {
 	grunt.registerTask('dev', ['devRebuild', 'express', 'watch']);
 
 	// build for website (output is minified)
-	grunt.registerTask('webRebuild', ['clean:dev', 'browserify:app', 'stylus', 'copy']);
+	grunt.registerTask('webRebuild', ['clean:dev', 'clean:devStyles', 'browserify:app', 'stylus', 'copy']);
 	grunt.registerTask('web', ['clean:build', 'webRebuild', 'shell:update_website', 'clean:build', 'devRebuild']);
 
 	// shorthands
