@@ -142,7 +142,7 @@ module.exports = function(grunt) {
 	// grunt.registerTask('register-non-npm', 'load all non-npm modules as globally requestable modules', function() {
 	// 	// if async
 	// 	// var done = this.async();
-	// 	debugger;
+
 	// 	var packageJson = grunt.config.get( "pkg" ),
 	// 		nonNpm = packageJson.browser,
 	// 		names = Object.keys( packageJson.browser );
