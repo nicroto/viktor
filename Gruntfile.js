@@ -99,7 +99,7 @@ module.exports = function(grunt) {
 			},
 			clientStyles: {
 				files: ['src/client/styles/*'],
-				tasks: ['devRebuildStyle']
+				tasks: ['devRebuildStyles']
 			},
 			server: {
 				files:  [ 'src/server/**/*', '!src/server/client/**/*' ],
@@ -169,12 +169,12 @@ module.exports = function(grunt) {
 
 	// start develop
 	grunt.registerTask('devRebuildApp', ['clean:dev', 'browserify:app_debug', 'copy']);
-	grunt.registerTask('devRebuildStyle', ['clean:devStyles', 'stylus']);
-	grunt.registerTask('devRebuild', ['devRebuildApp', 'devRebuildStyle']);
+	grunt.registerTask('devRebuildStyles', ['clean:devStyles', 'stylus']);
+	grunt.registerTask('devRebuild', ['devRebuildApp', 'devRebuildStyles']);
 	grunt.registerTask('dev', ['devRebuild', 'express', 'watch']);
 
 	// build for website (output is minified)
-	grunt.registerTask('webRebuild', ['clean:dev', 'clean:devStyles', 'browserify:app', 'stylus', 'copy']);
+	grunt.registerTask('webRebuild', ['devRebuildApp', 'devRebuildStyles']);
 	grunt.registerTask('web', ['clean:build', 'webRebuild', 'shell:update_website', 'clean:build', 'devRebuild']);
 
 	// shorthands
