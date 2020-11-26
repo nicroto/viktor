@@ -4,32 +4,13 @@ $horizontal-ad-height = 81px
 $vertical-ad-width = 300px
 $vertical-ad-height = 250px
 
-body > a
-	position: fixed
-	bottom: 0
-	left: 50%
-	width: $horizontal-ad-width
-	height: $horizontal-ad-height
-
-	& > img
-		position: relative
-		left: -50%
-		width: $horizontal-ad-width
-		height: $horizontal-ad-height
-		margin-top: 0px
-		opacity: 0.2
-		transform: scale(0.5)
-		transition: all 0.2s
-
-		&:hover
-			margin-top: -30px
-			opacity: 1
-			transform: scale(1)
-			transition: all 0.5s
 
 body > div.ad
 	position: absolute
-	top: 187px
+
+	&.ad-left
+	&.ad-right
+		top: 187px
 
 	&.ad-left
 		left: 0
@@ -54,3 +35,28 @@ body > div.ad
 			opacity: 1
 			transform: scale(1)
 			transition: all 0.5s
+
+	&.ad-bottom
+
+		a
+			position: fixed
+			bottom: 0
+			left: 50%
+
+			& > div
+				position: relative
+				left: -50%
+				margin-top: 0px
+				color: #c5c2c2
+				opacity: 0.7
+				transform: scale(0.8)
+				transition: all 0.2s
+
+				h3
+					display: inline-block
+
+				&:hover
+					margin-top: -30px
+					opacity: 1
+					transform: scale(1)
+					transition: all 0.5s
