@@ -2,7 +2,7 @@
 $horizontal-ad-width = 655px
 $horizontal-ad-height = 81px
 $vertical-ad-width = 300px
-$vertical-ad-height = 250px
+$vertical-ad-height = 300px
 
 
 body > div.ad
@@ -18,14 +18,20 @@ body > div.ad
 		img
 			margin-left: -38px
 
+			/* temporary */
+			&:hover
+				height: 250px
+
 	&.ad-right
 		right: 0
 
 		img
 			margin-right: -38px
-	
+
 	img
-		opacity: 0.2
+		opacity: 0.1
+		width: $vertical-ad-width
+		height: $vertical-ad-height
 		transform: scale(0.40)
 		transition: all 0.2s
 
