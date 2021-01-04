@@ -1,14 +1,12 @@
 'use strict';
 
 
-var GLOBALS = require( "globals" ),
-	Typed = require( "typedjs" );
+var Typed = require( "typedjs" );
 
 
 module.exports = function( mod ) {
 
 	mod.controller( "TypedAdController", [ "$scope", function ($scope) {
-		var self = this;
 
 		$scope.options = {
 			strings: [
@@ -31,7 +29,7 @@ module.exports = function( mod ) {
 			restrict: "E",
 			replace: true,
 			template: $templateCache.get( "typed-ad.html" ),
-			link: function ( $scope, $element ) {
+			link: function ( $scope ) {
 
 				$scope.typedObj = new Typed ( ".type-in-here", $scope.options);
 			}
