@@ -52344,6 +52344,7 @@ var PREVIOUS_PRESET_ACTION = "PREVIOUS_PRESET",
 		88: "X",
 		68: "D",
 		67: "C",
+		70: "F",
 		86: "V",
 		71: "G",
 		66: "B",
@@ -52356,13 +52357,15 @@ var PREVIOUS_PRESET_ACTION = "PREVIOUS_PRESET",
 		190: ".",
 		186: ";",
 		191: "/",
+		222: "'",
 		81: "Q",
 		50: "2",
 		87: "W",
 		51: "3",
 		69: "E",
-		82: "R",
+		52: "4",
 		53: "5",
+		82: "R",
 		84: "T",
 		54: "6",
 		89: "Y",
@@ -52373,52 +52376,49 @@ var PREVIOUS_PRESET_ACTION = "PREVIOUS_PRESET",
 		79: "O",
 		48: "0",
 		80: "P",
+		189: "-",
 		219: "[",
-		174: "+",
 		221: "]",
 
 		37: "LeftArrow",
 		39: "RightArrow"
 	},
 	SYMBOL_NOTENUM_MAP = {
-		"Z": 60,
-			"S": 61,
-		"X": 62,
-			"D": 63,
-		"C": 64,
-		"V": 65,
-			"G": 66,
-		"B": 67,
-			"H": 68,
-		"N": 69,
-			"J": 70,
-		"M": 71,
-		",": 72,
-			"L": 73,
-		".": 74,
-			";": 75,
-		"/": 76,
-
-		"Q": 84,
-			"2": 85,
-		"W": 86,
-			"3": 87,
-		"E": 88,
-		"R": 89,
-			"5": 90,
-		"T": 91,
-			"6": 92,
-		"Y": 93,
-			"7": 94,
-		"U": 95,
-		"I": 96,
-			"9": 97,
-		"O": 98,
-			"0": 99,
-		"P": 100,
-		"[": 101,
-			"+": 102,
-		"]": 103
+		"Q": 60,
+			"2": 61,
+		"W": 62,
+			"3": 63,
+		"E": 64,
+		"R": 65,
+			"5": 66,
+		"T": 67,
+			"6": 68,
+		"Y": 69,
+			"7": 70,
+		"U": 71,
+		"I": 72,
+			"9": 73,
+		"O": 74,
+			"0": 75,
+		"P": 76,
+		"Z": 77,
+			"S": 78,
+		"X": 79,
+			"D": 80,
+		"C": 81,
+			"F": 82,
+		"V": 83,
+		"B": 84,
+			"H": 85,
+		"N": 86,
+			"J": 87,
+		"M": 88,
+		",": 89,
+			"L": 90,
+		".": 91,
+			";": 92,
+		"/": 93,
+			"'": 94
 	},
 	SYMBOL_CONTROL_MAP = {
 		"LeftArrow": PREVIOUS_PRESET_ACTION,
@@ -61386,14 +61386,12 @@ module.exports = ngModule;
 'use strict';
 
 
-var GLOBALS = require( "globals" ),
-	Typed = require( "typedjs" );
+var Typed = require( "typedjs" );
 
 
 module.exports = function( mod ) {
 
 	mod.controller( "TypedAdController", [ "$scope", function ($scope) {
-		var self = this;
 
 		$scope.options = {
 			strings: [
@@ -61416,14 +61414,14 @@ module.exports = function( mod ) {
 			restrict: "E",
 			replace: true,
 			template: $templateCache.get( "typed-ad.html" ),
-			link: function ( $scope, $element ) {
+			link: function ( $scope ) {
 
 				$scope.typedObj = new Typed ( ".type-in-here", $scope.options);
 			}
 		};
 	} ] );
 };
-},{"globals":37,"typedjs":14}],87:[function(require,module,exports){
+},{"typedjs":14}],87:[function(require,module,exports){
 'use strict';
 
 var angular = require( "angular" ),
