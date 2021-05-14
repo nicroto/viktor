@@ -52891,7 +52891,8 @@ var angular = require( "angular" ),
 		require( "./module/patch-library/module" ).name,
 		require( "./module/instruments/synth/module" ).name,
 		require( "./module/maillist/module" ).name,
-		require( "./module/typed-ad/module" ).name,
+		// require( "./module/typed-ad/module" ).name,
+		require( "./module/typed-ad-custom-build/module" ).name,
 		require( "./module/footer/module" ).name,
 		require( "./module/t-shirts/module" ).name,
 
@@ -52953,7 +52954,7 @@ require( "./controller/modulation-wheel" )( mod );
 require( "./controller/keyboard" )( mod );
 
 module.exports = mod;
-},{"./controller/compressor":41,"./controller/delay":42,"./controller/keyboard":43,"./controller/master-controls":44,"./controller/master-volume":45,"./controller/modulation-wheel":46,"./controller/pitch-bend":47,"./controller/reverb":48,"./module/footer/module":52,"./module/instruments/synth/module":62,"./module/maillist/module":73,"./module/patch-library/module":77,"./module/settings/module":81,"./module/t-shirts/module":84,"./module/typed-ad/module":87,"./template/compressor.html":89,"./template/daw.html":90,"./template/delay.html":91,"./template/keyboard.html":92,"./template/master-controls.html":93,"./template/master-volume.html":94,"./template/modulation-wheel.html":95,"./template/pitch-bend.html":96,"./template/reverb.html":97,"angular":34,"viktor-nv1-engine":20}],51:[function(require,module,exports){
+},{"./controller/compressor":41,"./controller/delay":42,"./controller/keyboard":43,"./controller/master-controls":44,"./controller/master-volume":45,"./controller/modulation-wheel":46,"./controller/pitch-bend":47,"./controller/reverb":48,"./module/footer/module":52,"./module/instruments/synth/module":62,"./module/maillist/module":73,"./module/patch-library/module":77,"./module/settings/module":81,"./module/t-shirts/module":84,"./module/typed-ad-custom-build/module":87,"./template/compressor.html":89,"./template/daw.html":90,"./template/delay.html":91,"./template/keyboard.html":92,"./template/master-controls.html":93,"./template/master-volume.html":94,"./template/modulation-wheel.html":95,"./template/pitch-bend.html":96,"./template/reverb.html":97,"angular":34,"viktor-nv1-engine":20}],51:[function(require,module,exports){
 'use strict';
 
 module.exports = function( mod ) {
@@ -61396,9 +61397,8 @@ module.exports = function( mod ) {
 		$scope.options = {
 			strings: [
 				"Hey there!",
-				"Wanna record a full song?",
-				"Right in your browser?",
-				"Click right... HERE!"
+				"Do you want to build your own synth?",
+				"Click HERE to make an inquiry!"
 			],
 			typeSpeed: 80,
 			startDelay: 1200,
@@ -61440,12 +61440,11 @@ ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('typed-ad.html',
     '<div ng-controller="TypedAdController as ad" class="typed-ad-container container-fluid text-center">\n' +
     '    <div class="row text-center">\n' +
-    '        <a href="https://www.anrdoezrs.net/click-100274574-13899542" target="_blank">\n' +
+    '        <a href="https://forms.gle/7rr44vAqBrAKxUEU7" target="_blank">\n' +
     '            <div>\n' +
     '                <h3 class="type-in-here"></h3>\n' +
     '            </div>\n' +
     '        </a>\n' +
-    '        <img src="https://www.awltovhc.com/image-100274574-13899542" width="1" height="1" border="0"/>\n' +
     '    </div>\n' +
     '</div>');
 }]);
