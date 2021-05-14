@@ -23,7 +23,7 @@
   ],
   "main": "src/server/server",
   "engines": {
-    "node": ">= 0.10.0"
+    "node": "4.1.2"
   },
   "scripts": {
     "test": "grunt"
