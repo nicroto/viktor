@@ -1,4 +1,4 @@
-# Viktor NV-1 Synthesizer [![Build Status](https://secure.travis-ci.org/nicroto/viktor.png?branch=master)](http://travis-ci.org/nicroto/viktor)
+# Viktor NV-1 Synthesizer
 
 Synthesizer built on the Web Audio API.
 
