@@ -7729,7 +7729,7 @@ if (!window.FileReader) {
 }).call(global, undefined, undefined, undefined, undefined, function defineExport(ex) { module.exports = ex; });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"/Users/nikolay/repos/viktor/non-npm/angular-1-4-fixed.js":34}],13:[function(require,module,exports){
+},{"/Users/nikolay/repos/viktor/non-npm/angular-1-4-fixed.js":35}],13:[function(require,module,exports){
 ;(function(win){
 	var store = {},
 		doc = win.document,
@@ -8965,6 +8965,7 @@ var settingsConvertor = require( "viktor-nv1-settings-convertor" ),
 	CONST = require( "./engine/const" ),
 	patchLoader = require( "./engine/patch-loader" ),
 	MIDIController = require( "./engine/midi" ),
+	Arpeggiator = require( "./engine/arpeggiator" ),
 	Tuna = require( "./non-npm/tuna/tuna.js" );
 
 function DAW( AudioContext, instrumentTypes, selectedPatch ) {
@@ -8987,6 +8988,7 @@ function DAW( AudioContext, instrumentTypes, selectedPatch ) {
 	self.selectedPatch = selectedPatch;
 	self.instrumentTypes = instrumentTypes;
 	self.midiController = new MIDIController();
+	self.arpeggiator = new Arpeggiator( audioContext );
 	self.compressor = compressor;
 	self.delay = delay;
 	self.reverb = reverb;
@@ -9001,7 +9003,9 @@ function DAW( AudioContext, instrumentTypes, selectedPatch ) {
 		compressor: null,
 		delay: null,
 		reverb: null,
-		masterVolume: null
+		masterVolume: null,
+		arpeggiator: null,
+		tempo: null
 	};
 	self._patchChangeHandlers = [];
 
@@ -9013,6 +9017,10 @@ function DAW( AudioContext, instrumentTypes, selectedPatch ) {
 	self.delaySettings = CONST.DEFAULT_DELAY_SETTINGS;
 	self.reverbSettings = CONST.DEFAULT_REVERB_SETTINGS;
 	self.masterVolumeSettings = CONST.DEFAULT_MASTER_VOLUME_SETTINGS;
+	self.arpeggiatorSettings = CONST.DEFAULT_ARPEGGIATOR_SETTINGS;
+	self.tempoSettings = CONST.DEFAULT_TEMPO_SETTINGS;
+
+	self._setupArpeggiatorCallback();
 
 	self.init();
 }
@@ -9116,7 +9124,8 @@ DAW.prototype = {
 	propagateMidiMessage: function( eventType, parsed, rawEvent ) {
 		var self = this,
 			selectedInstrument = self.selectedInstrument,
-			externalHandlers = self.externalMidiMessageHandlers;
+			externalHandlers = self.externalMidiMessageHandlers,
+			arpeggiator = self.arpeggiator;
 
 		if ( eventType === "volume" ) {
 			self.masterVolumeSettings = {
@@ -9124,7 +9133,15 @@ DAW.prototype = {
 			};
 		}
 
-		selectedInstrument.onMidiMessage( eventType, parsed, rawEvent );
+		if ( eventType === "notePress" && arpeggiator.enabled ) {
+			if ( parsed.isNoteOn ) {
+				arpeggiator.addNote( parsed.noteFrequency, parsed.velocity );
+			} else {
+				arpeggiator.removeNote( parsed.noteFrequency );
+			}
+		} else {
+			selectedInstrument.onMidiMessage( eventType, parsed, rawEvent );
+		}
 
 		externalHandlers.forEach( function( handler ) {
 			handler( eventType, parsed, rawEvent );
@@ -9299,17 +9316,515 @@ DAW.prototype = {
 			}
 		} );
 
+		Object.defineProperty( self, "arpeggiatorSettings", {
+			get: function() {
+				var self = this;
+
+				return JSON.parse( JSON.stringify( self.settings.arpeggiator ) );
+			},
+			set: function( settings ) {
+				var self = this,
+					oldSettings = self.settings.arpeggiator ||
+						{ enabled: {}, hold: {}, reset: {}, direction: {}, rate: {}, range: {}, gate: {}, scale: {}, velSlope: {} },
+					arpeggiator = self.arpeggiator;
+
+				if ( oldSettings.enabled.value !== settings.enabled.value ) {
+					arpeggiator.enabled = ( settings.enabled.value === 1 );
+					if ( !arpeggiator.enabled ) {
+						arpeggiator.releaseAllNotes();
+					}
+				}
+				if ( oldSettings.hold.value !== settings.hold.value ) {
+					arpeggiator.hold = ( settings.hold.value === 1 );
+					if ( !arpeggiator.hold ) {
+						arpeggiator.releaseAllNotes();
+					}
+				}
+				if ( oldSettings.reset.value !== settings.reset.value ) {
+					arpeggiator.reset = ( settings.reset.value === 1 );
+				}
+				if ( oldSettings.direction.value !== settings.direction.value ) {
+					arpeggiator.direction = settings.direction.value;
+				}
+				if ( oldSettings.rate.value !== settings.rate.value ) {
+					arpeggiator.rate = settings.rate.value;
+				}
+				if ( oldSettings.range.value !== settings.range.value ) {
+					arpeggiator.range = settings.range.value;
+					arpeggiator._rebuildExpandedNotes();
+				}
+				if ( oldSettings.gate.value !== settings.gate.value ) {
+					arpeggiator.gate = settings.gate.value;
+				}
+				if ( oldSettings.scale.value !== settings.scale.value ) {
+					arpeggiator.scale = settings.scale.value;
+				}
+				if ( oldSettings.velSlope.value !== settings.velSlope.value ) {
+					arpeggiator.velSlope = settings.velSlope.value;
+				}
+
+				self.settings.arpeggiator = JSON.parse( JSON.stringify( settings ) );
+			}
+		} );
+
+		Object.defineProperty( self, "tempoSettings", {
+			get: function() {
+				var self = this;
+
+				return JSON.parse( JSON.stringify( self.settings.tempo ) );
+			},
+			set: function( settings ) {
+				var self = this,
+					oldSettings = self.settings.tempo || { bpm: {} },
+					arpeggiator = self.arpeggiator;
+
+				if ( oldSettings.bpm.value !== settings.bpm.value ) {
+					arpeggiator.bpm = settings.bpm.value;
+				}
+
+				self.settings.tempo = JSON.parse( JSON.stringify( settings ) );
+			}
+		} );
+
+	},
+
+	_setupArpeggiatorCallback: function() {
+		var self = this,
+			arpeggiator = self.arpeggiator;
+
+		arpeggiator.setNoteCallback( function( freq, velocity, isNoteOn, time ) {
+			var selectedInstrument = self.selectedInstrument;
+
+			if ( selectedInstrument ) {
+				selectedInstrument.onMidiMessage( "notePress", {
+					isNoteOn: isNoteOn,
+					noteFrequency: freq,
+					velocity: velocity,
+					time: time
+				} );
+			}
+		} );
 	}
 
 };
 
 module.exports = DAW;
-},{"./engine/const":16,"./engine/midi":17,"./engine/patch-loader":18,"./non-npm/tuna/tuna.js":19,"viktor-nv1-settings-convertor":33}],16:[function(require,module,exports){
+},{"./engine/arpeggiator":16,"./engine/const":17,"./engine/midi":18,"./engine/patch-loader":19,"./non-npm/tuna/tuna.js":20,"viktor-nv1-settings-convertor":34}],16:[function(require,module,exports){
+'use strict';
+
+var DIRECTION = {
+	UP: 0,
+	DOWN: 1,
+	UP_DOWN: 2,
+	DOWN_UP: 3,
+	RANDOM: 4
+};
+
+var RATE = {
+	QUARTER: 0,      // 1/4
+	EIGHTH: 1,       // 1/8
+	SIXTEENTH: 2,    // 1/16
+	EIGHTH_T: 3,     // 1/8 triplet
+	SIXTEENTH_T: 4   // 1/16 triplet
+};
+
+var SCALE = {
+	OFF: 0,
+	MAJOR: 1,
+	MINOR: 2,
+	PENTATONIC: 3,
+	BLUES: 4
+};
+
+var SCALE_INTERVALS = {
+	MAJOR: [ 0, 2, 4, 5, 7, 9, 11 ],
+	MINOR: [ 0, 2, 3, 5, 7, 8, 10 ],
+	PENTATONIC: [ 0, 2, 4, 7, 9 ],
+	BLUES: [ 0, 3, 5, 6, 7, 10 ]
+};
+
+function Arpeggiator( audioContext ) {
+	var self = this;
+
+	self.audioContext = audioContext;
+	self.enabled = false;
+	self.hold = false;
+	self.reset = true;
+	self.direction = DIRECTION.UP;
+	self.rate = RATE.EIGHTH;
+	self.range = 1;
+	self.gate = 0.8;
+	self.scale = SCALE.OFF;
+	self.velSlope = 0;
+	self.bpm = 120;
+
+	self.notePool = [];
+	self.expandedNotes = [];
+	self.currentStep = 0;
+	self.stepDirection = 1;
+	self.lastRandomIndex = -1;
+	self.schedulerTimerId = null;
+	self.nextNoteTime = 0;
+	self.noteCallback = null;
+	self.isRunning = false;
+
+	self.lookahead = 25.0;
+	self.scheduleAheadTime = 0.1;
+}
+
+Arpeggiator.prototype = {
+
+	setNoteCallback: function( callback ) {
+		var self = this;
+
+		self.noteCallback = callback;
+	},
+
+	addNote: function( freq, velocity ) {
+		var self = this,
+			notePool = self.notePool,
+			existingIndex = self._findNoteIndex( freq );
+
+		if ( existingIndex === -1 ) {
+			notePool.push( { freq: freq, velocity: velocity } );
+			notePool.sort( function( a, b ) {
+				return a.freq - b.freq;
+			} );
+			self._rebuildExpandedNotes();
+
+			if ( self.reset && notePool.length === 1 ) {
+				self.currentStep = 0;
+				self.stepDirection = 1;
+			}
+
+			if ( !self.isRunning && notePool.length > 0 ) {
+				self._start();
+			}
+		}
+	},
+
+	removeNote: function( freq ) {
+		var self = this,
+			notePool = self.notePool;
+
+		if ( self.hold ) {
+			return;
+		}
+
+		var index = self._findNoteIndex( freq );
+		if ( index !== -1 ) {
+			notePool.splice( index, 1 );
+			self._rebuildExpandedNotes();
+
+			if ( notePool.length === 0 ) {
+				self._stop();
+			}
+		}
+	},
+
+	releaseAllNotes: function() {
+		var self = this;
+
+		self.notePool = [];
+		self.expandedNotes = [];
+		self._stop();
+	},
+
+	_findNoteIndex: function( freq ) {
+		var self = this,
+			notePool = self.notePool;
+
+		for ( var i = 0; i < notePool.length; i++ ) {
+			if ( Math.abs( notePool[ i ].freq - freq ) < 0.01 ) {
+				return i;
+			}
+		}
+		return -1;
+	},
+
+	_rebuildExpandedNotes: function() {
+		var self = this,
+			notePool = self.notePool,
+			range = self.range,
+			expanded = [];
+
+		notePool.forEach( function( note ) {
+			for ( var octave = 0; octave < range; octave++ ) {
+				var multiplier = Math.pow( 2, octave );
+				expanded.push( {
+					freq: note.freq * multiplier,
+					velocity: note.velocity,
+					baseFreq: note.freq
+				} );
+			}
+		} );
+
+		expanded.sort( function( a, b ) {
+			return a.freq - b.freq;
+		} );
+
+		self.expandedNotes = expanded;
+
+		if ( self.currentStep >= expanded.length ) {
+			self.currentStep = 0;
+		}
+	},
+
+	_start: function() {
+		var self = this,
+			audioContext = self.audioContext;
+
+		if ( self.isRunning ) {
+			return;
+		}
+
+		self.isRunning = true;
+		self.nextNoteTime = audioContext.currentTime;
+		self._scheduler();
+	},
+
+	_stop: function() {
+		var self = this;
+
+		if ( !self.isRunning ) {
+			return;
+		}
+
+		self.isRunning = false;
+
+		if ( self.schedulerTimerId ) {
+			clearTimeout( self.schedulerTimerId );
+			self.schedulerTimerId = null;
+		}
+
+		self.currentStep = 0;
+		self.stepDirection = 1;
+	},
+
+	_scheduler: function() {
+		var self = this,
+			audioContext = self.audioContext;
+
+		if ( !self.isRunning ) {
+			return;
+		}
+
+		while ( self.nextNoteTime < audioContext.currentTime + self.scheduleAheadTime ) {
+			self._scheduleNote( self.nextNoteTime );
+			self._advanceStep();
+		}
+
+		self.schedulerTimerId = setTimeout( function() {
+			self._scheduler();
+		}, self.lookahead );
+	},
+
+	_scheduleNote: function( time ) {
+		var self = this,
+			expandedNotes = self.expandedNotes,
+			noteCallback = self.noteCallback;
+
+		if ( !noteCallback || expandedNotes.length === 0 ) {
+			return;
+		}
+
+		var noteIndex = self._getNextNoteIndex(),
+			note = expandedNotes[ noteIndex ],
+			freq = note.freq,
+			velocity = self._calculateVelocity( note.velocity, noteIndex, expandedNotes.length ),
+			noteDuration = self._getNoteDuration(),
+			gateDuration = noteDuration * self.gate;
+
+		if ( self.scale !== SCALE.OFF ) {
+			freq = self._applyScale( freq, note.baseFreq );
+		}
+
+		noteCallback( freq, velocity, true, time );
+		noteCallback( freq, 0, false, time + gateDuration );
+	},
+
+	_advanceStep: function() {
+		var self = this,
+			noteDuration = self._getNoteDuration();
+
+		self.nextNoteTime += noteDuration;
+		self._moveToNextStep();
+	},
+
+	_getNextNoteIndex: function() {
+		var self = this,
+			expandedNotes = self.expandedNotes,
+			direction = self.direction,
+			len = expandedNotes.length;
+
+		if ( len === 0 ) {
+			return 0;
+		}
+
+		var index = self.currentStep;
+
+		if ( direction === DIRECTION.DOWN ) {
+			index = len - 1 - self.currentStep;
+		} else if ( direction === DIRECTION.RANDOM ) {
+			var newIndex;
+			if ( len === 1 ) {
+				newIndex = 0;
+			} else {
+				do {
+					newIndex = Math.floor( Math.random() * len );
+				} while ( newIndex === self.lastRandomIndex );
+			}
+			self.lastRandomIndex = newIndex;
+			index = newIndex;
+		}
+
+		return Math.max( 0, Math.min( index, len - 1 ) );
+	},
+
+	_moveToNextStep: function() {
+		var self = this,
+			expandedNotes = self.expandedNotes,
+			direction = self.direction,
+			len = expandedNotes.length;
+
+		if ( len === 0 ) {
+			return;
+		}
+
+		if ( direction === DIRECTION.UP || direction === DIRECTION.DOWN ) {
+			self.currentStep = ( self.currentStep + 1 ) % len;
+		} else if ( direction === DIRECTION.UP_DOWN || direction === DIRECTION.DOWN_UP ) {
+			if ( len === 1 ) {
+				self.currentStep = 0;
+			} else {
+				self.currentStep += self.stepDirection;
+
+				if ( self.currentStep >= len - 1 ) {
+					self.currentStep = len - 1;
+					self.stepDirection = -1;
+				} else if ( self.currentStep <= 0 ) {
+					self.currentStep = 0;
+					self.stepDirection = 1;
+				}
+			}
+		}
+	},
+
+	_getNoteDuration: function() {
+		var self = this,
+			bpm = self.bpm,
+			rate = self.rate,
+			beatDuration = 60 / bpm;
+
+		switch ( rate ) {
+			case RATE.QUARTER:
+				return beatDuration;
+			case RATE.EIGHTH:
+				return beatDuration / 2;
+			case RATE.SIXTEENTH:
+				return beatDuration / 4;
+			case RATE.EIGHTH_T:
+				return beatDuration / 3;
+			case RATE.SIXTEENTH_T:
+				return beatDuration / 6;
+			default:
+				return beatDuration / 2;
+		}
+	},
+
+	_calculateVelocity: function( baseVelocity, stepIndex, totalSteps ) {
+		var self = this,
+			velSlope = self.velSlope;
+
+		if ( velSlope === 0 || totalSteps <= 1 ) {
+			return baseVelocity;
+		}
+
+		var position = stepIndex / ( totalSteps - 1 ),
+			slopeMultiplier = 1 + velSlope * ( position - 0.5 ),
+			outputVelocity = Math.round( baseVelocity * slopeMultiplier );
+
+		return Math.max( 1, Math.min( 127, outputVelocity ) );
+	},
+
+	_applyScale: function( freq, rootFreq ) {
+		var self = this,
+			scale = self.scale,
+			intervals;
+
+		switch ( scale ) {
+			case SCALE.MAJOR:
+				intervals = SCALE_INTERVALS.MAJOR;
+				break;
+			case SCALE.MINOR:
+				intervals = SCALE_INTERVALS.MINOR;
+				break;
+			case SCALE.PENTATONIC:
+				intervals = SCALE_INTERVALS.PENTATONIC;
+				break;
+			case SCALE.BLUES:
+				intervals = SCALE_INTERVALS.BLUES;
+				break;
+			default:
+				return freq;
+		}
+
+		var rootMidi = self._freqToMidi( rootFreq ),
+			noteMidi = self._freqToMidi( freq ),
+			rootPitchClass = rootMidi % 12,
+			notePitchClass = noteMidi % 12,
+			noteOctave = Math.floor( noteMidi / 12 ),
+			semitoneFromRoot = ( notePitchClass - rootPitchClass + 12 ) % 12,
+			closestInterval = self._findClosestInterval( semitoneFromRoot, intervals ),
+			quantizedPitchClass = ( rootPitchClass + closestInterval ) % 12,
+			quantizedMidi = noteOctave * 12 + quantizedPitchClass;
+
+		if ( quantizedMidi < noteMidi - 6 ) {
+			quantizedMidi += 12;
+		} else if ( quantizedMidi > noteMidi + 6 ) {
+			quantizedMidi -= 12;
+		}
+
+		return self._midiToFreq( quantizedMidi );
+	},
+
+	_findClosestInterval: function( semitone, intervals ) {
+		var closest = intervals[ 0 ],
+			minDist = 12;
+
+		for ( var i = 0; i < intervals.length; i++ ) {
+			var dist = Math.abs( intervals[ i ] - semitone );
+			if ( dist < minDist ) {
+				minDist = dist;
+				closest = intervals[ i ];
+			}
+		}
+
+		return closest;
+	},
+
+	_freqToMidi: function( freq ) {
+		return Math.round( 12 * Math.log2( freq / 440 ) + 69 );
+	},
+
+	_midiToFreq: function( midi ) {
+		return 440 * Math.pow( 2, ( midi - 69 ) / 12 );
+	}
+
+};
+
+Arpeggiator.DIRECTION = DIRECTION;
+Arpeggiator.RATE = RATE;
+Arpeggiator.SCALE = SCALE;
+
+module.exports = Arpeggiator;
+
+},{}],17:[function(require,module,exports){
 'use strict';
 
 module.exports = {
 
-	ENGINE_VERSION: 6,
+	ENGINE_VERSION: 7,
 
 	RANGE_LIBRARY: {
 		// ENGINE_VERSION_1
@@ -9811,6 +10326,128 @@ module.exports = {
 					}
 				}
 			}
+		},
+
+		ENGINE_VERSION_7: {
+			"daw": {
+				"pitch": {
+					"bend": [-200, 200]
+				},
+				"modulation": {
+					"rate": [0, 15]
+				},
+				"compressor": {
+					"threshold": [-60, 0],
+					"ratio": [1, 20],
+					"knee": [0, 20],
+					"attack": [0.01, 1000],
+					"release": [0.1, 1000],
+					"makeupGain": [0, 10],
+					"enabled": [0, 1]
+				},
+				"delay": {
+					"time": [0, 1000],
+					"feedback": [0, 0.9],
+					"dry": [0, 1],
+					"wet": [0, 1]
+				},
+				"reverb": {
+					"level": [0, 1]
+				},
+				"masterVolume": {
+					"level": [0, 1]
+				},
+				"arpeggiator": {
+					"enabled": [0, 1],
+					"hold": [0, 1],
+					"reset": [0, 1],
+					"direction": [0, 4],
+					"rate": [0, 4],
+					"range": [1, 3],
+					"gate": [0.1, 1],
+					"scale": [0, 4],
+					"velSlope": [-1, 1]
+				},
+				"tempo": {
+					"bpm": [60, 180]
+				}
+			},
+			"instruments": {
+				"synth": {
+					"polyphony": {
+						"voiceCount": [1, 10],
+						"sustain": [0, 1]
+					},
+					"modulation": {
+						"waveform": [0, 5],
+						"portamento": [0, 0.16666666666666666],
+						"rate": [0, 15]
+					},
+					"oscillator": {
+						"osc1": {
+							"range": [-4, 2],
+							"fineDetune": [-800, 800],
+							"waveform": [0, 5]
+						},
+						"osc2": {
+							"range": [-4, 2],
+							"fineDetune": [-800, 800],
+							"waveform": [0, 5]
+						},
+						"osc3": {
+							"range": [-4, 2],
+							"fineDetune": [-800, 800],
+							"waveform": [0, 5]
+						}
+					},
+					"mixer": {
+						"volume1": {
+							"enabled": [0, 1],
+							"level": [0, 1]
+						},
+						"volume2": {
+							"enabled": [0, 1],
+							"level": [0, 1]
+						},
+						"volume3": {
+							"enabled": [0, 1],
+							"level": [0, 1]
+						}
+					},
+					"noise": {
+						"enabled": [0, 1],
+						"level": [0, 1],
+						"type": [0, 2]
+					},
+					"envelopes": {
+						"primary": {
+							"attack": [0, 2],
+							"decay": [0.002, 2],
+							"sustain": [0, 1],
+							"release": [0, 2]
+						},
+						"filter": {
+							"attack": [0, 2],
+							"decay": [0, 2],
+							"sustain": [0.001, 1],
+							"release": [0, 2]
+						}
+					},
+					"filter": {
+						"cutoff": [0, 8000],
+						"emphasis": [0.4, 40],
+						"envAmount": [0, 1]
+					},
+					"lfo": {
+						"waveform": [0, 5],
+						"rate": [1, 25],
+						"amount": [0, 1]
+					},
+					"pitch": {
+						"bend": [-200, 200]
+					}
+				}
+			}
 		}
 	},
 
@@ -9886,6 +10523,50 @@ module.exports = {
 			range: [ 0, 1 ]
 		}
 	},
+	DEFAULT_ARPEGGIATOR_SETTINGS: {
+		enabled: {
+			value: 0,
+			range: [ 0, 1 ]
+		},
+		hold: {
+			value: 0,
+			range: [ 0, 1 ]
+		},
+		reset: {
+			value: 1,
+			range: [ 0, 1 ]
+		},
+		direction: {
+			value: 0,
+			range: [ 0, 4 ]
+		},
+		rate: {
+			value: 1,
+			range: [ 0, 4 ]
+		},
+		range: {
+			value: 1,
+			range: [ 1, 3 ]
+		},
+		gate: {
+			value: 0.8,
+			range: [ 0.1, 1 ]
+		},
+		scale: {
+			value: 0,
+			range: [ 0, 4 ]
+		},
+		velSlope: {
+			value: 0,
+			range: [ -1, 1 ]
+		}
+	},
+	DEFAULT_TEMPO_SETTINGS: {
+		bpm: {
+			value: 120,
+			range: [ 60, 180 ]
+		}
+	},
 
 	TUNA_COMPRESSOR_DEFAULT_SETTINGS: {
 		threshold: -20,
@@ -9916,7 +10597,7 @@ module.exports = {
 	}
 
 };
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 'use strict';
 
 function MIDIController() {
@@ -10110,7 +10791,7 @@ MIDIController.prototype = {
 };
 
 module.exports = MIDIController;
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 'use strict';
 
 var settingsConvertor = require( "viktor-nv1-settings-convertor" ),
@@ -10121,6 +10802,7 @@ var settingsConvertor = require( "viktor-nv1-settings-convertor" ),
 	ENGINE_VERSION_4 = 4,
 	ENGINE_VERSION_5 = 5,
 	ENGINE_VERSION_6 = 6,
+	ENGINE_VERSION_7 = 7,
 	CURRENT_ENGINE_VERSION = "ENGINE_VERSION_" + CONST.ENGINE_VERSION;
 
 var patchLoader = {
@@ -10154,6 +10836,10 @@ var patchLoader = {
 
 			case ENGINE_VERSION_6:
 				alteredPatch = self._loadVersion6Patch( alteredPatch );
+				break;
+
+			case ENGINE_VERSION_7:
+				alteredPatch = self._loadVersion7Patch( alteredPatch );
 				break;
 
 			default:
@@ -10195,6 +10881,7 @@ var patchLoader = {
 
 		self._defaultPatchToMonosynth( patch );
 		self._defaultPatchToNoCompression( patch );
+		self._defaultPatchToNoArpeggiator( patch );
 		self._transposeRanges( patch, newRangeLibrary );
 
 		return patch;
@@ -10207,6 +10894,7 @@ var patchLoader = {
 
 		self._defaultPatchToMonosynth( patch );
 		self._defaultPatchToNoCompression( patch );
+		self._defaultPatchToNoArpeggiator( patch );
 		self._applyRange( patch, rangeLibrary );
 
 		// if the current version of the engine is newer
@@ -10227,6 +10915,7 @@ var patchLoader = {
 			range: newRangeLibrary.instruments.synth.polyphony.sustain
 		};
 		self._defaultPatchToNoCompression( patch );
+		self._defaultPatchToNoArpeggiator( patch );
 
 		self._applyRange( patch, rangeLibrary );
 
@@ -10244,6 +10933,7 @@ var patchLoader = {
 			newRangeLibrary = CONST.RANGE_LIBRARY[ CURRENT_ENGINE_VERSION ];
 
 		self._defaultPatchToNoCompression( patch );
+		self._defaultPatchToNoArpeggiator( patch );
 		self._applyRange( patch, rangeLibrary );
 
 		// if the current version of the engine is newer
@@ -10260,6 +10950,7 @@ var patchLoader = {
 			newRangeLibrary = CONST.RANGE_LIBRARY[ CURRENT_ENGINE_VERSION ];
 
 		self._defaultPatchToNoCompression( patch );
+		self._defaultPatchToNoArpeggiator( patch );
 		self._applyRange( patch, rangeLibrary );
 
 		// if the current version of the engine is newer
@@ -10273,6 +10964,22 @@ var patchLoader = {
 	_loadVersion6Patch: function( patch ) {
 		var self = this,
 			rangeLibrary = CONST.RANGE_LIBRARY.ENGINE_VERSION_6,
+			newRangeLibrary = CONST.RANGE_LIBRARY[ CURRENT_ENGINE_VERSION ];
+
+		self._defaultPatchToNoArpeggiator( patch );
+		self._applyRange( patch, rangeLibrary );
+
+		// if the current version of the engine is newer
+		if ( rangeLibrary !== newRangeLibrary ) {
+			self._transposeRanges( patch, newRangeLibrary );
+		}
+
+		return patch;
+	},
+
+	_loadVersion7Patch: function( patch ) {
+		var self = this,
+			rangeLibrary = CONST.RANGE_LIBRARY.ENGINE_VERSION_7,
 			newRangeLibrary = CONST.RANGE_LIBRARY[ CURRENT_ENGINE_VERSION ];
 
 		self._applyRange( patch, rangeLibrary );
@@ -10302,6 +11009,11 @@ var patchLoader = {
 
 	_defaultPatchToNoCompression: function( patch ) {
 		patch.daw.compressor = CONST.DEFAULT_COMPRESSOR_SETTINGS;
+	},
+
+	_defaultPatchToNoArpeggiator: function( patch ) {
+		patch.daw.arpeggiator = CONST.DEFAULT_ARPEGGIATOR_SETTINGS;
+		patch.daw.tempo = CONST.DEFAULT_TEMPO_SETTINGS;
 	},
 
 	_transposeRanges: function( patch, rangeLibrary ) {
@@ -10357,7 +11069,7 @@ var patchLoader = {
 };
 
 module.exports = patchLoader;
-},{"./const":16,"viktor-nv1-settings-convertor":33}],19:[function(require,module,exports){
+},{"./const":17,"viktor-nv1-settings-convertor":34}],20:[function(require,module,exports){
 
 /*
     Copyright (c) 2012 DinahMoe AB
@@ -12111,7 +12823,7 @@ Tuna.toString = Tuna.prototype.toString = function () {
 };
 
 module.exports = Tuna;
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 'use strict';
 
 var DAW = require( "./daw/daw" ),
@@ -12141,7 +12853,7 @@ exports.create = function( AudioContext, store ) {
 	};
 
 };
-},{"./daw/daw":15,"./instruments/synth/instrument":30,"./patches/defaults":31,"./patches/library":32}],21:[function(require,module,exports){
+},{"./daw/daw":15,"./instruments/synth/instrument":31,"./patches/defaults":32,"./patches/library":33}],22:[function(require,module,exports){
 'use strict';
 
 var SEMITONE_CENTS = 100;
@@ -12376,7 +13088,7 @@ module.exports = {
 	FAKE_ZERO: 0.00001
 
 };
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 'use strict';
 
 var CONST = require( "./const" );
@@ -12438,7 +13150,7 @@ Envelope.prototype = {
 };
 
 module.exports = Envelope;
-},{"./const":21}],23:[function(require,module,exports){
+},{"./const":22}],24:[function(require,module,exports){
 'use strict';
 
 function Filter( audioContext ) {
@@ -12451,7 +13163,7 @@ function Filter( audioContext ) {
 }
 
 module.exports = Filter;
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 'use strict';
 
 var DEFAULT_FREQUENCY_RANGE = 500;
@@ -12549,7 +13261,7 @@ LFO.prototype = {
 };
 
 module.exports = LFO;
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 'use strict';
 
 function Mix( audioContext, firstMixNode, secondMixNode ) {
@@ -12588,7 +13300,7 @@ function Mix( audioContext, firstMixNode, secondMixNode ) {
 }
 
 module.exports = Mix;
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 'use strict';
 
 var NOISE_TYPE = [
@@ -12736,7 +13448,7 @@ Noise.prototype = {
 };
 
 module.exports = Noise;
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 /* jshint -W083 */
 
 'use strict';
@@ -12980,7 +13692,7 @@ OscillatorBank.prototype = {
 };
 
 module.exports = OscillatorBank;
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 /* jshint -W098 */
 
 'use strict';
@@ -13096,7 +13808,7 @@ Voice.prototype = {
 		if ( eventType === "notePress" ) {
 			var methodName = ( parsed.isNoteOn ) ? "onNoteOn" : "onNoteOff";
 
-			self[ methodName ]( parsed.noteFrequency, parsed.velocity );
+			self[ methodName ]( parsed.noteFrequency, parsed.velocity, parsed.time );
 		} else if ( eventType === "pitchBend" ) {
 			self.onPitchBend( parsed.pitchBend );
 		} else if ( eventType === "modulationWheel" ) {
@@ -13104,7 +13816,7 @@ Voice.prototype = {
 		}
 	},
 
-	onNoteOn: function( noteFrequency, velocity ) {
+	onNoteOn: function( noteFrequency, velocity, time ) {
 		var self = this,
 			oscillatorBank = self.oscillatorBank,
 			gainEnvelope = self.gainEnvelope,
@@ -13138,15 +13850,15 @@ Voice.prototype = {
 			portamento: portamento
 		};
 
-		gainEnvelope.start( attackPeak );
-		filterEnvelope.start( attackPeak );
+		gainEnvelope.start( attackPeak, time );
+		filterEnvelope.start( attackPeak, time );
 
 		if ( self._isSustainOn ) {
 			self.sustainedNote = noteFrequency;
 		}
 	},
 
-	onNoteOff: function( noteFrequency, velocity ) {
+	onNoteOff: function( noteFrequency, velocity, time ) {
 		var self = this,
 			oscillatorBank = self.oscillatorBank,
 			gainEnvelope = self.gainEnvelope,
@@ -13160,8 +13872,8 @@ Voice.prototype = {
 		}
 
 		if ( pressedNotes.length === 0 && !self._isSustainOn ) {
-			gainEnvelope.end();
-			filterEnvelope.end();
+			gainEnvelope.end( time );
+			filterEnvelope.end( time );
 		} else if ( pressedNotes.length > 0 ) {
 			noteFrequency = pressedNotes[ pressedNotes.length - 1 ];
 
@@ -13487,7 +14199,7 @@ Voice.prototype = {
 };
 
 module.exports = Voice;
-},{"./const":21,"./envelope":22,"./filter":23,"./lfo":24,"./mix":25,"./noise":26,"./oscillator-bank":27,"./waveform-source":29,"viktor-nv1-settings-convertor":33}],29:[function(require,module,exports){
+},{"./const":22,"./envelope":23,"./filter":24,"./lfo":25,"./mix":26,"./noise":27,"./oscillator-bank":28,"./waveform-source":30,"viktor-nv1-settings-convertor":34}],30:[function(require,module,exports){
 'use strict';
 
 function WaveformSource( audioContext, customForms ) {
@@ -13526,7 +14238,7 @@ WaveformSource.prototype = {
 };
 
 module.exports = WaveformSource;
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 /* jshint -W098 */
 
 'use strict';
@@ -13630,7 +14342,7 @@ Instrument.prototype = {
 		if ( eventType === "notePress" ) {
 			var methodName = ( parsed.isNoteOn ) ? "onNoteOn" : "onNoteOff";
 
-			self[ methodName ]( parsed.noteFrequency, parsed.velocity );
+			self[ methodName ]( parsed.noteFrequency, parsed.velocity, parsed.time );
 		} else if ( eventType === "sustain" ) {
 			var polyphonySettings = self.polyphonySettings;
 
@@ -13644,7 +14356,7 @@ Instrument.prototype = {
 		}
 	},
 
-	onNoteOn: function( noteFrequency, velocity ) {
+	onNoteOn: function( noteFrequency, velocity, time ) {
 		var self = this,
 			voicesInUse = self.voicesInUse,
 			voicesAvailable = self.voicesAvailable,
@@ -13684,14 +14396,14 @@ Instrument.prototype = {
 
 		voicesInUse.push( availableVoice );
 
-		availableVoice.onNoteOn( noteFrequency, velocity );
+		availableVoice.onNoteOn( noteFrequency, velocity, time );
 		frequencyVoiceMap[ noteFrequency ] = availableVoice;
 		if ( isSustainOn ) {
 			sustainedFrequencyVoiceMap[ noteFrequency ] = availableVoice;
 		}
 	},
 
-	onNoteOff: function( noteFrequency, velocity ) {
+	onNoteOff: function( noteFrequency, velocity, time ) {
 		var self = this,
 			voicesInUse = self.voicesInUse,
 			voicesAvailable = self.voicesAvailable,
@@ -13705,7 +14417,7 @@ Instrument.prototype = {
 			return;
 		}
 
-		usedVoice.onNoteOff( noteFrequency, velocity );
+		usedVoice.onNoteOff( noteFrequency, velocity, time );
 		delete frequencyVoiceMap[ noteFrequency ];
 
 		if ( usedVoice.pressedNotes.length ) {
@@ -13846,7 +14558,7 @@ Instrument.prototype = {
 };
 
 module.exports = Instrument;
-},{"./engine/const":21,"./engine/voice":28}],31:[function(require,module,exports){
+},{"./engine/const":22,"./engine/voice":29}],32:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -23146,7 +23858,7 @@ module.exports = {
 	}
 
 };
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 'use strict';
 
 var UNSAVED_NAME = "Custom Unsaved";
@@ -23424,7 +24136,7 @@ Library.prototype = {
 };
 
 module.exports = Library;
-},{}],33:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -23454,7 +24166,7 @@ module.exports = {
 	}
 
 };
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 (function (global){
 ;__browserify_shim_require__=require;(function browserifyShim(module, exports, require, define, browserify_shim__define__module__export__) {
 /**
@@ -51608,7 +52320,7 @@ var minlengthDirective = function() {
 }).call(global, undefined, undefined, undefined, undefined, function defineExport(ex) { module.exports = ex; });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 (function (global){
 
 ; require("/Users/nikolay/repos/viktor/non-npm/angular-1-4-fixed.js");
@@ -51674,7 +52386,7 @@ directive('bindPolymer', ['$parse', function($parse) {
 }).call(global, undefined, undefined, undefined, undefined, function defineExport(ex) { module.exports = ex; });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"/Users/nikolay/repos/viktor/non-npm/angular-1-4-fixed.js":34}],36:[function(require,module,exports){
+},{"/Users/nikolay/repos/viktor/non-npm/angular-1-4-fixed.js":35}],37:[function(require,module,exports){
 /* FileSaver.js
  * A saveAs() FileSaver implementation.
  * 2015-05-07.2
@@ -51928,7 +52640,7 @@ if (typeof module !== "undefined" && module.exports) {
     return saveAs;
   });
 }
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -51940,7 +52652,7 @@ module.exports = {
 	EMAILLIST_API_KEY: "PSpPFKcg1MaLYljElHup"
 
 };
-},{}],38:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -52064,7 +52776,7 @@ var patchSharing = {
 
 module.exports = patchSharing;
 }).call(this,require("buffer").Buffer)
-},{"./globals":37,"buffer":2,"deep-equal":9,"querystring":8}],39:[function(require,module,exports){
+},{"./globals":38,"buffer":2,"deep-equal":9,"querystring":8}],40:[function(require,module,exports){
 'use strict';
 
 var angular = require( "angular" ),
@@ -52094,7 +52806,7 @@ mod.service( "googleApi",[ function() {
 } ] );
 
 module.exports = mod;
-},{"angular":34,"globals":37}],40:[function(require,module,exports){
+},{"angular":35,"globals":38}],41:[function(require,module,exports){
 (function (global){
 /* jshint -W117 */
 
@@ -52184,7 +52896,118 @@ angular.element( document ).ready( function () {
 
 module.exports = app;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./3rd-party/google-api/module":39,"./ui/fixes":49,"./ui/module":50,"angular":34,"angular-bind-polymer":35,"angular-bootstrap-npm":1,"ng-file-upload":12,"non-npm-patch-sharing":38,"querystring":8,"store":13,"viktor-nv1-engine":20}],41:[function(require,module,exports){
+},{"./3rd-party/google-api/module":40,"./ui/fixes":51,"./ui/module":52,"angular":35,"angular-bind-polymer":36,"angular-bootstrap-npm":1,"ng-file-upload":12,"non-npm-patch-sharing":39,"querystring":8,"store":13,"viktor-nv1-engine":21}],42:[function(require,module,exports){
+'use strict';
+
+module.exports = function( mod ) {
+
+	mod.controller( "ArpeggiatorCtrl", [ "$scope", "globalVars", "dawEngine", "patchLibrary", function( $scope, globalVars, dawEngine, patchLibrary ) {
+		var self = this,
+			settingsChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
+				dawEngine.arpeggiatorSettings = {
+					enabled: self.enabled,
+					hold: self.hold,
+					reset: self.reset,
+					direction: self.direction,
+					rate: self.rate,
+					range: self.range,
+					gate: self.gate,
+					scale: self.scale,
+					velSlope: self.velSlope
+				};
+
+				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
+			},
+			tempoChangeHandler = function( newValue, oldValue ) {
+				if ( newValue === oldValue ) {
+					return;
+				}
+
+				dawEngine.tempoSettings = {
+					bpm: self.bpm
+				};
+
+				patchLibrary.preserveUnsaved( dawEngine.getPatch() );
+			},
+			settings,
+			tempoSettings,
+			pollSettings = function() {
+				settings = dawEngine.arpeggiatorSettings;
+				tempoSettings = dawEngine.tempoSettings;
+
+				self.enabled = settings.enabled;
+				self.hold = settings.hold;
+				self.reset = settings.reset;
+				self.direction = settings.direction;
+				self.rate = settings.rate;
+				self.range = settings.range;
+				self.gate = settings.gate;
+				self.scale = settings.scale;
+				self.velSlope = settings.velSlope;
+				self.bpm = tempoSettings.bpm;
+			},
+			watchers = [],
+			registerForChanges = function() {
+				[
+					"arp.enabled.value",
+					"arp.hold.value",
+					"arp.reset.value",
+					"arp.direction.value",
+					"arp.rate.value",
+					"arp.range.value",
+					"arp.gate.value",
+					"arp.scale.value",
+					"arp.velSlope.value"
+				].forEach( function( path ) {
+					watchers.push( $scope.$watch( path, settingsChangeHandler ) );
+				} );
+				watchers.push( $scope.$watch( "arp.bpm.value", tempoChangeHandler ) );
+			},
+			unregisterFromChanges = function() {
+				watchers.forEach( function( unregister ) {
+					unregister();
+				} );
+				watchers = [];
+			};
+
+		self.knobWidth = Math.round( 45 * globalVars.sizeRatio );
+		self.smallKnobWidth = Math.round( 40 * globalVars.sizeRatio );
+
+		self.directionLabels = [ "Up", "Down", "Up/Dn", "Dn/Up", "Rand" ];
+		self.rateLabels = [ "1/4", "1/8", "1/16", "1/8T", "1/16T" ];
+		self.scaleLabels = [ "Off", "Maj", "Min", "Pent", "Blues" ];
+
+		self.setDirection = function( dir ) {
+			self.direction.value = dir;
+			settingsChangeHandler( dir, null );
+		};
+
+		pollSettings();
+
+		registerForChanges();
+
+		dawEngine.onPatchChange( function() {
+			unregisterFromChanges();
+			pollSettings();
+			registerForChanges();
+		} );
+	} ] );
+
+	mod.directive( "arpeggiator", [ "$templateCache", function( $templateCache ) {
+		return {
+			restrict: "E",
+			replace: true,
+			template: $templateCache.get( "arpeggiator.html" )
+		};
+	} ] );
+
+};
+
+},{}],43:[function(require,module,exports){
 'use strict';
 
 module.exports = function( mod ) {
@@ -52263,7 +53086,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{}],42:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 'use strict';
 
 var settingsConvertor = require( "viktor-nv1-settings-convertor" );
@@ -52333,7 +53156,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"viktor-nv1-settings-convertor":33}],43:[function(require,module,exports){
+},{"viktor-nv1-settings-convertor":34}],45:[function(require,module,exports){
 'use strict';
 
 var PREVIOUS_PRESET_ACTION = "PREVIOUS_PRESET",
@@ -52513,7 +53336,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{}],44:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 'use strict';
 
 module.exports = function( mod ) {
@@ -52527,7 +53350,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{}],45:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 'use strict';
 
 var settingsConvertor = require( "viktor-nv1-settings-convertor" ),
@@ -52605,7 +53428,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"viktor-nv1-settings-convertor":33}],46:[function(require,module,exports){
+},{"viktor-nv1-settings-convertor":34}],48:[function(require,module,exports){
 'use strict';
 
 var settingsConvertor = require( "viktor-nv1-settings-convertor" ),
@@ -52684,7 +53507,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"viktor-nv1-settings-convertor":33}],47:[function(require,module,exports){
+},{"viktor-nv1-settings-convertor":34}],49:[function(require,module,exports){
 'use strict';
 
 var settingsConvertor = require( "viktor-nv1-settings-convertor" ),
@@ -52750,7 +53573,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"viktor-nv1-settings-convertor":33}],48:[function(require,module,exports){
+},{"viktor-nv1-settings-convertor":34}],50:[function(require,module,exports){
 'use strict';
 
 var settingsConvertor = require( "viktor-nv1-settings-convertor" );
@@ -52810,7 +53633,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"viktor-nv1-settings-convertor":33}],49:[function(require,module,exports){
+},{"viktor-nv1-settings-convertor":34}],51:[function(require,module,exports){
 'use strict';
 
 var angular = require( "angular" ),
@@ -52880,7 +53703,7 @@ mod.directive( "updateControlValue", [ "$document", function( $document ) {
 } ] );
 
 module.exports = mod;
-},{"angular":34}],50:[function(require,module,exports){
+},{"angular":35}],52:[function(require,module,exports){
 'use strict';
 
 var angular = require( "angular" ),
@@ -52902,7 +53725,8 @@ var angular = require( "angular" ),
 		require( "./template/master-volume.html" ).name,
 		require( "./template/pitch-bend.html" ).name,
 		require( "./template/modulation-wheel.html" ).name,
-		require( "./template/keyboard.html" ).name
+		require( "./template/keyboard.html" ).name,
+		require( "./template/arpeggiator.html" ).name
 	] ),
 	Synth = require( "viktor-nv1-engine" ).Synth,
 	synth;
@@ -52951,9 +53775,10 @@ require( "./controller/master-volume" )( mod );
 require( "./controller/pitch-bend" )( mod );
 require( "./controller/modulation-wheel" )( mod );
 require( "./controller/keyboard" )( mod );
+require( "./controller/arpeggiator" )( mod );
 
 module.exports = mod;
-},{"./controller/compressor":41,"./controller/delay":42,"./controller/keyboard":43,"./controller/master-controls":44,"./controller/master-volume":45,"./controller/modulation-wheel":46,"./controller/pitch-bend":47,"./controller/reverb":48,"./module/footer/module":52,"./module/instruments/synth/module":62,"./module/maillist/module":73,"./module/patch-library/module":77,"./module/settings/module":81,"./module/t-shirts/module":84,"./module/typed-ad/module":87,"./template/compressor.html":89,"./template/daw.html":90,"./template/delay.html":91,"./template/keyboard.html":92,"./template/master-controls.html":93,"./template/master-volume.html":94,"./template/modulation-wheel.html":95,"./template/pitch-bend.html":96,"./template/reverb.html":97,"angular":34,"viktor-nv1-engine":20}],51:[function(require,module,exports){
+},{"./controller/arpeggiator":42,"./controller/compressor":43,"./controller/delay":44,"./controller/keyboard":45,"./controller/master-controls":46,"./controller/master-volume":47,"./controller/modulation-wheel":48,"./controller/pitch-bend":49,"./controller/reverb":50,"./module/footer/module":54,"./module/instruments/synth/module":64,"./module/maillist/module":75,"./module/patch-library/module":79,"./module/settings/module":83,"./module/t-shirts/module":86,"./module/typed-ad/module":89,"./template/arpeggiator.html":91,"./template/compressor.html":92,"./template/daw.html":93,"./template/delay.html":94,"./template/keyboard.html":95,"./template/master-controls.html":96,"./template/master-volume.html":97,"./template/modulation-wheel.html":98,"./template/pitch-bend.html":99,"./template/reverb.html":100,"angular":35,"viktor-nv1-engine":21}],53:[function(require,module,exports){
 'use strict';
 
 module.exports = function( mod ) {
@@ -53001,7 +53826,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{}],52:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 'use strict';
 
 var angular = require( "angular" ),
@@ -53014,7 +53839,7 @@ var angular = require( "angular" ),
 require( "./controller/footer" )( mod );
 
 module.exports = mod;
-},{"./controller/footer":51,"./template/footer.html":53,"angular":34}],53:[function(require,module,exports){
+},{"./controller/footer":53,"./template/footer.html":55,"angular":35}],55:[function(require,module,exports){
 var ngModule = angular.module('footer.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('footer.html',
@@ -53022,7 +53847,7 @@ ngModule.run(['$templateCache', function($templateCache) {
     '	<div class="container">\n' +
     '		<div class="row">\n' +
     '			<div class="col-md-4">\n' +
-    '				<span class="copyright">Copyright © <a href="http://universless.com/" target="_blank">UNIVERSLESS Ltd.</a> 2015-2019\n' +
+    '				<span class="copyright">Copyright © <a href="http://universless.com/" target="_blank">UNIVERSLESS Ltd.</a> 2015-2026\n' +
     '					(<a href="https://github.com/nicroto/viktor/blob/master/LICENSE-MIT" target="_blank">MIT License</a>)</span>\n' +
     '			</div>\n' +
     '			<div class="col-md-4">\n' +
@@ -53133,7 +53958,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],54:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 'use strict';
 
 var settingsConvertor = require( "viktor-nv1-settings-convertor" );
@@ -53227,7 +54052,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"viktor-nv1-settings-convertor":33}],55:[function(require,module,exports){
+},{"viktor-nv1-settings-convertor":34}],57:[function(require,module,exports){
 'use strict';
 
 var settingsConvertor = require( "viktor-nv1-settings-convertor" );
@@ -53294,7 +54119,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"viktor-nv1-settings-convertor":33}],56:[function(require,module,exports){
+},{"viktor-nv1-settings-convertor":34}],58:[function(require,module,exports){
 'use strict';
 
 var settingsConvertor = require( "viktor-nv1-settings-convertor" );
@@ -53361,7 +54186,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"viktor-nv1-settings-convertor":33}],57:[function(require,module,exports){
+},{"viktor-nv1-settings-convertor":34}],59:[function(require,module,exports){
 'use strict';
 
 var settingsConvertor = require( "viktor-nv1-settings-convertor" );
@@ -53449,7 +54274,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"viktor-nv1-settings-convertor":33}],58:[function(require,module,exports){
+},{"viktor-nv1-settings-convertor":34}],60:[function(require,module,exports){
 'use strict';
 
 var settingsConvertor = require( "viktor-nv1-settings-convertor" );
@@ -53514,7 +54339,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"viktor-nv1-settings-convertor":33}],59:[function(require,module,exports){
+},{"viktor-nv1-settings-convertor":34}],61:[function(require,module,exports){
 'use strict';
 
 var settingsConvertor = require( "viktor-nv1-settings-convertor" );
@@ -53581,7 +54406,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"viktor-nv1-settings-convertor":33}],60:[function(require,module,exports){
+},{"viktor-nv1-settings-convertor":34}],62:[function(require,module,exports){
 'use strict';
 
 var settingsConvertor = require( "viktor-nv1-settings-convertor" );
@@ -53677,7 +54502,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"viktor-nv1-settings-convertor":33}],61:[function(require,module,exports){
+},{"viktor-nv1-settings-convertor":34}],63:[function(require,module,exports){
 'use strict';
 
 module.exports = function( mod ) {
@@ -53733,7 +54558,7 @@ module.exports = function( mod ) {
 	// directive is defined in the modulation controller
 
 };
-},{}],62:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 'use strict';
 
 var angular = require( "angular" ),
@@ -53768,11 +54593,11 @@ require( "./controller/filter" )( mod );
 require( "./controller/lfo" )( mod );
 
 module.exports = mod;
-},{"./controller/envelopes":54,"./controller/filter":55,"./controller/lfo":56,"./controller/mixer":57,"./controller/modulation":58,"./controller/noise":59,"./controller/oscillator-bank":60,"./controller/polyphony":61,"./template/envelopes.html":63,"./template/filter.html":64,"./template/lfo.html":65,"./template/mixer.html":66,"./template/modulation+polyphony.html":67,"./template/noise.html":68,"./template/oscillator-bank.html":69,"./template/synth.html":70,"angular":34}],63:[function(require,module,exports){
+},{"./controller/envelopes":56,"./controller/filter":57,"./controller/lfo":58,"./controller/mixer":59,"./controller/modulation":60,"./controller/noise":61,"./controller/oscillator-bank":62,"./controller/polyphony":63,"./template/envelopes.html":65,"./template/filter.html":66,"./template/lfo.html":67,"./template/mixer.html":68,"./template/modulation+polyphony.html":69,"./template/noise.html":70,"./template/oscillator-bank.html":71,"./template/synth.html":72,"angular":35}],65:[function(require,module,exports){
 var ngModule = angular.module('envelopes.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('envelopes.html',
-    '<div class="col-xs-2 envelopes control-bank text-center" ng-controller="EnvelopesCtrl as envs">\n' +
+    '<div class="envelopes control-bank text-center" ng-controller="EnvelopesCtrl as envs">\n' +
     '	<div class="envelope row">\n' +
     '		<h5>Primary</h5>\n' +
     '		<div class="col-xs-3">	\n' +
@@ -53782,7 +54607,7 @@ ngModule.run(['$templateCache', function($templateCache) {
     '				update-control-value\n' +
     '				update-number-value\n' +
     '				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"\n' +
-    '				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>\n' +
+    '				height="86" width="43" ditchlength="76" knobwidth="19" knobheight="19"></webaudio-slider>\n' +
     '		</div>\n' +
     '		<div class="col-xs-3">\n' +
     '			<webaudio-slider direction="vert"\n' +
@@ -53791,7 +54616,7 @@ ngModule.run(['$templateCache', function($templateCache) {
     '				update-control-value\n' +
     '				update-number-value\n' +
     '				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"\n' +
-    '				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>\n' +
+    '				height="86" width="43" ditchlength="76" knobwidth="19" knobheight="19"></webaudio-slider>\n' +
     '		</div>\n' +
     '		<div class="col-xs-3">\n' +
     '			<webaudio-slider direction="vert"\n' +
@@ -53800,7 +54625,7 @@ ngModule.run(['$templateCache', function($templateCache) {
     '				update-control-value\n' +
     '				update-number-value\n' +
     '				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"\n' +
-    '				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>\n' +
+    '				height="86" width="43" ditchlength="76" knobwidth="19" knobheight="19"></webaudio-slider>\n' +
     '		</div>\n' +
     '		<div class="col-xs-3">\n' +
     '			<webaudio-slider direction="vert"\n' +
@@ -53809,7 +54634,7 @@ ngModule.run(['$templateCache', function($templateCache) {
     '				update-control-value\n' +
     '				update-number-value\n' +
     '				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"\n' +
-    '				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>\n' +
+    '				height="86" width="43" ditchlength="76" knobwidth="19" knobheight="19"></webaudio-slider>\n' +
     '		</div>\n' +
     '	</div>\n' +
     '	<div class="envelope row">\n' +
@@ -53821,7 +54646,7 @@ ngModule.run(['$templateCache', function($templateCache) {
     '				update-control-value\n' +
     '				update-number-value\n' +
     '				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"\n' +
-    '				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>\n' +
+    '				height="86" width="43" ditchlength="76" knobwidth="19" knobheight="19"></webaudio-slider>\n' +
     '		</div>\n' +
     '		<div class="col-xs-3">\n' +
     '			<webaudio-slider direction="vert"\n' +
@@ -53830,7 +54655,7 @@ ngModule.run(['$templateCache', function($templateCache) {
     '				update-control-value\n' +
     '				update-number-value\n' +
     '				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"\n' +
-    '				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>\n' +
+    '				height="86" width="43" ditchlength="76" knobwidth="19" knobheight="19"></webaudio-slider>\n' +
     '		</div>\n' +
     '		<div class="col-xs-3">\n' +
     '			<webaudio-slider direction="vert"\n' +
@@ -53839,7 +54664,7 @@ ngModule.run(['$templateCache', function($templateCache) {
     '				update-control-value\n' +
     '				update-number-value\n' +
     '				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"\n' +
-    '				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>\n' +
+    '				height="86" width="43" ditchlength="76" knobwidth="19" knobheight="19"></webaudio-slider>\n' +
     '		</div>\n' +
     '		<div class="col-xs-3">\n' +
     '			<webaudio-slider direction="vert"\n' +
@@ -53848,7 +54673,7 @@ ngModule.run(['$templateCache', function($templateCache) {
     '				update-control-value\n' +
     '				update-number-value\n' +
     '				src="images/0-100-slider-base.png" knobsrc="images/slider-knob.png"\n' +
-    '				height="90" width="45" ditchlength="80" knobwidth="20" knobheight="20"></webaudio-slider>\n' +
+    '				height="86" width="43" ditchlength="76" knobwidth="19" knobheight="19"></webaudio-slider>\n' +
     '		</div>\n' +
     '	</div>\n' +
     '	<div class="row">\n' +
@@ -53862,11 +54687,11 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],64:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 var ngModule = angular.module('filter.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('filter.html',
-    '<div class="col-xs-1 filter control-bank tri-row single-column text-center" ng-controller="FilterCtrl as filter">\n' +
+    '<div class="filter control-bank tri-row single-column text-center" ng-controller="FilterCtrl as filter">\n' +
     '	<div class="row">\n' +
     '		<h5>Cutoff</h5>\n' +
     '		<webaudio-knob src="images/0-100-knob.png"\n' +
@@ -53896,11 +54721,11 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],65:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 var ngModule = angular.module('lfo.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('lfo.html',
-    '<div class="col-xs-1 lfo control-bank tri-row single-column text-center" ng-controller="LFOCtrl as lfo">\n' +
+    '<div class="lfo control-bank tri-row single-column text-center" ng-controller="LFOCtrl as lfo">\n' +
     '	<div class="row">\n' +
     '		<h5>Form</h5>\n' +
     '		<webaudio-knob src="images/range-knob.png"\n' +
@@ -53930,57 +54755,60 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],66:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 var ngModule = angular.module('mixer.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('mixer.html',
-    '<div class="col-xs-2 mixer control-bank text-center" ng-controller="MixerCtrl as mixer">\n' +
-    '	<div class="row">\n' +
-    '		<div class="oscillator-switch col-xs-6">\n' +
-    '			<div class="row">\n' +
-    '				<webaudio-switch src="images/switch.png" width="40" height="40"\n' +
-    '					bind-polymer\n' +
-    '					update-control-value\n' +
-    '					update-number-value\n' +
-    '					value="{{mixer.volume1.enabled.value}}"></webaudio-switch>\n' +
-    '			</div>\n' +
-    '			<div class="row">\n' +
-    '				<webaudio-switch src="images/switch.png" width="40" height="40"\n' +
-    '					bind-polymer\n' +
-    '					update-control-value\n' +
-    '					update-number-value\n' +
-    '					value="{{mixer.volume2.enabled.value}}"></webaudio-switch>\n' +
-    '			</div>\n' +
-    '			<div class="row">\n' +
-    '				<webaudio-switch src="images/switch.png" width="40" height="40"\n' +
-    '					bind-polymer\n' +
-    '					update-control-value\n' +
-    '					update-number-value\n' +
-    '					value="{{mixer.volume3.enabled.value}}"></webaudio-switch>\n' +
-    '			</div>\n' +
+    '<div class="mixer control-bank text-center" ng-controller="MixerCtrl as mixer">\n' +
+    '	<div class="oscillator row">\n' +
+    '		<h5>Osc 1</h5>\n' +
+    '		<div class="col-xs-6">\n' +
+    '			<webaudio-switch src="images/switch.png" width="30" height="30"\n' +
+    '				bind-polymer\n' +
+    '				update-control-value\n' +
+    '				update-number-value\n' +
+    '				value="{{mixer.volume1.enabled.value}}"></webaudio-switch>\n' +
     '		</div>\n' +
-    '		<div class="oscillator-volume col-xs-6">\n' +
-    '			<div class="row">\n' +
-    '				<webaudio-knob src="images/0-100-knob.png"\n' +
-    '					bind-polymer\n' +
-    '					knob-redraw\n' +
-    '					update-number-value\n' +
-    '					value="{{mixer.volume1.level.value}}" min="{{mixer.volume1.level.range[ 0 ]}}" max="{{mixer.volume1.level.range[ 1 ]}}" step="1" diameter="120" sprites="44" width="60" height="60"></webaudio-knob>\n' +
-    '			</div>\n' +
-    '			<div class="row">\n' +
-    '				<webaudio-knob src="images/0-100-knob.png"\n' +
-    '					bind-polymer\n' +
-    '					knob-redraw\n' +
-    '					update-number-value\n' +
-    '					value="{{mixer.volume2.level.value}}" min="{{mixer.volume2.level.range[ 0 ]}}" max="{{mixer.volume2.level.range[ 1 ]}}" step="1" diameter="120" sprites="44" width="60" height="60"></webaudio-knob>\n' +
-    '			</div>\n' +
-    '			<div class="row">\n' +
-    '				<webaudio-knob src="images/0-100-knob.png"\n' +
-    '					bind-polymer\n' +
-    '					knob-redraw\n' +
-    '					update-number-value\n' +
-    '					value="{{mixer.volume3.level.value}}" min="{{mixer.volume3.level.range[ 0 ]}}" max="{{mixer.volume3.level.range[ 1 ]}}" step="1" diameter="120" sprites="44" width="60" height="60"></webaudio-knob>\n' +
-    '			</div>\n' +
+    '		<div class="col-xs-6">\n' +
+    '			<webaudio-knob src="images/0-100-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				knob-redraw\n' +
+    '				update-number-value\n' +
+    '				value="{{mixer.volume1.level.value}}" min="{{mixer.volume1.level.range[ 0 ]}}" max="{{mixer.volume1.level.range[ 1 ]}}" step="1" diameter="100" sprites="44" width="50" height="50"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '	</div>\n' +
+    '	<div class="oscillator row">\n' +
+    '		<h5>Osc 2</h5>\n' +
+    '		<div class="col-xs-6">\n' +
+    '			<webaudio-switch src="images/switch.png" width="30" height="30"\n' +
+    '				bind-polymer\n' +
+    '				update-control-value\n' +
+    '				update-number-value\n' +
+    '				value="{{mixer.volume2.enabled.value}}"></webaudio-switch>\n' +
+    '		</div>\n' +
+    '		<div class="col-xs-6">\n' +
+    '			<webaudio-knob src="images/0-100-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				knob-redraw\n' +
+    '				update-number-value\n' +
+    '				value="{{mixer.volume2.level.value}}" min="{{mixer.volume2.level.range[ 0 ]}}" max="{{mixer.volume2.level.range[ 1 ]}}" step="1" diameter="100" sprites="44" width="50" height="50"></webaudio-knob>\n' +
+    '		</div>\n' +
+    '	</div>\n' +
+    '	<div class="oscillator row">\n' +
+    '		<h5>Osc 3</h5>\n' +
+    '		<div class="col-xs-6">\n' +
+    '			<webaudio-switch src="images/switch.png" width="30" height="30"\n' +
+    '				bind-polymer\n' +
+    '				update-control-value\n' +
+    '				update-number-value\n' +
+    '				value="{{mixer.volume3.enabled.value}}"></webaudio-switch>\n' +
+    '		</div>\n' +
+    '		<div class="col-xs-6">\n' +
+    '			<webaudio-knob src="images/0-100-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				knob-redraw\n' +
+    '				update-number-value\n' +
+    '				value="{{mixer.volume3.level.value}}" min="{{mixer.volume3.level.range[ 0 ]}}" max="{{mixer.volume3.level.range[ 1 ]}}" step="1" diameter="100" sprites="44" width="50" height="50"></webaudio-knob>\n' +
     '		</div>\n' +
     '	</div>\n' +
     '	<div class="row">\n' +
@@ -53988,15 +54816,16 @@ ngModule.run(['$templateCache', function($templateCache) {
     '		<div class="col-xs-6">Volume</div>\n' +
     '	</div>\n' +
     '	<h4>Mixer</h4>\n' +
-    '</div>');
+    '</div>\n' +
+    '');
 }]);
 
 module.exports = ngModule;
-},{}],67:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 var ngModule = angular.module('modulation+polyphony.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('modulation+polyphony.html',
-    '<div class="col-xs-1 col-xs-offset-1 modulation-polyphony no-padding control-bank single-column text-center">\n' +
+    '<div class="modulation-polyphony no-padding control-bank single-column text-center">\n' +
     '	<div class="row modulation" ng-controller="ModulationCtrl as modulation">\n' +
     '		<div class="row">\n' +
     '			<h5>Form</h5>\n' +
@@ -54031,11 +54860,11 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],68:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 var ngModule = angular.module('noise.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('noise.html',
-    '<div class="col-xs-1 noise control-bank text-center" ng-controller="NoiseCtrl as noise">\n' +
+    '<div class="noise control-bank text-center" ng-controller="NoiseCtrl as noise">\n' +
     '	<div class="row">\n' +
     '		<webaudio-switch src="images/switch.png" width="40" height="40"\n' +
     '			bind-polymer\n' +
@@ -54064,11 +54893,11 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],69:[function(require,module,exports){
+},{}],71:[function(require,module,exports){
 var ngModule = angular.module('oscillator-bank.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('oscillator-bank.html',
-    '<div class="col-xs-2 control-bank text-center" ng-controller="OscillatorBankCtrl as oscillators">\n' +
+    '<div class="oscillator-bank-section control-bank text-center" ng-controller="OscillatorBankCtrl as oscillators">\n' +
     '	<div class="oscillator row">\n' +
     '		<h5>Oscilator 1</h5>\n' +
     '		<div class="col-xs-4">\n' +
@@ -54076,7 +54905,7 @@ ngModule.run(['$templateCache', function($templateCache) {
     '				bind-polymer\n' +
     '				knob-redraw\n' +
     '				update-number-value\n' +
-    '				value="{{oscillators.osc1.range.value}}" min="1" max="{{oscillators.osc1.range.range[ 1 ]}}" step="1" diameter="240" sprites="5" width="60" height="60"></webaudio-knob>\n' +
+    '				value="{{oscillators.osc1.range.value}}" min="1" max="{{oscillators.osc1.range.range[ 1 ]}}" step="1" diameter="228" sprites="5" width="57" height="57"></webaudio-knob>\n' +
     '		</div>\n' +
     '		<div class="col-xs-4">\n' +
     '		</div>\n' +
@@ -54085,7 +54914,7 @@ ngModule.run(['$templateCache', function($templateCache) {
     '				bind-polymer\n' +
     '				knob-redraw\n' +
     '				update-number-value\n' +
-    '				value="{{oscillators.osc1.waveform.value}}" min="{{oscillators.osc1.waveform.range[ 0 ]}}" max="{{oscillators.osc1.waveform.range[ 1 ]}}" step="1" diameter="240" sprites="5" width="60" height="60"></webaudio-knob>\n' +
+    '				value="{{oscillators.osc1.waveform.value}}" min="{{oscillators.osc1.waveform.range[ 0 ]}}" max="{{oscillators.osc1.waveform.range[ 1 ]}}" step="1" diameter="228" sprites="5" width="57" height="57"></webaudio-knob>\n' +
     '		</div>\n' +
     '	</div>\n' +
     '	<div class="oscillator row">\n' +
@@ -54095,21 +54924,21 @@ ngModule.run(['$templateCache', function($templateCache) {
     '				bind-polymer\n' +
     '				knob-redraw\n' +
     '				update-number-value\n' +
-    '				value="{{oscillators.osc2.range.value}}" min="1" max="{{oscillators.osc2.range.range[ 1 ]}}" step="1" diameter="240" sprites="5" width="60" height="60"></webaudio-knob>\n' +
+    '				value="{{oscillators.osc2.range.value}}" min="1" max="{{oscillators.osc2.range.range[ 1 ]}}" step="1" diameter="228" sprites="5" width="57" height="57"></webaudio-knob>\n' +
     '		</div>\n' +
     '		<div class="col-xs-4">\n' +
     '			<webaudio-knob src="images/0-100-knob.png"\n' +
     '				bind-polymer\n' +
     '				knob-redraw\n' +
     '				update-number-value\n' +
-    '				value="{{oscillators.osc2.fineDetune.value}}" min="{{oscillators.osc2.fineDetune.range[ 0 ]}}" max="{{oscillators.osc2.fineDetune.range[ 1 ]}}" step="1" diameter="120" sprites="44" width="60" height="60"></webaudio-knob>\n' +
+    '				value="{{oscillators.osc2.fineDetune.value}}" min="{{oscillators.osc2.fineDetune.range[ 0 ]}}" max="{{oscillators.osc2.fineDetune.range[ 1 ]}}" step="1" diameter="114" sprites="44" width="57" height="57"></webaudio-knob>\n' +
     '		</div>\n' +
     '		<div class="col-xs-4">\n' +
     '			<webaudio-knob src="images/range-knob.png"\n' +
     '				bind-polymer\n' +
     '				knob-redraw\n' +
     '				update-number-value\n' +
-    '				value="{{oscillators.osc2.waveform.value}}" min="{{oscillators.osc2.waveform.range[ 0 ]}}" max="{{oscillators.osc2.waveform.range[ 1 ]}}" step="1" diameter="240" sprites="5" width="60" height="60"></webaudio-knob>\n' +
+    '				value="{{oscillators.osc2.waveform.value}}" min="{{oscillators.osc2.waveform.range[ 0 ]}}" max="{{oscillators.osc2.waveform.range[ 1 ]}}" step="1" diameter="228" sprites="5" width="57" height="57"></webaudio-knob>\n' +
     '		</div>\n' +
     '	</div>\n' +
     '	<div class="oscillator row">\n' +
@@ -54119,21 +54948,21 @@ ngModule.run(['$templateCache', function($templateCache) {
     '				bind-polymer\n' +
     '				knob-redraw\n' +
     '				update-number-value\n' +
-    '				value="{{oscillators.osc3.range.value}}" min="{{oscillators.osc3.range.range[ 0 ]}}" max="{{oscillators.osc3.range.range[ 1 ]}}" step="1" diameter="240" sprites="6" width="60" height="60"></webaudio-knob>\n' +
+    '				value="{{oscillators.osc3.range.value}}" min="{{oscillators.osc3.range.range[ 0 ]}}" max="{{oscillators.osc3.range.range[ 1 ]}}" step="1" diameter="228" sprites="6" width="57" height="57"></webaudio-knob>\n' +
     '		</div>\n' +
     '		<div class="col-xs-4">\n' +
     '			<webaudio-knob src="images/0-100-knob.png"\n' +
     '				bind-polymer\n' +
     '				knob-redraw\n' +
     '				update-number-value\n' +
-    '				value="{{oscillators.osc3.fineDetune.value}}" min="{{oscillators.osc3.fineDetune.range[ 0 ]}}" max="{{oscillators.osc3.fineDetune.range[ 1 ]}}" step="1" diameter="120" sprites="44" width="60" height="60"></webaudio-knob>\n' +
+    '				value="{{oscillators.osc3.fineDetune.value}}" min="{{oscillators.osc3.fineDetune.range[ 0 ]}}" max="{{oscillators.osc3.fineDetune.range[ 1 ]}}" step="1" diameter="114" sprites="44" width="57" height="57"></webaudio-knob>\n' +
     '		</div>\n' +
     '		<div class="col-xs-4">\n' +
     '			<webaudio-knob src="images/range-knob.png"\n' +
     '				bind-polymer\n' +
     '				knob-redraw\n' +
     '				update-number-value\n' +
-    '				value="{{oscillators.osc3.waveform.value}}" min="{{oscillators.osc3.waveform.range[ 0 ]}}" max="{{oscillators.osc3.waveform.range[ 1 ]}}" step="1" diameter="240" sprites="5" width="60" height="60"></webaudio-knob>\n' +
+    '				value="{{oscillators.osc3.waveform.value}}" min="{{oscillators.osc3.waveform.range[ 0 ]}}" max="{{oscillators.osc3.waveform.range[ 1 ]}}" step="1" diameter="228" sprites="5" width="57" height="57"></webaudio-knob>\n' +
     '		</div>\n' +
     '	</div>\n' +
     '	<div class="row">\n' +
@@ -54146,7 +54975,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],70:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 var ngModule = angular.module('synth.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('synth.html',
@@ -54159,12 +54988,13 @@ ngModule.run(['$templateCache', function($templateCache) {
     '		<envelopes></envelopes>\n' +
     '		<filter></filter>\n' +
     '		<lfo></lfo>\n' +
+    '		<arpeggiator></arpeggiator>\n' +
     '	</div>\n' +
     '</div>');
 }]);
 
 module.exports = ngModule;
-},{}],71:[function(require,module,exports){
+},{}],73:[function(require,module,exports){
 'use strict';
 
 
@@ -54325,7 +55155,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"./midi-data":72,"globals":37}],72:[function(require,module,exports){
+},{"./midi-data":74,"globals":38}],74:[function(require,module,exports){
 'use strict';
 
 module.exports = [
@@ -60504,7 +61334,7 @@ module.exports = [
         ]
     }
 ];
-},{}],73:[function(require,module,exports){
+},{}],75:[function(require,module,exports){
 'use strict';
 
 var angular = require( "angular" ),
@@ -60517,7 +61347,7 @@ var angular = require( "angular" ),
 require( "./controller/maillist" )( mod );
 
 module.exports = mod;
-},{"./controller/maillist":71,"./template/maillist.html":74,"angular":34}],74:[function(require,module,exports){
+},{"./controller/maillist":73,"./template/maillist.html":76,"angular":35}],76:[function(require,module,exports){
 var ngModule = angular.module('maillist.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('maillist.html',
@@ -60558,7 +61388,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],75:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 'use strict';
 
 module.exports = function( mod ) {
@@ -60629,7 +61459,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{}],76:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 'use strict';
 
 var saveFile = require( "file-saver" ).saveAs;
@@ -60854,7 +61684,7 @@ module.exports = function( mod ) {
 	} );
 
 };
-},{"file-saver":36}],77:[function(require,module,exports){
+},{"file-saver":37}],79:[function(require,module,exports){
 'use strict';
 
 var angular = require( "angular" ),
@@ -60868,7 +61698,7 @@ require( "./controller/patch-library" )( mod );
 require( "./controller/drop-down" )( mod );
 
 module.exports = mod;
-},{"./controller/drop-down":75,"./controller/patch-library":76,"./template/drop-down.html":78,"./template/patch-library.html":79,"angular":34}],78:[function(require,module,exports){
+},{"./controller/drop-down":77,"./controller/patch-library":78,"./template/drop-down.html":80,"./template/patch-library.html":81,"angular":35}],80:[function(require,module,exports){
 var ngModule = angular.module('drop-down.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('drop-down.html',
@@ -60895,7 +61725,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],79:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 var ngModule = angular.module('patch-library.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('patch-library.html',
@@ -61001,7 +61831,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],80:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 'use strict';
 
 module.exports = function( mod ) {
@@ -61065,7 +61895,7 @@ module.exports = function( mod ) {
     } );
 
 };
-},{}],81:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 'use strict';
 
 var angular = require( "angular" ),
@@ -61077,7 +61907,7 @@ var angular = require( "angular" ),
 require( "./controller/settings" )( mod );
 
 module.exports = mod;
-},{"./controller/settings":80,"./template/settings.html":82,"angular":34}],82:[function(require,module,exports){
+},{"./controller/settings":82,"./template/settings.html":84,"angular":35}],84:[function(require,module,exports){
 var ngModule = angular.module('settings.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('settings.html',
@@ -61123,7 +61953,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],83:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 /* jshint -W098 */
 
 'use strict';
@@ -61242,7 +62072,7 @@ module.exports = function( mod ) {
 	} ] );
 
 };
-},{"angular":34}],84:[function(require,module,exports){
+},{"angular":35}],86:[function(require,module,exports){
 'use strict';
 
 var angular = require( "angular" ),
@@ -61254,7 +62084,7 @@ var angular = require( "angular" ),
 require( "./controller/t-shirts" )( mod );
 
 module.exports = mod;
-},{"./controller/t-shirts":83,"./template/t-shirts.html":85,"angular":34}],85:[function(require,module,exports){
+},{"./controller/t-shirts":85,"./template/t-shirts.html":87,"angular":35}],87:[function(require,module,exports){
 var ngModule = angular.module('t-shirts.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('t-shirts.html',
@@ -61382,7 +62212,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],86:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 'use strict';
 
 
@@ -61437,9 +62267,9 @@ function getAd () {
 
 	var indexChance = [];
 
-	ADS.forEach((value, index) => {
+	ADS.forEach(function( value, index ) {
 
-		indexChance = indexChance.concat ( Array.from( { length: Math.floor( value.weight * 10 ) } ).map( x => index ));
+		indexChance = indexChance.concat ( Array.from( { length: Math.floor( value.weight * 10 ) } ).map( function() { return index; } ));
 	});
 
 	return ADS [
@@ -61479,7 +62309,7 @@ module.exports = function( mod ) {
 		};
 	} ] );
 };
-},{"typedjs":14}],87:[function(require,module,exports){
+},{"typedjs":14}],89:[function(require,module,exports){
 'use strict';
 
 var angular = require( "angular" ),
@@ -61492,7 +62322,7 @@ var angular = require( "angular" ),
 require( "./controller/typed-ad" )( mod );
 
 module.exports = mod;
-},{"./controller/typed-ad":86,"./template/typed-ad.html":88,"angular":34}],88:[function(require,module,exports){
+},{"./controller/typed-ad":88,"./template/typed-ad.html":90,"angular":35}],90:[function(require,module,exports){
 var ngModule = angular.module('typed-ad.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('typed-ad.html',
@@ -61509,7 +62339,119 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],89:[function(require,module,exports){
+},{}],91:[function(require,module,exports){
+var ngModule = angular.module('arpeggiator.html', []);
+ngModule.run(['$templateCache', function($templateCache) {
+  $templateCache.put('arpeggiator.html',
+    '<div class="arpeggiator control-bank text-center" ng-controller="ArpeggiatorCtrl as arp">\n' +
+    '	<div class="row arp-buttons">\n' +
+    '		<div class="col-xs-4 no-padding">\n' +
+    '			<webaudio-switch src="images/switch.png" width="24" height="24"\n' +
+    '				bind-polymer\n' +
+    '				update-control-value\n' +
+    '				update-number-value\n' +
+    '				value="{{arp.enabled.value}}"></webaudio-switch>\n' +
+    '			<h6>ARP</h6>\n' +
+    '		</div>\n' +
+    '		<div class="col-xs-4 no-padding">\n' +
+    '			<webaudio-switch src="images/switch.png" width="24" height="24"\n' +
+    '				bind-polymer\n' +
+    '				update-control-value\n' +
+    '				update-number-value\n' +
+    '				value="{{arp.hold.value}}"></webaudio-switch>\n' +
+    '			<h6>Hold</h6>\n' +
+    '		</div>\n' +
+    '		<div class="col-xs-4 no-padding">\n' +
+    '			<webaudio-switch src="images/switch.png" width="24" height="24"\n' +
+    '				bind-polymer\n' +
+    '				update-control-value\n' +
+    '				update-number-value\n' +
+    '				value="{{arp.reset.value}}"></webaudio-switch>\n' +
+    '			<h6>Reset</h6>\n' +
+    '		</div>\n' +
+    '	</div>\n' +
+    '	<div class="row arp-direction">\n' +
+    '		<div class="direction-buttons">\n' +
+    '			<button class="btn btn-xs" ng-class="{\'active\': arp.direction.value === 0}" ng-click="arp.setDirection(0)" title="Up">↑</button>\n' +
+    '			<button class="btn btn-xs" ng-class="{\'active\': arp.direction.value === 1}" ng-click="arp.setDirection(1)" title="Down">↓</button>\n' +
+    '			<button class="btn btn-xs" ng-class="{\'active\': arp.direction.value === 2}" ng-click="arp.setDirection(2)" title="Up/Down">↕</button>\n' +
+    '			<button class="btn btn-xs" ng-class="{\'active\': arp.direction.value === 3}" ng-click="arp.setDirection(3)" title="Down/Up">⇅</button>\n' +
+    '			<button class="btn btn-xs" ng-class="{\'active\': arp.direction.value === 4}" ng-click="arp.setDirection(4)" title="Random">?</button>\n' +
+    '		</div>\n' +
+    '	</div>\n' +
+    '	<div class="row arp-knobs">\n' +
+    '		<div class="col-xs-6 no-padding">\n' +
+    '			<webaudio-knob src="images/0-100-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				update-number-value\n' +
+    '				knob-redraw\n' +
+    '				value="{{arp.rate.value}}" min="{{arp.rate.range[ 0 ]}}" max="{{arp.rate.range[ 1 ]}}"\n' +
+    '				step="1"\n' +
+    '				sprites="44" width="44" height="44"></webaudio-knob>\n' +
+    '			<h6>Rate</h6>\n' +
+    '		</div>\n' +
+    '		<div class="col-xs-6 no-padding">\n' +
+    '			<webaudio-knob src="images/0-100-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				update-number-value\n' +
+    '				knob-redraw\n' +
+    '				value="{{arp.range.value}}" min="{{arp.range.range[ 0 ]}}" max="{{arp.range.range[ 1 ]}}"\n' +
+    '				step="1"\n' +
+    '				sprites="44" width="44" height="44"></webaudio-knob>\n' +
+    '			<h6>Range</h6>\n' +
+    '		</div>\n' +
+    '	</div>\n' +
+    '	<div class="row arp-knobs">\n' +
+    '		<div class="col-xs-6 no-padding">\n' +
+    '			<webaudio-knob src="images/0-100-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				update-number-value\n' +
+    '				knob-redraw\n' +
+    '				value="{{arp.gate.value}}" min="{{arp.gate.range[ 0 ]}}" max="{{arp.gate.range[ 1 ]}}"\n' +
+    '				step="0.01"\n' +
+    '				sprites="44" width="44" height="44"></webaudio-knob>\n' +
+    '			<h6>Gate</h6>\n' +
+    '		</div>\n' +
+    '		<div class="col-xs-6 no-padding">\n' +
+    '			<webaudio-knob src="images/0-100-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				update-number-value\n' +
+    '				knob-redraw\n' +
+    '				value="{{arp.scale.value}}" min="{{arp.scale.range[ 0 ]}}" max="{{arp.scale.range[ 1 ]}}"\n' +
+    '				step="1"\n' +
+    '				sprites="44" width="44" height="44"></webaudio-knob>\n' +
+    '			<h6>Scale</h6>\n' +
+    '		</div>\n' +
+    '	</div>\n' +
+    '	<div class="row arp-knobs">\n' +
+    '		<div class="col-xs-6 no-padding">\n' +
+    '			<webaudio-knob src="images/0-100-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				update-number-value\n' +
+    '				knob-redraw\n' +
+    '				value="{{arp.velSlope.value}}" min="{{arp.velSlope.range[ 0 ]}}" max="{{arp.velSlope.range[ 1 ]}}"\n' +
+    '				step="0.01"\n' +
+    '				sprites="44" width="44" height="44"></webaudio-knob>\n' +
+    '			<h6>Vel Slope</h6>\n' +
+    '		</div>\n' +
+    '		<div class="col-xs-6 no-padding">\n' +
+    '			<webaudio-knob src="images/0-100-knob.png"\n' +
+    '				bind-polymer\n' +
+    '				update-number-value\n' +
+    '				knob-redraw\n' +
+    '				value="{{arp.bpm.value}}" min="{{arp.bpm.range[ 0 ]}}" max="{{arp.bpm.range[ 1 ]}}"\n' +
+    '				step="1"\n' +
+    '				sprites="44" width="44" height="44"></webaudio-knob>\n' +
+    '			<h6>BPM</h6>\n' +
+    '		</div>\n' +
+    '	</div>\n' +
+    '	<h4>Arpeggiator</h4>\n' +
+    '</div>\n' +
+    '');
+}]);
+
+module.exports = ngModule;
+},{}],92:[function(require,module,exports){
 var ngModule = angular.module('compressor.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('compressor.html',
@@ -61588,7 +62530,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],90:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 var ngModule = angular.module('daw.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('daw.html',
@@ -61621,7 +62563,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],91:[function(require,module,exports){
+},{}],94:[function(require,module,exports){
 var ngModule = angular.module('delay.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('delay.html',
@@ -61673,22 +62615,19 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],92:[function(require,module,exports){
+},{}],95:[function(require,module,exports){
 var ngModule = angular.module('keyboard.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('keyboard.html',
     '<div class="col-xs-6 keyboard no-padding" ng-controller="KeyboardCtrl as keyboard">\n' +
     '    <webaudio-keyboard\n' +
     '        keyboard-value\n' +
-    '        keys="39" min="61" width="539" height="153"></webaudio-keyboard>\n' +
-    '<!-- 	<webaudio-keyboard\n' +
-    '		keyboard-value\n' +
-    '		keys="39" min="61" width="599" height="170"></webaudio-keyboard> -->\n' +
+    '        keys="39" min="61" width="599" height="170"></webaudio-keyboard>\n' +
     '</div>');
 }]);
 
 module.exports = ngModule;
-},{}],93:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 var ngModule = angular.module('master-controls.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('master-controls.html',
@@ -61707,7 +62646,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],94:[function(require,module,exports){
+},{}],97:[function(require,module,exports){
 var ngModule = angular.module('master-volume.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('master-volume.html',
@@ -61726,7 +62665,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],95:[function(require,module,exports){
+},{}],98:[function(require,module,exports){
 var ngModule = angular.module('modulation-wheel.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('modulation-wheel.html',
@@ -61742,7 +62681,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],96:[function(require,module,exports){
+},{}],99:[function(require,module,exports){
 var ngModule = angular.module('pitch-bend.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('pitch-bend.html',
@@ -61758,7 +62697,7 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}],97:[function(require,module,exports){
+},{}],100:[function(require,module,exports){
 var ngModule = angular.module('reverb.html', []);
 ngModule.run(['$templateCache', function($templateCache) {
   $templateCache.put('reverb.html',
@@ -61778,4 +62717,4 @@ ngModule.run(['$templateCache', function($templateCache) {
 }]);
 
 module.exports = ngModule;
-},{}]},{},[40]);
+},{}]},{},[41]);

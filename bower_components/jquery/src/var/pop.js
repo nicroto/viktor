@@ -1,7 +1,9 @@
 define( [
 	"./arr"
 ], function( arr ) {
-	"use strict";
 
-	return arr.concat;
+"use strict";
+
+return arr.pop;
+
 } );
