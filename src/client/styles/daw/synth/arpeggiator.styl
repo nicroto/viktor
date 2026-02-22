@@ -1,0 +1,41 @@
+.arpeggiator
+
+	.arp-buttons
+		margin-top: 8px
+		margin-bottom: 4px
+		.col-xs-4
+			padding: 0 2px
+		h6
+			margin-top: 3px
+			font-size: 9px
+
+	.arp-direction
+		margin-bottom: 6px
+		.direction-buttons
+			display: flex
+			justify-content: center
+			gap: 3px
+			button
+				width: 28px
+				height: 28px
+				padding: 0
+				font-size: 13px
+				background-color: $background-dark-color
+				border: 1px solid $control-bank-border-color
+				color: $panel-text-grey
+				border-radius: 3px
+				&:hover
+					background-color: $highlight-on-dark-background
+				&.active
+					background-color: $green-on-dark
+					color: white
+					border-color: $green-on-dark
+
+	.arp-knobs
+		margin-bottom: 2px
+		.col-xs-6
+			padding: 0 2px
+		h6
+			margin-top: 2px
+			font-size: 9px
+			white-space: nowrap
