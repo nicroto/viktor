@@ -19,7 +19,8 @@ var angular = require( "angular" ),
 		require( "./template/master-volume.html" ).name,
 		require( "./template/pitch-bend.html" ).name,
 		require( "./template/modulation-wheel.html" ).name,
-		require( "./template/keyboard.html" ).name
+		require( "./template/keyboard.html" ).name,
+		require( "./template/arpeggiator.html" ).name
 	] ),
 	Synth = require( "viktor-nv1-engine" ).Synth,
 	synth;
@@ -68,5 +69,6 @@ require( "./controller/master-volume" )( mod );
 require( "./controller/pitch-bend" )( mod );
 require( "./controller/modulation-wheel" )( mod );
 require( "./controller/keyboard" )( mod );
+require( "./controller/arpeggiator" )( mod );
 
 module.exports = mod;

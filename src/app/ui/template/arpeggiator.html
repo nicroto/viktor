@@ -1,0 +1,104 @@
+<div class="arpeggiator control-bank text-center" ng-controller="ArpeggiatorCtrl as arp">
+	<div class="row arp-buttons">
+		<div class="col-xs-4 no-padding">
+			<webaudio-switch src="images/switch.png" width="24" height="24"
+				bind-polymer
+				update-control-value
+				update-number-value
+				value="{{arp.enabled.value}}"></webaudio-switch>
+			<h6>ARP</h6>
+		</div>
+		<div class="col-xs-4 no-padding">
+			<webaudio-switch src="images/switch.png" width="24" height="24"
+				bind-polymer
+				update-control-value
+				update-number-value
+				value="{{arp.hold.value}}"></webaudio-switch>
+			<h6>Hold</h6>
+		</div>
+		<div class="col-xs-4 no-padding">
+			<webaudio-switch src="images/switch.png" width="24" height="24"
+				bind-polymer
+				update-control-value
+				update-number-value
+				value="{{arp.reset.value}}"></webaudio-switch>
+			<h6>Reset</h6>
+		</div>
+	</div>
+	<div class="row arp-direction">
+		<div class="direction-buttons">
+			<button class="btn btn-xs" ng-class="{'active': arp.direction.value === 0}" ng-click="arp.setDirection(0)" title="Up">↑</button>
+			<button class="btn btn-xs" ng-class="{'active': arp.direction.value === 1}" ng-click="arp.setDirection(1)" title="Down">↓</button>
+			<button class="btn btn-xs" ng-class="{'active': arp.direction.value === 2}" ng-click="arp.setDirection(2)" title="Up/Down">↕</button>
+			<button class="btn btn-xs" ng-class="{'active': arp.direction.value === 3}" ng-click="arp.setDirection(3)" title="Down/Up">⇅</button>
+			<button class="btn btn-xs" ng-class="{'active': arp.direction.value === 4}" ng-click="arp.setDirection(4)" title="Random">?</button>
+		</div>
+	</div>
+	<div class="row arp-knobs">
+		<div class="col-xs-6 no-padding">
+			<webaudio-knob src="images/0-100-knob.png"
+				bind-polymer
+				update-number-value
+				knob-redraw
+				value="{{arp.rate.value}}" min="{{arp.rate.range[ 0 ]}}" max="{{arp.rate.range[ 1 ]}}"
+				step="1"
+				sprites="44" width="44" height="44"></webaudio-knob>
+			<h6>Rate</h6>
+		</div>
+		<div class="col-xs-6 no-padding">
+			<webaudio-knob src="images/0-100-knob.png"
+				bind-polymer
+				update-number-value
+				knob-redraw
+				value="{{arp.range.value}}" min="{{arp.range.range[ 0 ]}}" max="{{arp.range.range[ 1 ]}}"
+				step="1"
+				sprites="44" width="44" height="44"></webaudio-knob>
+			<h6>Range</h6>
+		</div>
+	</div>
+	<div class="row arp-knobs">
+		<div class="col-xs-6 no-padding">
+			<webaudio-knob src="images/0-100-knob.png"
+				bind-polymer
+				update-number-value
+				knob-redraw
+				value="{{arp.gate.value}}" min="{{arp.gate.range[ 0 ]}}" max="{{arp.gate.range[ 1 ]}}"
+				step="0.01"
+				sprites="44" width="44" height="44"></webaudio-knob>
+			<h6>Gate</h6>
+		</div>
+		<div class="col-xs-6 no-padding">
+			<webaudio-knob src="images/0-100-knob.png"
+				bind-polymer
+				update-number-value
+				knob-redraw
+				value="{{arp.scale.value}}" min="{{arp.scale.range[ 0 ]}}" max="{{arp.scale.range[ 1 ]}}"
+				step="1"
+				sprites="44" width="44" height="44"></webaudio-knob>
+			<h6>Scale</h6>
+		</div>
+	</div>
+	<div class="row arp-knobs">
+		<div class="col-xs-6 no-padding">
+			<webaudio-knob src="images/0-100-knob.png"
+				bind-polymer
+				update-number-value
+				knob-redraw
+				value="{{arp.velSlope.value}}" min="{{arp.velSlope.range[ 0 ]}}" max="{{arp.velSlope.range[ 1 ]}}"
+				step="0.01"
+				sprites="44" width="44" height="44"></webaudio-knob>
+			<h6>Vel Slope</h6>
+		</div>
+		<div class="col-xs-6 no-padding">
+			<webaudio-knob src="images/0-100-knob.png"
+				bind-polymer
+				update-number-value
+				knob-redraw
+				value="{{arp.bpm.value}}" min="{{arp.bpm.range[ 0 ]}}" max="{{arp.bpm.range[ 1 ]}}"
+				step="1"
+				sprites="44" width="44" height="44"></webaudio-knob>
+			<h6>BPM</h6>
+		</div>
+	</div>
+	<h4>Arpeggiator</h4>
+</div>

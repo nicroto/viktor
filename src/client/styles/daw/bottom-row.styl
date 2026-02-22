@@ -3,17 +3,21 @@
 		margin-top: 26px
 
 	#masterControls
+
 		.effects
 			h4, h5, h6
 				margin-top: 0px
 				margin-bottom: 1px
 
 		.master-column-bank
-			margin-right: 2px
+			margin-right: 6px
 
 		.master-control-bank
 			border-radius: 10px
 			border: 1px solid #8E8E8E
+
+		.master-volume
+			padding-bottom: 2px
 
 		.on-off-switch 
 			position: absolute
@@ -23,4 +27,23 @@
 			margin-left: -30px
 			
 			.compressor
-				margin-bottom: 3px
+				margin-bottom: 7px
+
+			> .row
+				display: flex
+				flex-wrap: nowrap
+
+			> .row:last-child
+				gap: 4px
+				.delay
+					flex: 4
+					max-width: none
+					width: auto
+					padding-left: 5px
+					padding-right: 5px
+				.reverb
+					flex: 1
+					max-width: none
+					width: auto
+					padding-left: 0
+					padding-right: 0

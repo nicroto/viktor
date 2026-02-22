@@ -90,6 +90,13 @@ $ for i in *.png; do ffmpeg -i $i -vframes 1 -compression_level 100 $i-1.png; do
 
 ## Release History
 
+ * 2.0.0 (unreleased)
+   * Add: Arpeggiator with direction (Up, Down, Up/Down, Down/Up, Random), rate (1/4, 1/8, 1/16, 1/8T, 1/16T), range (1-3 octaves), gate, scale quantization (Major, Minor, Pentatonic, Blues), velocity slope, hold, and reset controls;
+   * Add: Tempo (BPM) control for the arpeggiator;
+   * Improve: UI layout - redesigned mixer panel with per-oscillator rows, adjusted oscillator bank and envelope slider sizing for better fit;
+   * Improve: Keyboard size increased to 599x170;
+   * Improve: Disabled ads in the page layout;
+   * Bump: Engine version to 7 (adds arpeggiator and tempo to patch format).
  * 1.9.0 (4th of October, 2016)
    * Add: Envelope: lower boundary;
    * Fix: Filter Envelope: frequency shouldn’t go down under 1Hz;
