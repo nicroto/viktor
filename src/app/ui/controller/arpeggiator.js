@@ -1,7 +1,5 @@
 'use strict';
 
-var settingsConvertor = require( "viktor-nv1-settings-convertor" );
-
 module.exports = function( mod ) {
 
 	mod.controller( "ArpeggiatorCtrl", [ "$scope", "globalVars", "dawEngine", "patchLibrary", function( $scope, globalVars, dawEngine, patchLibrary ) {

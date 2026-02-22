@@ -52,9 +52,9 @@ function getAd () {
 
 	var indexChance = [];
 
-	ADS.forEach((value, index) => {
+	ADS.forEach(function( value, index ) {
 
-		indexChance = indexChance.concat ( Array.from( { length: Math.floor( value.weight * 10 ) } ).map( x => index ));
+		indexChance = indexChance.concat ( Array.from( { length: Math.floor( value.weight * 10 ) } ).map( function() { return index; } ));
 	});
 
 	return ADS [
