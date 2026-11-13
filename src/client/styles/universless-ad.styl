@@ -2,7 +2,7 @@ $u-black = #0d0d0d
 $u-ivory = #f0ead6
 $u-amber = #f59e0b
 
-$u-ad-width = 250px
+$u-ad-width = 270px
 $u-ad-expanded-width = 640px
 
 #universlessAd
@@ -47,6 +47,8 @@ $u-ad-expanded-width = 640px
 		align-items: center
 		justify-content: space-between
 		margin-top: 9px
+		// Room for the close button.
+		padding-right: 28px
 
 	.u-kicker
 		font: 9px/1.2 Menlo, Monaco, monospace
@@ -60,6 +62,7 @@ $u-ad-expanded-width = 640px
 		margin-top: 5px
 		font: 500 12px Menlo, Monaco, monospace
 		letter-spacing: 0.1em
+		white-space: nowrap
 		color: rgba($u-ivory, 0.85)
 
 		img
@@ -78,10 +81,11 @@ $u-ad-expanded-width = 640px
 		color: rgba($u-ivory, 0.55)
 		transition: max-height 0.35s ease, margin-top 0.35s ease
 
+	// In the bottom-right corner, the only spot that doesn't move as the card grows.
 	.u-close
 		position: absolute
-		top: -9px
-		right: -9px
+		right: 11px
+		bottom: 18px
 		width: 20px
 		height: 20px
 		padding: 0
@@ -110,7 +114,7 @@ $u-ad-expanded-width = 640px
 
 		.u-tag
 			max-height: 40px
-			margin-top: 6px
+			margin-top: 8px
 
 // Would cover the synth on small screens.
 @media (max-width: 900px)
