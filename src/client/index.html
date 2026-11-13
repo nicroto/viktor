@@ -121,9 +121,10 @@
 <script src="https://apis.google.com/js/client.js?onload=initGoogleApi"></script>
 
 <!-- UNIVERSLESS-1 beta ad -->
-<div id="universlessAd">
+<div id="universlessAd" style="display: none">
 	<a href="https://universless.com/?utm_source=viktor&amp;utm_medium=referral&amp;utm_campaign=beta" target="_blank" rel="noopener">
 		<img class="u-shot" src="images/universless/app-dark.jpg" alt="UNIVERSLESS-1 screenshot">
+		<div class="u-tag">Your whole band in one looper, with the NV-1 synth built in.</div>
 		<div class="u-row">
 			<div>
 				<div class="u-kicker">The sequel to NV-1</div>
@@ -131,7 +132,6 @@
 			</div>
 			<span class="u-cta">Free beta &rarr;</span>
 		</div>
-		<div class="u-tag">Your whole band in one looper, with the NV-1 synth built in.</div>
 	</a>
 	<button class="u-close" type="button" aria-label="Close">&times;</button>
 </div>
@@ -149,6 +149,8 @@
 		});
 
 		setTimeout(function () {
+			// A cached main.css from before the ad existed would show it unstyled.
+			if (window.getComputedStyle(ad).position !== 'fixed') { return; }
 			ad.style.display = 'block';
 			// Next frame, so the fade-in transition runs.
 			setTimeout(function () { ad.className = 'shown'; }, 30);
