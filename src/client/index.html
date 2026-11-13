@@ -120,6 +120,42 @@
 </script>
 <script src="https://apis.google.com/js/client.js?onload=initGoogleApi"></script>
 
+<!-- UNIVERSLESS-1 beta ad -->
+<div id="universlessAd">
+	<a href="https://universless.com/?utm_source=viktor&amp;utm_medium=referral&amp;utm_campaign=beta" target="_blank" rel="noopener">
+		<img class="u-shot" src="images/universless/app-dark.jpg" alt="UNIVERSLESS-1 screenshot">
+		<div class="u-row">
+			<div>
+				<div class="u-kicker">The sequel to NV-1</div>
+				<div class="u-name"><img src="images/universless/symbol-ivory.svg" alt="">UNIVERSLESS-1</div>
+			</div>
+			<span class="u-cta">Free beta &rarr;</span>
+		</div>
+		<div class="u-tag">Your whole band in one looper, with the NV-1 synth built in.</div>
+	</a>
+	<button class="u-close" type="button" aria-label="Close">&times;</button>
+</div>
+<script>
+	(function () {
+		var KEY = 'universlessAdClosed';
+		var ad = document.getElementById('universlessAd');
+		try {
+			if (localStorage.getItem(KEY)) { return; }
+		} catch (e) {}
+
+		ad.querySelector('.u-close').addEventListener('click', function () {
+			ad.parentNode.removeChild(ad);
+			try { localStorage.setItem(KEY, '1'); } catch (e) {}
+		});
+
+		setTimeout(function () {
+			ad.style.display = 'block';
+			// Next frame, so the fade-in transition runs.
+			setTimeout(function () { ad.className = 'shown'; }, 30);
+		}, 12000);
+	})();
+</script>
+
 <!-- Ads (disabled)
 <div class="ad ad-left">
 	<a href="https://www.pluginboutique.com/bundles?utm_source=PIB%20bundles&utm_medium=AFRS&utm_campaign=PIB%20bundles&amp;a_aid=5c07916071e3f&amp;a_bid=e609991c&amp;chan=code1" target="_blank"><img src="//loopmasters.postaffiliatepro.com/accounts/default1/hfwq3b89wu2/e609991c.jpg" alt="Music Software Bundles from Pluginboutique.com" title="Music Software Bundles from Pluginboutique.com" width="336" height="280" /></a>
