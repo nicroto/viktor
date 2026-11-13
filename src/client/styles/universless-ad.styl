@@ -1,0 +1,118 @@
+$u-black = #0d0d0d
+$u-ivory = #f0ead6
+$u-amber = #f59e0b
+
+$u-ad-width = 250px
+$u-ad-expanded-width = 640px
+
+#universlessAd
+	display: none
+	position: fixed
+	right: 22px
+	bottom: 22px
+	z-index: 1000
+	width: $u-ad-width
+	opacity: 0
+	transform: translateY(12px)
+	transition: opacity 0.8s ease, transform 0.8s ease, width 0.35s ease
+
+	&.shown
+		opacity: 1
+		transform: translateY(0)
+
+	a
+		display: block
+		padding: 10px
+		color: $u-ivory
+		text-decoration: none
+		background: $u-black
+		border: 1px solid rgba($u-amber, 0.35)
+		border-radius: 8px
+		box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55)
+		font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif
+		transition: border-color 0.35s ease, box-shadow 0.35s ease
+
+	.u-shot
+		display: block
+		width: 100%
+		height: ($u-ad-width - 22px) * 0.625
+		object-fit: cover
+		object-position: top left
+		border: 1px solid rgba(255, 255, 255, 0.08)
+		border-radius: 4px
+		transition: height 0.35s ease
+
+	.u-row
+		display: flex
+		align-items: center
+		justify-content: space-between
+		margin-top: 9px
+
+	.u-kicker
+		font: 9px/1.2 Menlo, Monaco, monospace
+		letter-spacing: 0.18em
+		text-transform: uppercase
+		color: $u-amber
+
+	.u-name
+		display: flex
+		align-items: center
+		margin-top: 5px
+		font: 500 12px Menlo, Monaco, monospace
+		letter-spacing: 0.1em
+		color: rgba($u-ivory, 0.85)
+
+		img
+			height: 16px
+			margin-right: 7px
+
+	.u-cta
+		font: 11px Menlo, Monaco, monospace
+		color: $u-amber
+		white-space: nowrap
+
+	.u-tag
+		max-height: 0
+		overflow: hidden
+		font-size: 12px
+		color: rgba($u-ivory, 0.55)
+		transition: max-height 0.35s ease, margin-top 0.35s ease
+
+	.u-close
+		position: absolute
+		top: -9px
+		right: -9px
+		width: 20px
+		height: 20px
+		padding: 0
+		font-size: 13px
+		line-height: 18px
+		text-align: center
+		color: rgba($u-ivory, 0.6)
+		background: $u-black
+		border: 1px solid rgba($u-ivory, 0.25)
+		border-radius: 50%
+		cursor: pointer
+
+		&:hover
+			color: $u-ivory
+
+	&:hover
+		width: $u-ad-expanded-width
+
+		a
+			border-color: rgba($u-amber, 0.7)
+			box-shadow: 0 18px 60px rgba(0, 0, 0, 0.7)
+
+		.u-shot
+			// The screenshot's own aspect ratio (3432x2230).
+			height: ($u-ad-expanded-width - 22px) * (2230 / 3432)
+
+		.u-tag
+			max-height: 40px
+			margin-top: 6px
+
+// Would cover the synth on small screens.
+@media (max-width: 900px)
+	#universlessAd
+		display: none !important
